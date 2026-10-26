@@ -51,7 +51,7 @@ async function runDemo() {
   const draw = () => {
     const g = runner.game;
     const hudOpacity = ui.demoCards(runner.frame, DEMO.titleFrames, runner.overAt, DEMO.endFrames, g);
-    ui.update(g, { hudOpacity: runner.frame < DEMO.titleFrames ? 0 : hudOpacity });
+    ui.update(g, { hudOpacity: runner.frame < DEMO.titleFrames ? 0 : hudOpacity, dip: view.director.dip });
     view.render(g);
     window.__demoFrame = runner.frame;
     window.__demoInfo = { frame: runner.frame, score: g.score, stats: g.stats, overAt: runner.overAt };
@@ -296,7 +296,7 @@ function runGame() {
     }
     const b = game.activeBooster();
     sound.update(Math.max(0, ...game.boosters.map((x) => x.throttle)), state === 'playing' && b && b.rcs !== 0);
-    ui.update(game);
+    ui.update(game, { dip: view.director.dip });
     view.render(game);
     requestAnimationFrame(frame);
   };

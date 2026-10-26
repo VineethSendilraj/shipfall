@@ -578,19 +578,19 @@ export class Game {
     this.addPopup(perfect ? 'PERFECT!' : 'NICE CATCH!', labelX, py - 120, {
       color: perfect ? '#ffd166' : '#7ee8ff',
       size: perfect ? 56 : 44,
-      dur: 1.9,
+      dur: 1.6,
       big: true,
       sy: 0.17,
     });
-    this.addPopup(`+${pts.toLocaleString('en-US')}`, labelX, py - 74, { color: '#ffffff', size: 28, dur: 1.9, delay: 0.12, sy: 0.245 });
-    this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#dfe6f5', size: 17, dur: 1.9, delay: 0.2, sy: 0.29 });
+    this.addPopup(`+${pts.toLocaleString('en-US')}`, labelX, py - 74, { color: '#ffffff', size: 28, dur: 1.6, delay: 0.12, sy: 0.245 });
+    this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#dfe6f5', size: 17, dur: 1.6, delay: 0.2, sy: 0.29 });
     this.emit('catch', { perfect, pts });
 
     if (this.roundDouble && this.roundCatches === 2) {
       this.score += 500;
       this.stats.doubles++;
-      this.addPopup('DOUBLE CATCH!', this.W / 2, 200, { color: '#ffd166', size: 52, dur: 2.2, big: true, delay: 0.35, sy: 0.46 });
-      this.addPopup('+500', this.W / 2, 246, { color: '#ffffff', size: 26, dur: 2.2, delay: 0.45, sy: 0.535 });
+      this.addPopup('DOUBLE CATCH!', this.W / 2, 200, { color: '#ffd166', size: 52, dur: 2.0, big: true, delay: 0.35, sy: 0.84 });
+      this.addPopup('+500', this.W / 2, 246, { color: '#ffffff', size: 26, dur: 2.0, delay: 0.45, sy: 0.905 });
       this.emit('double');
     }
   }

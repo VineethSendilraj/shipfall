@@ -51,7 +51,8 @@ export class UI {
     this.shownScore = 0;
   }
 
-  update(game, { hudOpacity = 1 } = {}) {
+  update(game, { hudOpacity = 1, dip = 0 } = {}) {
+    this.dip = dip;
     const e = this.el;
     const h = game.hud();
     const showHud = game.phase !== 'ready' && hudOpacity > 0;
@@ -91,7 +92,7 @@ export class UI {
       this.set('round', e.round, 'text', String(Math.max(1, h.round)));
       const lives = '●'.repeat(h.lives) + '○'.repeat(Math.max(0, 3 - h.lives));
       this.set('livesT', e.lives, 'text', lives);
-      this.set('tower', e.tower, 'text', h.double ? `DOUBLE CATCH · TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : '');
+      this.set('tower', e.tower, 'text', h.double ? (h.booster ? `DOUBLE CATCH · TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : 'DOUBLE CATCH') : '');
     }
     this.updatePopups(game);
     this.updateBanner(game);
@@ -128,7 +129,7 @@ export class UI {
         y = q.y - p.t * 24 * this.scale;
       }
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) scale(${s.toFixed(3)})`;
-      el.style.opacity = Math.max(0, fade).toFixed(3);
+      el.style.opacity = Math.max(0, fade * (1 - this.dip)).toFixed(3);
     }
     for (const [id, el] of this.popupEls) {
       if (!live.has(id)) {
@@ -150,7 +151,7 @@ export class UI {
     this.set('bannerC', e.banner, 'class', b.gold ? 'banner gold' : 'banner');
     const fin = Math.min(1, b.t / 0.25);
     const fout = Math.min(1, (b.dur - b.t) / 0.45);
-    const o = Math.max(0, Math.min(fin, fout));
+    const o = Math.max(0, Math.min(fin, fout)) * (1 - this.dip);
     e.banner.style.opacity = o.toFixed(3);
     e.banner.style.transform = `translate(-50%, -50%) scale(${(1.06 - 0.06 * fin).toFixed(3)})`;
     e.bannerTitle.style.letterSpacing = `${(0.3 - 0.14 * fin).toFixed(3)}em`;

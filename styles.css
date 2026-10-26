@@ -141,7 +141,7 @@ kbd.wide { min-width: 64px; }
 .icon-btn[aria-pressed='true'] .wave { display: inline; }
 .icon-btn[aria-pressed='true'] .mute { display: none; }
 
-.disclaimer { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: rgba(220, 230, 255, 0.55); pointer-events: none; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+.disclaimer { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; color: rgba(225, 233, 255, 0.72); pointer-events: none; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
 
 .toast { position: absolute; left: 50%; bottom: 48px; transform: translate(-50%, 20px); padding: 10px 16px; border-radius: 12px; background: rgba(10, 16, 32, 0.9); border: 1px solid var(--line); font-size: 14px; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 20; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }

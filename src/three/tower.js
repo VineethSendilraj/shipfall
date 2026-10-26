@@ -160,7 +160,7 @@ export function createTower(mats, side) {
   cg.castShadow = true;
   cg.receiveShadow = true;
   carriage.add(cg);
-  const workMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 3.0, 2.6), toneMapped: false });
+  const workMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.4, 1.25), toneMapped: false });
   for (const z of [-3, 3]) {
     const panel = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 1.6), workMat);
     panel.position.set(side * (TOWER_HALF_M + 2.3), 2.4, z);

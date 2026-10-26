@@ -91,9 +91,15 @@ await browser.close();
 server.close();
 
 // GIF: 12 fps, 640 px wide, palette pass. Fall back to fewer colors if it is too large.
-for (const colors of [160, 96, 64]) {
-  run(['-i', mp4, '-vf', `fps=12,scale=640:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=${colors}:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle`, '-loop', '0', gif]);
-  if (statSync(gif).size < 15 * 1024 * 1024) break;
+// Camera motion changes most pixels every frame, so size is governed by noise; step down gently.
+for (const [pre, colors, dither] of [
+  ['', 160, 'bayer:bayer_scale=4'],
+  ['hqdn3d=3:3:6:6,', 96, 'bayer:bayer_scale=5'],
+  ['hqdn3d=5:4:8:8,gblur=sigma=0.5,', 64, 'bayer:bayer_scale=5'],
+  ['hqdn3d=5:4:8:8,gblur=sigma=0.6,', 48, 'none'],
+]) {
+  run(['-i', mp4, '-vf', `fps=12,scale=640:-1:flags=lanczos,${pre}split[a][b];[a]palettegen=max_colors=${colors}:stats_mode=diff[p];[b][p]paletteuse=dither=${dither}:diff_mode=rectangle`, '-loop', '0', gif]);
+  if (statSync(gif).size < 14.5 * 1024 * 1024) break;
 }
 
 // Evenly spaced QA frames from the final MP4.

@@ -97,6 +97,7 @@ export function createBoosterMaterials(skin, envIntensity = 1) {
     fin: new THREE.MeshStandardMaterial({ color: 0x8a8d93, metalness: 0.9, roughness: 0.42 }),
     inner: new THREE.MeshStandardMaterial({ color: 0x141518, metalness: 0.4, roughness: 0.9 }),
     pin: new THREE.MeshStandardMaterial({ color: 0xb9bcc2, metalness: 0.9, roughness: 0.35 }),
+    dome: new THREE.MeshStandardMaterial({ color: 0x8b8f96, metalness: 0.85, roughness: 0.62 }),
   };
 }
 
@@ -113,9 +114,9 @@ export function createBooster(mats) {
   add(geo.body, mats.steel);
   add(geo.skirt, mats.soot);
   add(geo.shield, mats.soot, false);
-  add(geo.bands, mats.steel);
+  add(geo.bands, mats.dome);
   add(geo.inner, mats.inner, false);
-  add(geo.dome, mats.steel);
+  add(geo.dome, mats.dome);
 
   const struts = new THREE.InstancedMesh(geo.strut, mats.darkSteel, 40);
   const m = new THREE.Matrix4();

@@ -81,8 +81,8 @@ export class Director {
       const c = this.close;
       const s = c.side;
       const u = this.closeT;
-      P.set(c.x + s * (24 - u * 3), c.y - 9 + u * 1.5, (46 - u * 4) * widen);
-      T.set(c.x - s * 3, c.y + 8, 0);
+      P.set(c.x + s * (27 - u * 3), c.y - 11 + u * 1.5, (60 - u * 5) * widen);
+      T.set(c.x - s * 3, c.y + 9, 0);
       fov = 34;
       k = 0.075;
     } else {

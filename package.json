@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "record": "node scripts/record.mjs"
+    "record": "node scripts/record.mjs",
+    "test": "node scripts/test-sim.mjs",
+    "vendor": "node scripts/vendor.mjs",
+    "author-demo": "node scripts/author-demo.mjs"
   },
   "devDependencies": {
     "ffmpeg-static": "^5.2.0",
