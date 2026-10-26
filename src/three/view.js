@@ -19,7 +19,7 @@ export class View {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
     renderer.setPixelRatio(pixelRatio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.3;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer = renderer;
@@ -42,7 +42,7 @@ export class View {
       const plume = createPlume();
       b.root.add(plume.group);
       b.root.visible = false;
-      const light = new THREE.PointLight(0xff8f45, 0, 320, 1.35);
+      const light = new THREE.PointLight(0xff8f45, 0, 0, 2);
       scene.add(b.root, light);
       return { ...b, plume, light, id: null };
     });
@@ -50,8 +50,8 @@ export class View {
     this.particles = createParticles(toX, toY);
     scene.add(this.particles.group);
 
-    const guideMat = new THREE.MeshBasicMaterial({ color: COL_IDLE.clone(), toneMapped: false, transparent: true, opacity: 0.85, depthWrite: false });
-    this.guide = new THREE.Mesh(new THREE.TorusGeometry(GUIDE_R, 0.09, 6, 96), guideMat);
+    const guideMat = new THREE.MeshBasicMaterial({ color: COL_IDLE.clone(), toneMapped: false, transparent: true, opacity: 0.55, depthWrite: false });
+    this.guide = new THREE.Mesh(new THREE.TorusGeometry(GUIDE_R, 0.06, 6, 128), guideMat);
     this.guide.rotation.x = Math.PI / 2;
     const laneMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.06, 0.25, 0.35), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
     this.lane = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 6), laneMat);
@@ -111,7 +111,7 @@ export class View {
       const isActive = tw === active && game.phase === 'live';
       view.glowMat.color.copy(tw.ready ? COL_READY : isActive || tw.holding ? COL_IDLE : COL_OFF);
       view.lightMat.color.setRGB(4 * blink(i * 1.7), 0.25 * blink(i * 1.7), 0.15);
-      view.spot.intensity = 900;
+      view.spot.intensity = 90;
     });
 
     const live = game.phase === 'live' && active && !active.holding;
@@ -157,7 +157,7 @@ export class View {
       slot.throatMat.color.setRGB(7 * thr + 0.02, 3 * thr, 0.9 * thr);
       const ex = X + Math.sin(b.tilt) * ENGINE_Y;
       slot.light.position.set(ex, Math.max(2, engineY - 10), 6);
-      slot.light.intensity = thr > 0.02 ? 9000 * (0.35 + thr) : 0;
+      slot.light.intensity = thr > 0.02 ? 650 * (0.25 + thr) : 0;
       if (thr > 0.02) {
         engines.push({ x: ex, y: engineY - 8, power: thr });
         if (hazeIdx < 2) this.hazeFor(b, hazeIdx++ === 0 ? this.final.uniforms.uHaze : this.final.uniforms.uHaze2);
@@ -179,7 +179,7 @@ export class View {
     this.world.skyMat.uniforms.uTime.value = t;
     const fl = game.flash;
     const [r, g, b] = game.flashColor.split(',').map(Number);
-    this.final.uniforms.uFlash.value.set((r / 255) * fl * 0.35, (g / 255) * fl * 0.35, (b / 255) * fl * 0.35);
+    this.final.uniforms.uFlash.value.set((r / 255) * fl * 0.1, (g / 255) * fl * 0.1, (b / 255) * fl * 0.1);
     this.final.uniforms.uDip.value = dip ?? this.director.dip;
     this.final.uniforms.uTime.value = t;
     this.composer.render();

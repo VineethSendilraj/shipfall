@@ -52,7 +52,7 @@ export function createComposer(renderer, scene, camera, w, h, samples) {
   const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.7, 0.55, 0.92);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.42, 0.5, 1.0);
   composer.addPass(bloom);
   const final = new ShaderPass(FinalShader);
   composer.addPass(final);

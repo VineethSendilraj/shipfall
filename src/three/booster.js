@@ -89,7 +89,7 @@ export function createBoosterMaterials(skin, envIntensity = 1) {
       metalness: 1,
       roughness: 1,
       roughnessMap: skin.roughnessMap,
-      anisotropy: 0.55,
+      anisotropy: 0.3,
       envMapIntensity: envIntensity,
     }),
     darkSteel: new THREE.MeshStandardMaterial({ color: 0x3a3b3e, metalness: 0.85, roughness: 0.55 }),

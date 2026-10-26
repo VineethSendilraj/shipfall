@@ -580,10 +580,10 @@ export class Game {
       size: perfect ? 56 : 44,
       dur: 1.9,
       big: true,
-      sy: 0.22,
+      sy: 0.17,
     });
-    this.addPopup(`+${pts.toLocaleString('en-US')}`, labelX, py - 74, { color: '#ffffff', size: 28, dur: 1.9, delay: 0.12, sy: 0.3 });
-    this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#b8c4dc', size: 15, dur: 1.9, delay: 0.2, sy: 0.355 });
+    this.addPopup(`+${pts.toLocaleString('en-US')}`, labelX, py - 74, { color: '#ffffff', size: 28, dur: 1.9, delay: 0.12, sy: 0.245 });
+    this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#dfe6f5', size: 17, dur: 1.9, delay: 0.2, sy: 0.29 });
     this.emit('catch', { perfect, pts });
 
     if (this.roundDouble && this.roundCatches === 2) {

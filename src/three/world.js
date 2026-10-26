@@ -187,11 +187,11 @@ function lightMast(scene, x, z, target, intensity) {
   pole.position.set(x, 17, z);
   pole.castShadow = true;
   scene.add(pole);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(5, 2.2, 0.6), new THREE.MeshBasicMaterial({ color: new THREE.Color(6, 5, 3.6), toneMapped: false }));
+  const head = new THREE.Mesh(new THREE.BoxGeometry(5, 2.2, 0.6), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.0, 1.5), toneMapped: false }));
   head.position.set(x, 34.5, z);
   head.lookAt(target);
   scene.add(head);
-  const spot = new THREE.SpotLight(0xffd2a0, intensity, 0, THREE.MathUtils.degToRad(24), 0.55, 0);
+  const spot = new THREE.SpotLight(0xffd2a0, intensity, 0, THREE.MathUtils.degToRad(30), 0.6, 2);
   spot.position.set(x, 34.5, z);
   spot.target.position.copy(target);
   scene.add(spot, spot.target);
@@ -202,7 +202,7 @@ export function buildWorld(scene, renderer, towerMats) {
   const rng = createRng(4242);
   scene.fog = new THREE.FogExp2(0x0a0d18, 0.0011);
   scene.environment = buildEnvironment(renderer);
-  scene.environmentIntensity = 0.55;
+  scene.environmentIntensity = 0.8;
 
   const skyMat = skyMaterial({ withStars: true });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(4000, 64, 32), skyMat);
@@ -213,7 +213,7 @@ export function buildWorld(scene, renderer, towerMats) {
   const tex = concrete();
   tex.map.repeat.set(36, 36);
   tex.roughnessMap.repeat.set(36, 36);
-  const padMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex.map, roughnessMap: tex.roughnessMap, roughness: 1, metalness: 0 });
+  const padMat = new THREE.MeshStandardMaterial({ color: 0xd8d4cc, map: tex.map, roughnessMap: tex.roughnessMap, roughness: 1, metalness: 0, envMapIntensity: 1.6 });
   const pad = new THREE.Mesh(new THREE.PlaneGeometry(720, 720), padMat);
   pad.rotation.x = -Math.PI / 2;
   pad.receiveShadow = true;
@@ -223,7 +223,7 @@ export function buildWorld(scene, renderer, towerMats) {
   outer.position.y = -0.05;
   scene.add(outer);
 
-  const hemi = new THREE.HemisphereLight(0x4a5f9a, 0x1a1512, 0.55);
+  const hemi = new THREE.HemisphereLight(0x4a5f9a, 0x1a1512, 0.8);
   scene.add(hemi);
 
   const moon = new THREE.DirectionalLight(0xb9c9ff, 1.25);
@@ -243,11 +243,42 @@ export function buildWorld(scene, renderer, towerMats) {
   moon.shadow.normalBias = 0.6;
   scene.add(moon, moon.target);
 
+  const fill = new THREE.DirectionalLight(0x8ea4d6, 0.55);
+  fill.position.set(60, 40, 300);
+  fill.target.position.set(0, 60, 0);
+  scene.add(fill, fill.target);
+
   const floods = [
-    lightMast(scene, 95, 70, new THREE.Vector3(30, 70, 0), 9),
-    lightMast(scene, -40, 85, new THREE.Vector3(10, 60, 0), 7),
-    lightMast(scene, -150, 60, new THREE.Vector3(-100, 60, 0), 6),
+    lightMast(scene, 130, 55, new THREE.Vector3(40, 50, 0), 15000),
+    lightMast(scene, -215, 50, new THREE.Vector3(-100, 50, 0), 12000),
+    lightMast(scene, -40, -95, new THREE.Vector3(10, 50, 0), 9000),
   ];
+
+  // Pools of sodium light on the pad, and a perimeter of small runway-style lights.
+  for (const [x, z, s, c] of [
+    [40, 30, 70, 0xffb070],
+    [-95, 25, 60, 0xffb070],
+    [-20, 70, 50, 0xffd9a8],
+  ]) {
+    const pool = new THREE.PointLight(c, 260, 0, 2);
+    pool.position.set(x, 12, z);
+    scene.add(pool);
+  }
+  const lampGeo = new THREE.BoxGeometry(0.6, 0.35, 0.6);
+  const lamps = new THREE.InstancedMesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), 64);
+  const lm = new THREE.Matrix4();
+  const lc = new THREE.Color();
+  for (let i = 0; i < 64; i++) {
+    const side = i % 4;
+    const u = (Math.floor(i / 4) / 15) * 2 - 1;
+    const x = side < 2 ? u * 260 - 40 : (side === 2 ? -300 : 220);
+    const z = side < 2 ? (side === 0 ? 140 : -140) : u * 140;
+    lm.makeTranslation(x, 0.2, z);
+    lamps.setMatrixAt(i, lm);
+    lc.setRGB(i % 3 ? 3.2 : 1.6, i % 3 ? 1.6 : 2.4, i % 3 ? 0.5 : 3.2);
+    lamps.setColorAt(i, lc);
+  }
+  scene.add(lamps);
 
   setDressing(scene, rng, towerMats);
   return { sky, skyMat, floods, moon };

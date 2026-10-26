@@ -64,9 +64,9 @@ async function runDemo() {
   };
 
   if (CAPTURE) {
-    window.__advance = (n = 1) => {
+    window.__advance = (n = 1, render = true) => {
       for (let i = 0; i < n; i++) advance();
-      draw();
+      if (render) draw();
       return { frame: runner.frame, done: runner.done, score: runner.game.score };
     };
     draw();

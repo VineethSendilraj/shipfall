@@ -196,7 +196,7 @@ export function createTower(mats, side) {
   }
   root.add(carriage);
 
-  const spot = new THREE.SpotLight(0xdfe8ff, 0, 90, THREE.MathUtils.degToRad(38), 0.6, 1.2);
+  const spot = new THREE.SpotLight(0xdfe8ff, 0, 90, THREE.MathUtils.degToRad(42), 0.9, 1.2);
   spot.position.set(side * (TOWER_HALF_M + 3), 6, 0);
   const spotTarget = new THREE.Object3D();
   spotTarget.position.set(side * 26, -6, 0);

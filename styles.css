@@ -155,6 +155,7 @@ kbd.wide { min-width: 64px; }
 
 /* ----------------------------------------------------------------- demo */
 body.demo, body.demo * { cursor: none !important; }
+body.demo-end .disclaimer { display: none; }
 body.demo #sound, body.demo #touch, body.demo #title-screen, body.demo #gameover, body.demo #toast { display: none !important; }
 .demo-card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%, rgba(3, 6, 16, 0.25), rgba(2, 4, 10, 0.7)); }

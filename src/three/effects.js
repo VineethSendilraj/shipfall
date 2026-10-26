@@ -59,9 +59,9 @@ function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
 export function createPlume() {
   const group = new THREE.Group();
   group.position.y = ENGINE_Y;
-  const outer = plumeLayer(5.2, 7.5, [2.2, 0.9, 0.3], [0.9, 0.22, 0.05], { pow: 1.2 });
-  const mid = plumeLayer(4.1, 2.6, [5.5, 3.2, 1.3], [2.6, 0.9, 0.2], { diamonds: 0.35, pow: 1.5 });
-  const core = plumeLayer(2.9, 0.5, [9, 8.4, 7.6], [5, 2.6, 0.9], { diamonds: 0.6, pow: 2.2 });
+  const outer = plumeLayer(5.2, 7.5, [0.7, 0.26, 0.08], [0.3, 0.07, 0.015], { pow: 1.2 });
+  const mid = plumeLayer(4.1, 2.6, [2.2, 1.25, 0.5], [1.1, 0.36, 0.08], { diamonds: 0.35, pow: 1.5 });
+  const core = plumeLayer(2.9, 0.5, [4.2, 3.9, 3.5], [2.2, 1.1, 0.35], { diamonds: 0.6, pow: 2.2 });
   group.add(outer, mid, core);
   const layers = [
     { mesh: outer, len: 1.25, amp: 0.55 },
@@ -75,7 +75,7 @@ export function createPlume() {
       group.visible = on;
       if (!on) return;
       const len = 10 + 46 * Math.min(1, throttle * 1.2);
-      const width = 0.45 + 0.55 * Math.min(1, throttle * 1.5);
+      const width = 0.3 + 0.7 * Math.min(1, throttle * 1.4);
       for (const L of layers) {
         L.mesh.scale.set(width, Math.min(len * L.len, alt + 6), width);
         L.mesh.material.uniforms.uTime.value = t;
@@ -136,10 +136,10 @@ function makePoints(max, additive, soft) {
 }
 
 const FIRE = [
-  [9, 8, 6.5],
-  [7, 4.2, 1.6],
-  [4.5, 1.6, 0.35],
-  [1.4, 0.35, 0.1],
+  [2.6, 2.2, 1.7],
+  [2.0, 1.1, 0.4],
+  [1.2, 0.4, 0.09],
+  [0.35, 0.08, 0.02],
 ];
 
 function lerp3(a, b, t) {
@@ -206,11 +206,11 @@ export function createParticles(toX, toY) {
           if (p.k === 0) {
             c = fireColor(u);
             size = (p.size + p.grow * p.t) / 4 * 1.25;
-            a = (1 - u) * 0.55;
+            a = (1 - u) * 0.32;
             z = (h - 0.5) * (5 + u * 14);
           } else {
-            c = p.k === 6 ? [3, 5, 6] : [9, 6, 2.5];
-            size = 0.9;
+            c = p.k === 6 ? [2.2, 3.4, 4] : [6, 3.6, 1.2];
+            size = p.k === 6 ? 0.45 : 0.6;
             a = 1 - u * u;
             z = (h - 0.5) * 10;
           }
@@ -231,19 +231,19 @@ export function createParticles(toX, toY) {
             a = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 0.5;
             base = [0.12, 0.11, 0.1];
           } else {
-            a = Math.sin(Math.PI * Math.min(1, u * 1.15)) * 0.42;
+            a = Math.sin(Math.PI * Math.min(1, u * 1.15)) * 0.3;
             base = [0.085, 0.085, 0.09];
           }
           let glowAmt = 0;
           for (const e of engines) {
             const dx = X - e.x;
             const dy = Y - e.y;
-            glowAmt += (e.power * 900) / (dx * dx + dy * dy + 300);
+            glowAmt += (e.power * 260) / (dx * dx + dy * dy + 400);
           }
-          glowAmt = Math.min(glowAmt, 3);
+          glowAmt = Math.min(glowAmt, 1.1);
           const z = (h - 0.5) * (p.k === 3 ? 3 : 10 + u * 26);
           sp.position.setXYZ(ns, X, Y, z);
-          sp.aColor.setXYZW(ns, base[0] + glowAmt * 0.55, base[1] + glowAmt * 0.26, base[2] + glowAmt * 0.08, a);
+          sp.aColor.setXYZW(ns, base[0] + glowAmt * 0.32, base[1] + glowAmt * 0.14, base[2] + glowAmt * 0.04, a);
           sp.aSize.setX(ns, size);
           sp.aSeed.setX(ns, h2);
           ns++;

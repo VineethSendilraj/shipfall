@@ -142,7 +142,7 @@ export class UI {
     const b = game.banner;
     const e = this.el;
     if (!b) {
-      this.set('bannerO', e.banner, 'opacity', '0');
+      e.banner.style.opacity = '0';
       return;
     }
     this.set('bannerT', e.bannerTitle, 'text', b.text);
@@ -169,6 +169,7 @@ export class UI {
     if (overAt >= 0) {
       const u = (frame - overAt) / 26;
       e.demoEnd.classList.remove('hidden');
+      document.body.classList.add('demo-end');
       e.demoEnd.style.opacity = Math.min(1, Math.max(0, u)).toFixed(3);
       e.demoScore.textContent = game.score.toLocaleString('en-US');
       const s = game.stats;
