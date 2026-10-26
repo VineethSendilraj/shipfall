@@ -229,8 +229,8 @@ export function createParticles(toX, toY) {
             a = (1 - u) * 0.45;
             base = [0.55, 0.58, 0.62];
           } else if (p.k === 4) {
-            a = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 0.5;
-            base = [0.12, 0.11, 0.1];
+            a = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 0.6;
+            base = [0.34, 0.3, 0.26];
           } else {
             a = Math.sin(Math.PI * Math.min(1, u * 1.15)) * 0.3;
             base = [0.085, 0.085, 0.09];

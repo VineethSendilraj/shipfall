@@ -324,7 +324,7 @@ export class Game {
         const tw = this.towers[1];
         const prev = tw.rise;
         tw.rise = clamp((this.phaseT - 0.2) / 1.2, 0, 1);
-        if (tw.rise > 0 && tw.rise < 1) this.spawnDust(tw.x, 3);
+        if (tw.rise > 0 && tw.rise < 1) this.spawnDust(tw.x, 5);
         if (prev < 1 && tw.rise >= 1) {
           this.shake = Math.max(this.shake, 5);
           this.emit('towerUp');

@@ -57,7 +57,7 @@ export class Director {
       }
     }
     const otherFalling = game.boosters.some((b) => b.state === 'falling' || b.state === 'waiting');
-    const closeDur = this.cinematic ? (otherFalling ? 1.05 : 1.7) : otherFalling ? 0 : 1.3;
+    const closeDur = otherFalling ? 0 : this.cinematic ? 1.7 : 1.3;
     const inClose = this.closeT >= 0 && this.closeT < closeDur && game.phase !== 'over';
 
     if (game.phase === 'ready') {
@@ -84,7 +84,7 @@ export class Director {
       P.set(c.x + s * (27 - u * 3), c.y - 11 + u * 1.5, (60 - u * 5) * widen);
       T.set(c.x - s * 3, c.y + 9, 0);
       fov = 34;
-      k = 0.075;
+      k = 0.048;
     } else {
       const b = game.activeBooster();
       const tw = b ? game.towers[b.tower] : A;

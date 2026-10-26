@@ -157,11 +157,29 @@ function setDressing(scene, rng, towerMats) {
     s.position.set(-90 + i * 24, 10, -300);
     farm.add(s);
   }
+  const windowGeo = new THREE.PlaneGeometry(1.6, 0.9);
+  const windowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.6, 0.9), toneMapped: false });
   for (let i = 0; i < 5; i++) {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(rng.range(20, 60), rng.range(8, 30), rng.range(20, 40)), towerMats.carriage);
-    b.position.set(rng.range(120, 420), 0, rng.range(-420, -260));
-    b.position.y = b.geometry.parameters.height / 2;
+    const w = rng.range(20, 60);
+    const h = rng.range(8, 30);
+    const d = rng.range(20, 40);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), towerMats.carriage);
+    b.position.set(rng.range(120, 420), h / 2, rng.range(-420, -260));
+    b.receiveShadow = true;
     farm.add(b);
+    const rows = Math.max(1, Math.floor(h / 5));
+    const cols = Math.floor(w / 4);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (!rng.chance(0.35)) continue;
+        const win = new THREE.Mesh(windowGeo, windowMat);
+        win.position.set(b.position.x - w / 2 + 2 + c * 4, 2.5 + r * 5, b.position.z + d / 2 + 0.05);
+        farm.add(win);
+      }
+    }
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(w, 0.35, 0.3), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.6, 1.4, 2.0), toneMapped: false }));
+    strip.position.set(b.position.x, h + 0.2, b.position.z + d / 2);
+    farm.add(strip);
   }
   scene.add(farm);
 
