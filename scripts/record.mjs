@@ -99,7 +99,7 @@ for (const [pre, colors, dither] of [
   ['hqdn3d=5:4:8:8,gblur=sigma=0.6,', 48, 'none'],
 ]) {
   run(['-i', mp4, '-vf', `fps=12,scale=640:-1:flags=lanczos,${pre}split[a][b];[a]palettegen=max_colors=${colors}:stats_mode=diff[p];[b][p]paletteuse=dither=${dither}:diff_mode=rectangle`, '-loop', '0', gif]);
-  if (statSync(gif).size < 14.5 * 1024 * 1024) break;
+  if (statSync(gif).size < 14 * 1024 * 1024) break;
 }
 
 // Evenly spaced QA frames from the final MP4.

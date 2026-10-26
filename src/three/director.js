@@ -62,11 +62,11 @@ export class Director {
 
     if (game.phase === 'ready') {
       const c = toX(A.x) - 8;
-      const a = -0.55 + t * 0.035;
-      const r = 150 * widen;
-      P.set(c + Math.sin(a) * r, 7, Math.cos(a) * r);
-      T.set(c - 6, 78, 0);
-      fov = 42;
+      const a = -0.1 + t * 0.03;
+      const r = 165 * widen;
+      P.set(c + Math.sin(a) * r, 6, Math.cos(a) * r);
+      T.set(c - 14, 72, 0);
+      fov = 46;
     } else if (game.phase === 'over' || game.phase === 'unlock') {
       const xs = game.towers.map((tw) => toX(tw.cx));
       const mid = (Math.min(...xs) + Math.max(...xs)) / 2;

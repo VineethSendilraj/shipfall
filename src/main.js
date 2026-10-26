@@ -110,6 +110,7 @@ function runGame() {
   renderBoard($('board-title'));
 
   const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  Object.defineProperty(window, '__game', { get: () => game });
 
   function startGame() {
     game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0 });

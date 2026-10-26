@@ -94,6 +94,7 @@ const pointsVert = /* glsl */ `
     gl_PointSize = clamp(aSize * uScale / -mv.z, 1.0, 512.0);
     gl_Position = projectionMatrix * mv;
     vColor = aColor; vSeed = aSeed;
+    vColor.a *= smoothstep(12.0, 55.0, -mv.z);
   }`;
 
 const pointsFrag = /* glsl */ `
