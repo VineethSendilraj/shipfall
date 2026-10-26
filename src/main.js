@@ -123,6 +123,7 @@ function runGame() {
     titleEl.classList.add('hidden');
     overEl.classList.add('hidden');
     touchEl.classList.toggle('hidden', !isTouch);
+    document.body.classList.toggle('touch-ui', isTouch);
     canvas.focus?.();
   }
 
@@ -133,12 +134,14 @@ function runGame() {
     renderBoard($('board-title'));
     overEl.classList.add('hidden');
     touchEl.classList.add('hidden');
+    document.body.classList.remove('touch-ui');
     titleEl.classList.remove('hidden');
   }
 
   function showGameOver() {
     state = 'over';
     touchEl.classList.add('hidden');
+    document.body.classList.remove('touch-ui');
     const s = game.stats;
     $('go-kicker').textContent = game.lives > 0 ? 'mission report' : 'out of boosters';
     $('go-score').textContent = `${game.score.toLocaleString('en-US')} pts`;

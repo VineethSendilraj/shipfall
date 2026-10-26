@@ -26,7 +26,7 @@ const W = 1280;
 const H = 720;
 const DONE_TIMEOUT_MS = Number(arg('timeout', 45 * 60 * 1000));
 // Sim frames (60 Hz) to save as cover stills.
-const STILLS = { 'booster-still-approach': 352, 'booster-still-catch': 430, 'booster-still-double': 1478 };
+const STILLS = { 'booster-still-title': 100, 'booster-still-approach': 352, 'booster-still-catch': 430, 'booster-still-double': 1478 };
 const GL_ARGS = (process.env.CHROMIUM_ARGS || '--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist').split(' ').filter(Boolean);
 
 mkdirSync(OUT, { recursive: true });

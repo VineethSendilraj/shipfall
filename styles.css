@@ -177,3 +177,4 @@ body.demo #sound, body.demo #touch, body.demo #title-screen, body.demo #gameover
   .touch { bottom: 26px; }
 }
 #demo-title { justify-content: flex-end; padding-bottom: 15vh; background: linear-gradient(180deg, rgba(2, 4, 10, 0) 35%, rgba(2, 4, 10, 0.55)); }
+body.touch-ui #sound { bottom: auto; top: calc(18px * var(--ui) + 112px); right: calc(18px * var(--ui)); }
