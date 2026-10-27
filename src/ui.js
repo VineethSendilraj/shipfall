@@ -32,10 +32,13 @@ export class UI {
     this.shownScore = 0;
     this.cache = {};
     this.scale = 1;
+    this.safe = null;
+    this.safeDirty = true;
   }
 
   setScale(s) {
     this.scale = s;
+    this.safeDirty = true;
     document.documentElement.style.setProperty('--ui', s.toFixed(3));
   }
 
@@ -58,6 +61,7 @@ export class UI {
     const showHud = game.phase !== 'ready' && hudOpacity > 0;
     this.set('hudHidden', e.hud, 'class', showHud ? 'hud' : 'hud hidden');
     this.set('hudOpacity', e.hud, 'opacity', String(hudOpacity));
+    if (showHud && this.safeDirty) this.measureSafe();
     if (showHud) {
       const b = h.booster;
       if (b) {
@@ -98,6 +102,28 @@ export class UI {
     this.updateBanner(game);
   }
 
+  /** Screen band between the HUD panels and the on-screen buttons; only used where they crowd the popups. */
+  measureSafe() {
+    this.safeDirty = false;
+    if (!document.body.classList.contains('compact')) {
+      this.safe = null;
+      return;
+    }
+    const panels = [...this.el.hud.querySelectorAll('.panel')].map((p) => p.getBoundingClientRect().bottom);
+    const touch = document.getElementById('touch');
+    const controlsTop = touch.classList.contains('hidden') ? this.view.size.h - 26 : touch.getBoundingClientRect().top;
+    this.safe = { top: Math.max(0, ...panels) + 8, bottom: controlsTop - 8 };
+  }
+
+  popupShift(sy) {
+    if (!this.safe) return 0;
+    const h = this.view.size.h;
+    const s = this.scale;
+    // Shift each group as a block so the lines inside it keep their spacing.
+    if (sy < 0.5) return Math.max(0, this.safe.top - (0.17 * h - 52 * s * 1.2 * 0.6));
+    return Math.min(0, this.safe.bottom - (0.905 * h + 26 * s * 0.6));
+  }
+
   updatePopups(game) {
     const live = new Set();
     const { w, h } = this.view.size;
@@ -122,7 +148,7 @@ export class UI {
       let y;
       if (p.sy !== null) {
         x = w / 2;
-        y = p.sy * h - p.t * 10 * this.scale;
+        y = p.sy * h + this.popupShift(p.sy) - p.t * 10 * this.scale;
       } else {
         const q = this.view.project(p.x, p.y);
         x = q.x;

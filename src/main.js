@@ -4,10 +4,14 @@ import { createDemoRunner, DEMO } from './demo.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
 import { loadBoard, qualifies, addEntry, renderBoard } from './leaderboard.js';
+import { AutoQuality } from './quality.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
 const CAPTURE = DEMO_MODE && params.get('capture') === '1';
+const EMBED = document.body.classList.contains('embed');
+const SITE_URL = __SITE_URL__;
+const SOUND_KEY = 'catch-the-booster.sound';
 const WORLD_W = 1280;
 const $ = (id) => document.getElementById(id);
 
@@ -20,6 +24,24 @@ function fit() {
   const h = window.innerHeight;
   view.resize(w, h);
   ui.setScale(Math.max(0.62, Math.min(1.25, Math.min(w / 1280, h / 720))));
+  document.body.classList.toggle('compact', Math.min(w, h) < 600 || w < 700);
+  document.body.classList.toggle('tall', w / h < 0.8);
+}
+
+function readSoundPref() {
+  try {
+    return localStorage.getItem(SOUND_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function writeSoundPref(on) {
+  try {
+    localStorage.setItem(SOUND_KEY, on ? 'on' : 'off');
+  } catch {
+    // Storage can be blocked in third-party iframes; the toggle still works for this session.
+  }
 }
 
 function createView(opts) {
@@ -86,9 +108,10 @@ async function runDemo() {
 // ------------------------------------------------------------------ play
 
 function runGame() {
-  view = createView({ pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5), cinematic: false, samples: 4 });
+  view = createView({ pixelRatio: 1, cinematic: false, samples: 4 });
   if (!view) return;
   ui = new UI(view);
+  const quality = new AutoQuality(view, { forced: params.get('quality') });
   fit();
   window.addEventListener('resize', fit);
   loadFonts();
@@ -101,16 +124,21 @@ function runGame() {
   const held = { left: false, right: false, up: false, down: false };
   let closeLatch = false;
 
-  const titleEl = $('title-screen');
+  const titleEl = EMBED ? $('quick-start') : $('title-screen');
   const overEl = $('gameover');
   const touchEl = $('touch');
   const soundBtn = $('sound');
+  const shareLink = $('share');
   const form = $('initials-form');
   const initialsInput = $('initials');
   renderBoard($('board-title'));
 
   const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  // The embed always shows on-screen buttons: they are the mouse controls inside an X post.
+  const showButtons = EMBED || isTouch;
   Object.defineProperty(window, '__game', { get: () => game });
+  window.__view = view;
+  Object.defineProperty(window, '__quality', { get: () => ({ level: quality.name, fps: quality.fps, dpr: view.pixelRatio }) });
 
   function startGame() {
     game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0 });
@@ -122,9 +150,11 @@ function runGame() {
     closeLatch = false;
     titleEl.classList.add('hidden');
     overEl.classList.add('hidden');
-    touchEl.classList.toggle('hidden', !isTouch);
-    document.body.classList.toggle('touch-ui', isTouch);
-    canvas.focus?.();
+    touchEl.classList.toggle('hidden', !showButtons);
+    document.body.classList.toggle('touch-ui', showButtons);
+    document.body.classList.add('playing');
+    ui.safeDirty = true;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }
 
   function showTitle() {
@@ -134,28 +164,27 @@ function runGame() {
     renderBoard($('board-title'));
     overEl.classList.add('hidden');
     touchEl.classList.add('hidden');
-    document.body.classList.remove('touch-ui');
+    document.body.classList.remove('touch-ui', 'playing');
     titleEl.classList.remove('hidden');
   }
 
   function showGameOver() {
     state = 'over';
     touchEl.classList.add('hidden');
-    document.body.classList.remove('touch-ui');
+    document.body.classList.remove('touch-ui', 'playing');
     const s = game.stats;
     $('go-kicker').textContent = game.lives > 0 ? 'mission report' : 'out of boosters';
     $('go-score').textContent = `${game.score.toLocaleString('en-US')} pts`;
     $('go-stats').textContent = `${game.round} round${game.round === 1 ? '' : 's'} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${s.perfects} perfect · ${s.doubles} double`;
+    const text = `i caught the booster: ${game.score.toLocaleString('en-US')} pts`;
+    shareLink.href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
     const q = qualifies(game.score);
     form.classList.toggle('hidden', !q);
     renderBoard($('board-over'), loadBoard());
     overEl.classList.remove('hidden');
-    if (q) {
-      initialsInput.value = '';
-      setTimeout(() => initialsInput.focus(), 50);
-    } else {
-      $('again').focus();
-    }
+    // Focusing the input on a phone pops the keyboard over the card, so only desktop gets autofocus.
+    if (q && !isTouch) setTimeout(() => initialsInput.focus(), 50);
+    else if (!q) $('again').focus({ preventScroll: true });
   }
 
   form.addEventListener('submit', (ev) => {
@@ -163,39 +192,9 @@ function runGame() {
     const { list, index } = addEntry(initialsInput.value, game.score, game.round);
     renderBoard($('board-over'), list, index);
     form.classList.add('hidden');
-    $('again').focus();
+    initialsInput.blur();
+    $('again').focus({ preventScroll: true });
   });
-
-  async function share() {
-    const url = location.origin + location.pathname;
-    const text = `i caught the booster: ${game.score.toLocaleString('en-US')} pts — ${url}`;
-    let ok = false;
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        ok = true;
-      }
-    } catch {
-      ok = false;
-    }
-    if (!ok) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.append(ta);
-      ta.select();
-      try {
-        ok = document.execCommand('copy');
-      } catch {
-        ok = false;
-      }
-      ta.remove();
-    }
-    if (ok) toast('Copied to clipboard — paste it anywhere');
-    else window.prompt('Copy your score:', text);
-  }
 
   let toastTimer = 0;
   function toast(msg) {
@@ -206,16 +205,30 @@ function runGame() {
     toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
   }
 
-  function setSound(on) {
+  function setSound(on, remember = true) {
     sound.setEnabled(on);
     soundBtn.setAttribute('aria-pressed', String(on));
+    if (remember) writeSoundPref(on);
   }
 
+  // Browsers only allow audio after a user gesture, so the AudioContext is created on the first one.
+  let unlocked = false;
+  const unlockAudio = (ev) => {
+    if (unlocked || soundBtn.contains(ev.target)) return;
+    unlocked = true;
+    if (readSoundPref()) setSound(true, false);
+  };
+  window.addEventListener('pointerdown', unlockAudio, { capture: true });
+  window.addEventListener('keydown', unlockAudio, { capture: true });
+
   $('play').addEventListener('click', startGame);
+  $('quick-play').addEventListener('click', startGame);
   $('again').addEventListener('click', startGame);
   $('to-title').addEventListener('click', showTitle);
-  $('share').addEventListener('click', share);
-  soundBtn.addEventListener('click', () => setSound(!sound.enabled));
+  soundBtn.addEventListener('click', () => {
+    unlocked = true;
+    setSound(!sound.enabled);
+  });
 
   const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
   window.addEventListener('keydown', (ev) => {
@@ -231,9 +244,12 @@ function runGame() {
       else if (state === 'title' && !ev.repeat) startGame();
     }
     if (ev.code === 'Enter' && !ev.repeat) {
-      if (state === 'title' || (state === 'over' && document.activeElement?.tagName !== 'BUTTON')) startGame();
+      if (state === 'title' || (state === 'over' && !(document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement))) startGame();
     }
-    if (ev.code === 'KeyM') setSound(!sound.enabled);
+    if (ev.code === 'KeyM') {
+      unlocked = true;
+      setSound(!sound.enabled);
+    }
     if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing') {
       paused = !paused;
       toast(paused ? 'Paused — press P to resume' : 'Resumed');
@@ -251,7 +267,11 @@ function runGame() {
     const k = btn.dataset.k;
     const down = (ev) => {
       ev.preventDefault();
-      btn.setPointerCapture?.(ev.pointerId);
+      try {
+        btn.setPointerCapture(ev.pointerId);
+      } catch {
+        // Synthetic or already-released pointers can't be captured; the press still counts.
+      }
       btn.classList.add('on');
       if (k === 'close') closeLatch = true;
       else held[k] = true;
@@ -264,6 +284,7 @@ function runGame() {
     btn.addEventListener('pointerup', up);
     btn.addEventListener('pointercancel', up);
     btn.addEventListener('lostpointercapture', up);
+    btn.addEventListener('contextmenu', (ev) => ev.preventDefault());
   }
 
   function step() {
@@ -291,7 +312,9 @@ function runGame() {
   const frame = (now) => {
     acc += Math.min(0.1, (now - last) / 1000);
     last = now;
-    if (paused || document.hidden) acc = 0;
+    const idle = paused || document.hidden;
+    if (idle) acc = 0;
+    quality.frame(now, !idle);
     let n = 0;
     while (acc >= DT && n < 6) {
       step();
