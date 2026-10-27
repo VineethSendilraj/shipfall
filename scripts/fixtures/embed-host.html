@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Embed host test page</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: #000; color: #e7e9ea; font: 15px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      .post { width: 560px; margin: 0 auto; padding: 14px 16px 18px; border-left: 1px solid #2f3336; border-right: 1px solid #2f3336; min-height: 100vh; }
+      .head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+      .avatar { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #9fb4d8, #34425e); }
+      .name { font-weight: 700; }
+      .handle { color: #71767b; }
+      .text { margin: 0 0 12px; }
+      .player { width: 480px; height: 480px; border: 1px solid #2f3336; border-radius: 16px; overflow: hidden; margin-left: 24px; background: #05070f; }
+      iframe { display: block; width: 480px; height: 480px; border: 0; }
+      .meta { margin: 8px 0 0 24px; color: #71767b; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <article class="post">
+      <div class="head">
+        <div class="avatar"></div>
+        <div><span class="name">Test Account</span> <span class="handle">@test · 1m</span></div>
+      </div>
+      <p class="text">Parent page iframing /embed/ at 480×480, like a player card in a post.</p>
+      <div class="player">
+        <iframe id="player" src="/embed/" width="480" height="480" title="Catch the Booster" allow="autoplay; fullscreen" scrolling="no"></iframe>
+      </div>
+      <p class="meta">Catch the Booster · player card test</p>
+    </article>
+  </body>
+</html>
