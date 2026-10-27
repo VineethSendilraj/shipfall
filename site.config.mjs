@@ -8,7 +8,7 @@ export const PLACEHOLDER_SITE_URL = 'https://catch-the-booster.example';
 
 export const CARD = {
   title: 'Catch the Booster',
-  description: "Line up a falling rocket booster with the tower's arms and close them gently. Fan-made, unofficial.",
+  description: "Line up a falling rocket booster with the tower's arms and close them gently. Not affiliated with SpaceX.",
   imageAlt: "A stainless rocket booster held in a launch tower's catch arms at night",
   image: '/card.jpg',
   imageSize: 1080,

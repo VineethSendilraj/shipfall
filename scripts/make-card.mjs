@@ -19,8 +19,7 @@ const GL_ARGS = (process.env.CHROMIUM_ARGS || '--use-gl=angle --use-angle=swifts
 
 const CARD_CSS = `
   #hud, #popups, #banner, #demo-title, #demo-end, .disclaimer { display: none !important; }
-  .card-title { position: absolute; left: 0; right: 0; top: 54px; text-align: center; pointer-events: none; }
-  .card-title p { margin: 0 0 10px; font: 600 18px var(--mono); letter-spacing: 0.32em; text-transform: uppercase; color: #8fe9ff; text-shadow: 0 2px 12px rgba(0,0,0,0.9); }
+  .card-title { position: absolute; left: 0; right: 0; top: 64px; text-align: center; pointer-events: none; }
   .card-title h1 { margin: 0; font: 700 84px var(--display); letter-spacing: -0.02em; line-height: 1;
     background: linear-gradient(180deg, #ffffff 20%, #b4c4ea); -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 6px 26px rgba(0,0,0,0.75)); }
@@ -37,10 +36,10 @@ await page.addStyleTag({ content: CARD_CSS });
 await page.evaluate(() => {
   const t = document.createElement('div');
   t.className = 'card-title';
-  t.innerHTML = '<p>fan-made 3D game</p><h1>catch the booster</h1>';
+  t.innerHTML = '<h1>catch the booster</h1>';
   const f = document.createElement('div');
   f.className = 'card-foot';
-  f.textContent = 'fan-made · not affiliated with SpaceX';
+  f.textContent = 'not affiliated with SpaceX';
   document.getElementById('app').append(t, f);
 });
 

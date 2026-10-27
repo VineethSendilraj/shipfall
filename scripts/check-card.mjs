@@ -83,7 +83,8 @@ try {
     const resources = [...html.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/g)].map((r) => r[1]).filter((u) => !u.startsWith('data:'));
     const external = resources.filter((u) => /^(https?:)?\/\//.test(u) && !u.startsWith(site.url));
     check(external.length === 0, `${path} loads no external scripts, styles or fonts`, external.join(', ') || `${resources.length} local resources`);
-    check(/fan-made, not affiliated with SpaceX/.test(html), `${path} shows the fan-made disclaimer`);
+    check(/not affiliated with SpaceX/.test(html), `${path} shows the "not affiliated with SpaceX" disclaimer`);
+    check(!/fan[- ]made/i.test(html), `${path} has no "fan-made" wording`);
   }
   const embed = await (await fetch(`${url}/embed/`)).text();
   check(/<body class="embed">/.test(embed), '/embed/ is the game-only embed page');

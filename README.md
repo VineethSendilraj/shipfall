@@ -1,8 +1,8 @@
 # Catch the Booster
 
-A fan-made 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
+A 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
 
-**fan-made, not affiliated with SpaceX.** This is an unofficial tribute inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: every model, texture, the sky and the effects are generated procedurally at runtime.
+**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: every model, texture, the sky and the effects are generated procedurally at runtime.
 
 - Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): PBR brushed-stainless booster with four lattice grid fins, a hot-stage ring, catch pins and 33 engine bells; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
 - Moonlit night sky (procedural stars, milky way, textured moon), moon-cast shadows, inverse-square floodlights, warm engine light on the booster and tower.
