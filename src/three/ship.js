@@ -224,14 +224,14 @@ function proceduralShip(mats, throatMat) {
 
 const MODEL_NO_SHADOW = new Set(['inner', 'bell', 'throat']);
 
-/** Lathe angle (from +z toward +x) of the middle of the tiles once turned: they face a tower on the +x side. */
-export const TILES_AT = Math.PI / 2;
+/** Lathe angle (from +z toward +x) of the middle of the tiles once turned: they face away from a tower on the +x side. */
+export const TILES_AT = -Math.PI / 2;
 /** How far the hull, tiles and flaps are turned about the axis from their modeled angle (WIND). */
 export const SPIN = TILES_AT - WIND;
 
 /**
  * model: the loaded ship.glb scene; without it the ship is built procedurally.
- * Everything but the catch pins sits in `spin`, turned so the tiles face the tower; the pins stay on the +-z arms.
+ * Everything but the catch pins sits in `spin`, turned so the tiles face away from the tower; the pins stay on the +-z arms.
  */
 export function createShip(mats, model = null) {
   const throatMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false });
@@ -247,7 +247,7 @@ export function createShip(mats, model = null) {
   return { root, spin, throatMat };
 }
 
-/** Turns the tiles toward the tower on side `towerSide` (+1: +x, -1: -x). */
+/** Turns the tiles away from the tower on side `towerSide` (+1: +x, -1: -x). */
 export function faceTower(ship, towerSide) {
   ship.spin.rotation.y = towerSide * TILES_AT - WIND;
 }

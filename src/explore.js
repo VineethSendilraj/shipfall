@@ -47,7 +47,7 @@ const PRESETS = [
   { id: 'engines', label: 'Engines', target: [0, BOOSTER_Y + ENGINE_Y + 0.35, 0], camera: [0, 10, 6.3], fov: 52, wide: true },
   { id: 'fins', label: 'Grid fins', target: [0, BOOSTER_Y + 4.5, 0], camera: [11, BOOSTER_Y + 12, 14], fov: 40 },
   { id: 'ring', label: 'Hot-stage ring', target: [0, BOOSTER_Y + 10, 0], camera: [10, BOOSTER_Y + 12.5, 14], fov: 36 },
-  { id: 'nose', label: 'Nose and tiles', target: [0, SHIP_PINS + 8, 0], camera: [8, SHIP_PINS + 11, 25.5], fov: 40 },
+  { id: 'nose', label: 'Nose and tiles', target: [0, SHIP_PINS + 8, 0], camera: [-8, SHIP_PINS + 11, 25.5], fov: 40 },
   { id: 'flaps', label: 'Flaps', target: [0, SHIP_PINS - 25, 0], camera: [-30, SHIP_PINS - 21, 9], fov: 44, wide: true },
   { id: 'chopsticks', label: 'Chopsticks', target: [10, SHIP_PINS - 1, 0], camera: [-6, SHIP_PINS + 8, 40], fov: 46 },
   { id: 'tower', label: 'Tower top', target: [TOWER_DX, 148, 0], camera: [TOWER_DX + 34, 160, 30], fov: 42 },
