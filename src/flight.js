@@ -263,6 +263,7 @@ export class Flight {
     this.cut = null;
     this.anchor = 0;
     this.anchorLift = 0;
+    this.boom = null;
     this.prediction = null;
     this.outcome = null;
     this.endT = 0;
@@ -764,13 +765,15 @@ export class Flight {
     this.end();
   }
 
-  /** Explosion on the ground under a body, wherever on the planet it is. */
+  /** Explosion on the ground under a body, wherever on the planet it is; boom keeps the seed the view's explosion needs. */
   explode(b, L) {
     this.anchor = L.phi;
     this.anchorLift = groundAt(L.phi * R);
     const p = this.fxPoint(b.x, b.y);
     this.fx.popups.length = 0;
-    this.fx.crash({ x: p.px, y: 0, vy: 0, rot: 0, state: 'falling', lifeLost: true });
+    const wreck = { x: p.px, y: 0, vy: 0, rot: 0, state: 'falling', lifeLost: true };
+    this.fx.crash(wreck);
+    this.boom = wreck.boom;
   }
 
   end() {

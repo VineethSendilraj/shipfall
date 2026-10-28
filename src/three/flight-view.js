@@ -5,7 +5,8 @@ import { COL_IDLE, COL_READY, COL_OFF } from './view.js';
 import { createPlanet, createAir, createSpaceSky, buildSpaceEnv, setAirCamera, sunlight, SUN_DIR, CENTER, AIR_TOP } from './flight-world.js';
 import { Craft } from './flight-craft.js';
 import { FlightDirector, alongAxis, shipMid } from './flight-camera.js';
-import { DT } from '../sim.js';
+import { toX } from './director.js';
+import { DT, PX_PER_M, VEHICLES } from '../sim.js';
 import { SITE_X, TOWER_X, R, ARM_Y, BOOSTER_TOP, local, wrap } from '../flight.js';
 
 const SITE = new THREE.Vector3(SITE_X, 0, 0);
@@ -21,6 +22,14 @@ const ROLL_RATE = 0.8;
 const clamp = (x, lo, hi) => (x < lo ? lo : x > hi ? hi : x);
 const smooth = THREE.MathUtils.smoothstep;
 const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+
+/** Turns a group in the catch game's frame onto the planet: x = SITE_X over the point at angle phi, its ground lift meters up. */
+function onGround(group, phi, lift) {
+  const c = Math.cos(phi);
+  const s = Math.sin(phi);
+  group.rotation.set(0, 0, -phi);
+  group.position.set(CENTER.x - c * SITE_X + s * (R + lift), CENTER.y + s * SITE_X + c * (R + lift), 0);
+}
 
 /**
  * Draws a free flight with the catch game's View: its renderer, scene, launch site and vehicle models, plus the
@@ -57,6 +66,9 @@ export class FlightView {
     this.director = new FlightDirector();
     this.prev = null;
     this.roll = ROLL;
+    this.boom = null;
+    this.boomAt = 0;
+    this.hold = null;
     // The director's first step only cuts to the opening shot. Without it, a frame drawn before the first sim step
     // looks out from the world's origin.
     this.step(f);
@@ -109,8 +121,10 @@ export class FlightView {
     this.kids = [];
     v.pool[2].root.rotation.set(0, 0, 0, 'XYZ');
     v.pool.forEach((s, i) => s.plume.group.scale.copy(this.plumes[i]));
-    v.particles.group.position.set(0, 0, 0);
-    v.particles.group.rotation.set(0, 0, 0);
+    for (const g of [v.particles.group, v.explosions.group]) {
+      g.position.set(0, 0, 0);
+      g.rotation.set(0, 0, 0);
+    }
     camera.near = 1;
     camera.far = 6000;
     camera.up.set(0, 1, 0);
@@ -142,6 +156,29 @@ export class FlightView {
     const s = f.ship;
     const want = s.mode === 'stacked' || s.mode === 'free' || s.dir > 0 ? ROLL : ROLL + Math.PI;
     this.roll += clamp(want - this.roll, -ROLL_RATE * DT, ROLL_RATE * DT);
+    this.crash(f);
+  }
+
+  /** On a new crash, the catch game's explosion on the ground under it, its fire along the wreck as vehicles() draws it. */
+  crash(f) {
+    const boom = f.boom;
+    if (!boom || boom === this.boom) return;
+    const b = f.booster;
+    const s = f.ship;
+    const ship = s.mode === 'crashed';
+    // The stack comes down as one: the ship still sits on the booster's ring.
+    const stack = ship && b.state === 'lost' && alongAxis(this._u, b, BOOSTER_TOP).distanceTo(this._v.set(s.x, s.y, 0)) < 1;
+    // Model origins as vehicles() places them: the booster's at its catch point, the ship's above its skirt.
+    const bottom = ship && !stack ? alongAxis(this._u, s, SHIP_ENGINE_Y - SKIRT) : alongAxis(this._u, b, ENGINE_Y);
+    const top = ship ? alongAxis(this._v, s, -VEHICLES.ship.top / PX_PER_M - SKIRT) : alongAxis(this._v, b, -VEHICLES.booster.top / PX_PER_M);
+    const ground = (p) => {
+      const q = this.toCatch(f, p.x, p.y);
+      return new THREE.Vector3(q.x, q.y + f.anchorLift, 0);
+    };
+    this.view.explosions.spawn({ t: boom.t, seed: boom.seed, x: toX(boom.x), y: f.anchorLift, bottom: ground(bottom), top: ground(top), drift: boom.wind });
+    this.boom = boom;
+    this.boomAt = f.anchor;
+    this.hold = { t: boom.t, booster: !ship || stack, ship };
   }
 
   /** Call before each sim step: what that step started from, so frames drawn between steps can be interpolated. */
@@ -196,7 +233,7 @@ export class FlightView {
   render(f, { alpha = 1 } = {}) {
     const undo = alpha < 1 && this.prev ? this.interpolate(f, alpha) : null;
     try {
-      this.draw(f);
+      this.draw(f, alpha);
     } finally {
       undo?.();
     }
@@ -208,7 +245,7 @@ export class FlightView {
     return { x: (p.x * 0.5 + 0.5) * this.view.size.w, y: (-p.y * 0.5 + 0.5) * this.view.size.h, visible: p.z > -1 && p.z < 1 };
   }
 
-  draw(f) {
+  draw(f, alpha) {
     const v = this.view;
     if (v.world !== this.world) this.bind();
     const { scene, camera, world } = v;
@@ -238,7 +275,7 @@ export class FlightView {
 
     this.light(catchW);
     this.tower(f);
-    this.effects(f, this.vehicles(f, nearSite));
+    this.effects(f, this.vehicles(f, nearSite), alpha);
     v.composer.render();
   }
 
@@ -359,15 +396,18 @@ export class FlightView {
     v.final.uniforms.uHaze2.value.z = 0;
     const engines = [];
 
+    // A crashed hull stays up until the explosion's fire covers it, as in the catch game.
+    const h = this.hold;
+    const held = !!h && f.fx.t - h.t < 4.5 * DT;
     // A parked booster was lifted off the tower and taken away while the ship was out of sight.
-    bs.root.visible = b.state !== 'lost' && b.state !== 'parked' && (nearSite || b.state !== 'caught');
+    bs.root.visible = (b.state !== 'lost' || (held && h.booster)) && b.state !== 'parked' && (nearSite || b.state !== 'caught');
     bs.root.position.set(b.x, b.y, 0);
     bs.root.rotation.set(0, 0, b.ang - Math.PI / 2);
     this.engine(f, 0, b.x, b.y, b.ang, ENGINE_Y, bs.root.visible ? b.throttle : 0, b.engines > 13 ? 1.5 : 1, engines);
 
     const ox = s.x - Math.cos(s.ang) * SKIRT;
     const oy = s.y - Math.sin(s.ang) * SKIRT;
-    ss.root.visible = s.mode !== 'crashed';
+    ss.root.visible = s.mode !== 'crashed' || (held && h.ship);
     ss.root.position.set(ox, oy, 0);
     ss.root.rotation.set(0, this.roll, s.ang - Math.PI / 2, 'ZYX');
     // Hot staging: the ship's exhaust stops at the booster's dome and vents out of the ring until the booster falls clear.
@@ -416,15 +456,14 @@ export class FlightView {
     return { x: rx * c - ry * s + SITE_X, y: rx * s + ry * c - R - f.anchorLift };
   }
 
-  /** The catch game's particles turned onto the effects anchor, and the post uniforms. */
-  effects(f, engines) {
+  /** The catch game's particles turned onto the effects anchor, its explosions onto the ground of the last crash, and the post uniforms. */
+  effects(f, engines, alpha) {
     const v = this.view;
-    const c = Math.cos(f.anchor);
-    const s = Math.sin(f.anchor);
-    const lift = R + f.anchorLift;
-    v.particles.group.rotation.set(0, 0, -f.anchor);
-    v.particles.group.position.set(CENTER.x - c * SITE_X + s * lift, CENTER.y + s * SITE_X + c * lift, 0);
+    onGround(v.particles.group, f.anchor, f.anchorLift);
     v.particles.update(f.fx.particles, engines);
+    onGround(v.explosions.group, this.boomAt, 0);
+    // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
+    v.explosions.update(f.fx.t - (1 - alpha) * DT, v.camera);
 
     const fx = f.fx;
     const [r, g, b] = fx.flashColor.split(',').map(Number);
