@@ -12,8 +12,10 @@ const plumeVert = /* glsl */ `
     gl_Position = projectionMatrix * mv;
   }`;
 
+// uCover is how much of the background a layer hides: 0 is pure glow, which a bright daytime sky washes out.
 const plumeFrag = /* glsl */ `
   uniform float uTime; uniform float uAmp; uniform vec3 uColA; uniform vec3 uColB; uniform float uDiamonds; uniform float uPow;
+  uniform float uCover;
   varying vec2 vUv; varying float vFres;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float n2(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -24,16 +26,20 @@ const plumeFrag = /* glsl */ `
     float flick = 0.65 + 0.35 * n2(vec2(vUv.x * 10.0, v * 7.0 - uTime * 16.0));
     // Many engines merging into one column: fine vertical streaks that drift with the flow.
     float streak = 0.55 + 0.45 * n2(vec2(vUv.x * 46.0, v * 2.5 - uTime * 9.0));
-    float dia = 1.0 - uDiamonds + uDiamonds * pow(0.5 + 0.5 * cos(v * 38.0 - uTime * 1.5), 3.0) * 1.6;
+    float knot = pow(0.5 + 0.5 * cos(v * 38.0 - uTime * 1.5), 8.0) * smoothstep(0.8, 0.1, v);
     float fade = smoothstep(1.0, 0.18, v) * smoothstep(0.0, 0.03, v);
     vec3 col = mix(uColA, uColB, smoothstep(0.0, 0.75, v));
-    float a = edge * fade * flick * streak * dia * uAmp;
-    gl_FragColor = vec4(col * a, 0.0);
+    float body = edge * fade * uAmp * (1.0 - 0.6 * uDiamonds + 1.6 * uDiamonds * knot);
+    vec3 rgb = col * body * flick * streak * (1.0 + 2.0 * uDiamonds * knot);
+    gl_FragColor = vec4(rgb, min(1.0, body * uCover));
   }`;
 
-function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
+function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6, cover = 0 } = {}) {
   const geo = new THREE.CylinderGeometry(rTop, rBot, 1, 40, 12, true);
   geo.translate(0, -0.5, 0);
+  // Transparent objects sort by bounding-sphere centre; centring every layer on its origin makes the layers of
+  // one plume tie, so they draw in the order they were made (outer to core) from any camera.
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1);
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
@@ -42,6 +48,7 @@ function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
       uColB: { value: new THREE.Color(...colB) },
       uDiamonds: { value: diamonds },
       uPow: { value: pow },
+      uCover: { value: cover },
     },
     vertexShader: plumeVert,
     fragmentShader: plumeFrag,
@@ -49,7 +56,7 @@ function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
     depthWrite: false,
     blending: THREE.CustomBlending,
     blendSrc: THREE.OneFactor,
-    blendDst: THREE.OneFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
     side: THREE.DoubleSide,
     fog: false,
   });
@@ -58,31 +65,54 @@ function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
   return mesh;
 }
 
+// Steam or dust at the foot of the plume, lit by the flame.
+const FLAME_LIT = new THREE.Color(1.5, 1.05, 0.7);
+
+/**
+ * Plume of one vehicle. update() takes how far the exhaust can reach (alt) and the engine exit's height above the
+ * ground, which raises steam or dust once the blast gets there; setPalette() takes the map's fx colours.
+ */
 export function createPlume() {
   const group = new THREE.Group();
   group.position.y = ENGINE_Y;
-  const outer = plumeLayer(5.2, 7.5, [0.5, 0.2, 0.07], [0.22, 0.06, 0.015], { pow: 1.2 });
-  const mid = plumeLayer(4.1, 2.6, [1.5, 0.9, 0.42], [0.85, 0.3, 0.07], { diamonds: 0.45, pow: 1.5 });
-  const core = plumeLayer(2.9, 0.5, [2.0, 2.2, 2.9], [1.6, 0.85, 0.32], { diamonds: 0.8, pow: 2.2 });
-  group.add(outer, mid, core);
+  const outer = plumeLayer(5.2, 7.5, [2.4, 0.7, 0.12], [0.9, 0.22, 0.04], { pow: 1.1, cover: 1.3 });
+  const mid = plumeLayer(4.1, 2.6, [3.2, 1.4, 0.35], [1.8, 0.5, 0.08], { diamonds: 0.45, pow: 1.4, cover: 1.1 });
+  const core = plumeLayer(2.9, 0.5, [4.0, 3.6, 4.2], [3.0, 1.6, 0.5], { diamonds: 0.9, pow: 2.0, cover: 1 });
+  // Exhaust striking the ground: a squat dome of steam or dust, flipped so it is densest at the ground.
+  const splash = plumeLayer(1, 0.4, [1, 1, 1], [1, 1, 1], { pow: 1.6, cover: 0.9 });
+  splash.rotation.x = Math.PI;
+  group.add(outer, mid, core, splash);
   const layers = [
     { mesh: outer, len: 1.25, amp: 0.55 },
     { mesh: mid, len: 1.0, amp: 0.8 },
     { mesh: core, len: 0.6, amp: 1.0 },
   ];
+  const all = [...layers.map((L) => L.mesh), splash];
   return {
     group,
-    update(throttle, t, alt) {
+    setPalette({ vapor, dust }) {
+      const u = splash.material.uniforms;
+      u.uColB.value.setRGB(...vapor.map((v, i) => 0.7 * (v + dust[i])));
+      u.uColA.value.copy(u.uColB.value).multiply(FLAME_LIT);
+    },
+    update(throttle, t, alt, ground = alt) {
       const on = throttle > 0.02;
       group.visible = on;
       if (!on) return;
       const len = 10 + 46 * Math.min(1, throttle * 1.2);
-      const width = 0.3 + 0.7 * Math.min(1, throttle * 1.4);
+      const width = 0.5 + 0.5 * Math.min(1, throttle * 1.4);
+      const amp = Math.min(1, 0.35 + throttle * 1.2);
       for (const L of layers) {
         L.mesh.scale.set(width, Math.min(len * L.len, alt + 6), width);
-        L.mesh.material.uniforms.uTime.value = t;
-        L.mesh.material.uniforms.uAmp.value = L.amp * Math.min(1, 0.35 + throttle * 1.2);
+        L.mesh.material.uniforms.uAmp.value = L.amp * amp;
       }
+      for (const m of all) m.material.uniforms.uTime.value = t;
+      // The blast reaches the ground a little before the visible flame does.
+      const hit = Math.min(1, Math.max(0, (len * 1.25 + 15 - ground) / 25));
+      splash.visible = hit > 0;
+      splash.position.y = -ground;
+      splash.scale.set(9 + 22 * hit, 5 + 9 * hit, 9 + 22 * hit);
+      splash.material.uniforms.uAmp.value = hit * amp;
     },
   };
 }
@@ -139,10 +169,10 @@ function makePoints(max, additive, soft) {
 }
 
 const FIRE = [
-  [2.6, 2.2, 1.7],
-  [2.0, 1.1, 0.4],
-  [1.2, 0.4, 0.09],
-  [0.35, 0.08, 0.02],
+  [2.2, 1.3, 0.5],
+  [2.0, 0.75, 0.16],
+  [1.2, 0.34, 0.06],
+  [0.35, 0.07, 0.015],
 ];
 
 function lerp3(a, b, t) {
@@ -225,7 +255,7 @@ export function createParticles(toX, toY) {
           if (p.k === 0) {
             c = fireColor(u);
             size = (p.size + p.grow * p.t) / 4 * 1.25;
-            a = (1 - u) * 0.32;
+            a = (1 - u) * 0.24;
             z = (h - 0.5) * (5 + u * 14);
           } else {
             c = p.k === 6 ? [2.2, 3.4, 4] : [6, 3.6, 1.2];
@@ -240,14 +270,14 @@ export function createParticles(toX, toY) {
           ng++;
         } else {
           if (ns >= MAX) continue;
-          const size = (p.size + p.grow * p.t) / 4 * (p.k === 3 ? 1.1 : 1.6);
+          const size = (p.size + p.grow * p.t) / 4 * (p.k === 3 ? 1.1 : p.k === 4 ? 1.9 : 1.6);
           let a;
           let base;
           if (p.k === 3) {
             a = (1 - u) * 0.45;
             base = pal.vapor;
           } else if (p.k === 4) {
-            a = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 0.6;
+            a = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 0.8;
             base = pal.dust;
           } else {
             a = Math.sin(Math.PI * Math.min(1, u * 1.15)) * 0.3;
