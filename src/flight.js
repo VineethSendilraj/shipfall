@@ -283,7 +283,9 @@ export class Flight {
     if (this.marks[key] == null) this.marks[key] = this.t;
   }
 
+  /** A message in the middle of the screen; it replaces any still showing there. */
   popup(text, sub, color = '#f2f4f7') {
+    this.fx.popups.length = 0;
     this.fx.addPopup(text, 0, 0, { color, size: 40, dur: 2.2, big: true, sy: 0.24 });
     if (sub) this.fx.addPopup(sub, 0, 0, { color: '#cfd6df', size: 17, dur: 2.2, delay: 0.1, sy: 0.31 });
   }
@@ -760,6 +762,7 @@ export class Flight {
     this.anchor = L.phi;
     this.anchorLift = groundAt(L.phi * R);
     const p = this.fxPoint(b.x, b.y);
+    this.fx.popups.length = 0;
     this.fx.crash({ x: p.px, y: 0, vy: 0, rot: 0, state: 'falling', lifeLost: true });
   }
 
@@ -866,7 +869,7 @@ export class Flight {
       if ((b.state === 'caught' || b.state === 'lost') && this.cut.end === Infinity) this.cut.end = this.real + 2.6;
       if (this.real > this.cut.end + 0.7) this.cut = null;
     }
-    if (b.state === 'caught' && !this.cut && b.stateT > 1 && Math.abs(L.phi * R) > 20000) {
+    if (b.state === 'caught' && !this.cut && b.stateT > 1 && Math.hypot(s.x - SITE_X, s.y) > 20000) {
       b.state = 'parked';
       this.arms.holding = false;
     }
