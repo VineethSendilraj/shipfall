@@ -54,7 +54,7 @@
       </div>
       <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
       <div class="board">
-        <h2>Top 5 catchers</h2>
+        <h2 id="board-title-h">Your best catches</h2>
         <ol id="board-title"></ol>
       </div>
     </div>
@@ -78,15 +78,16 @@
       <p class="kicker" id="go-kicker">mission report</p>
       <h1 class="go-score"><span id="go-score">0</span><small>pts</small></h1>
       <p class="lede" id="go-stats"></p>
-      <form id="initials-form" class="initials hidden" autocomplete="off">
-        <label for="initials">New top-5 score! Your initials</label>
+      <form id="initials-form" class="initials hidden" autocomplete="off" novalidate>
+        <label for="initials">Put your score on the leaderboard</label>
         <div class="initials-row">
-          <input id="initials" maxlength="3" pattern="[A-Za-z0-9]{1,3}" placeholder="AAA" required />
-          <button class="btn primary" type="submit">Save</button>
+          <div class="handle-field"><span aria-hidden="true">@</span><input id="initials" maxlength="16" placeholder="your X handle" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" /></div>
+          <button class="btn primary" type="submit">Submit</button>
         </div>
+        <p class="form-note" id="initials-note" aria-live="polite"></p>
       </form>
       <div class="board">
-        <h2>Top 5 catchers</h2>
+        <h2 id="board-over-h">Your best catches</h2>
         <ol id="board-over"></ol>
       </div>
       <div class="actions">
