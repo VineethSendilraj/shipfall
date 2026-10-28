@@ -1,0 +1,29 @@
+ok - centered, slow catch succeeds with full precision
+ok - vertical tolerance is ±12 px inclusive
+ok - lateral offset must be < 15 px
+ok - vertical speed must be < 3 m/s
+ok - closing on the body is a clang miss and costs a life
+ok - closing on empty air is a harmless whiff
+ok - score = 1000 + precision (<=500) + fuel bonus
+ok - the fuel bonus tops out near +300, inside the leaderboard bound of 1,800 per catch
+ok - a pilot who never steers keeps the full catch window
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: shortest window per round: 4.40, 3.68, 2.98, 2.25, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 s
+    at file:///Users/vsendilraj/dev/scratch/catch-the-ship-fuel/scripts/test-sim.mjs:133:10
+    at test (file:///Users/vsendilraj/dev/scratch/catch-the-ship-fuel/scripts/test-sim.mjs:70:3)
+    at file:///Users/vsendilraj/dev/scratch/catch-the-ship-fuel/scripts/test-sim.mjs:125:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:655:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v25.6.1

@@ -1,0 +1,10 @@
+import { chromium } from '/Users/vsendilraj/dev/scratch/catch-the-ship/node_modules/playwright/index.mjs';
+const [url, out, w, h, play, touch] = process.argv.slice(2);
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=metal', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: +w, height: +h }, hasTouch: touch === '1', isMobile: false });
+await page.goto(url, { timeout: 120000 });
+await page.waitForTimeout(2500);
+await page.click(play);
+await page.waitForTimeout(4500);
+await page.screenshot({ path: out, timeout: 120000 });
+await browser.close();

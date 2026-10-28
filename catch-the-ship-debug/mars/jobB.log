@@ -1,0 +1,40 @@
+### node ident.mjs http://localhost:41773 http://localhost:41772 1280 720 130,366,700,1000,1300
+frame 130: {"differing":0,"max":0,"mean":0}
+frame 366: {"differing":0,"max":0,"mean":0}
+frame 700: {"differing":0,"max":0,"mean":0}
+frame 1000: {"differing":0,"max":0,"mean":0}
+frame 1300: {"differing":0,"max":0,"mean":0}
+### node ident.mjs http://localhost:41771 http://localhost:41771 1280 720 366,1000
+frame 366: {"differing":0,"max":0,"mean":0}
+frame 1000: {"differing":0,"max":0,"mean":0}
+### node fps2.mjs http://localhost:41773/ title
+http://localhost:41773/ title {"frames":2470,"fps":164.7,"p50":6.3,"p95":8.1,"p99":9.3,"crashed":false,"quality":{"level":"high","fps":184.77826608070302,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/ title
+http://localhost:41772/ title {"frames":1772,"fps":118.1,"p50":8.6,"p95":13.2,"p99":15.8,"crashed":false,"quality":{"level":"high","fps":172.7561556791103,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/?map=mars title
+http://localhost:41772/?map=mars title {"frames":2982,"fps":198.8,"p50":5.2,"p95":8,"p99":9.6,"crashed":false,"quality":{"level":"high","fps":232.88355822088957,"dpr":1.5}}
+### node fps2.mjs http://localhost:41773/ title
+http://localhost:41773/ title {"frames":2172,"fps":144.8,"p50":6.5,"p95":14,"p99":18,"crashed":false,"quality":{"level":"high","fps":172.37963146423655,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/ title
+http://localhost:41772/ title {"frames":1452,"fps":96.8,"p50":9.9,"p95":16,"p99":30.8,"crashed":false,"quality":{"level":"high","fps":125.77360750648842,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/?map=mars title
+http://localhost:41772/?map=mars title {"frames":2978,"fps":198.5,"p50":4.9,"p95":9.3,"p99":12.9,"crashed":false,"quality":{"level":"high","fps":212.02468644236467,"dpr":1.5}}
+### node fps2.mjs http://localhost:41773/ title
+http://localhost:41773/ title {"frames":2661,"fps":177.4,"p50":5.6,"p95":10.8,"p99":14.8,"crashed":false,"quality":{"level":"high","fps":177.59698382776043,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/ title
+http://localhost:41772/ title {"frames":1577,"fps":105.1,"p50":9.3,"p95":19,"p99":28.2,"crashed":false,"quality":{"level":"high","fps":136.15583383025282,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/?map=mars title
+http://localhost:41772/?map=mars title {"frames":3715,"fps":247.7,"p50":3.3,"p95":9.6,"p99":13.7,"crashed":false,"quality":{"level":"high","fps":245.8445307056831,"dpr":1.5}}
+### node fps2.mjs http://localhost:41773/ flight
+http://localhost:41773/ flight {"frames":2169,"fps":144.6,"p50":6.2,"p95":14.1,"p99":20.6,"crashed":true,"quality":{"level":"high","fps":180.71086261980793,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/ flight
+http://localhost:41772/ flight {"frames":2121,"fps":141.4,"p50":6.4,"p95":12.8,"p99":19.5,"crashed":true,"quality":{"level":"high","fps":186.47093830589156,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/?map=mars flight
+http://localhost:41772/?map=mars flight {"frames":2964,"fps":197.6,"p50":3.4,"p95":14.9,"p99":19.4,"crashed":true,"quality":{"level":"high","fps":196.84252597921676,"dpr":1.5}}
+### node fps2.mjs http://localhost:41773/ flight
+http://localhost:41773/ flight {"frames":3251,"fps":216.7,"p50":4,"p95":10.4,"p99":17.3,"crashed":true,"quality":{"level":"high","fps":219.6485623003198,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/ flight
+http://localhost:41772/ flight {"frames":1462,"fps":97.5,"p50":7.5,"p95":20.6,"p99":44.8,"crashed":true,"quality":{"level":"high","fps":51.99480051994808,"dpr":1.5}}
+### node fps2.mjs http://localhost:41772/?map=mars flight
+http://localhost:41772/?map=mars flight {"frames":1258,"fps":83.9,"p50":9.3,"p95":25.2,"p99":62.5,"crashed":true,"quality":{"level":"high","fps":75.38416932444208,"dpr":1.5}}
+### done

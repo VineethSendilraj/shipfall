@@ -1,0 +1,36 @@
+
+> catch-the-booster@1.0.0 test
+> node scripts/test-sim.mjs && node scripts/test-api.mjs
+
+ok - centered, slow catch succeeds with full precision
+ok - vertical tolerance is ±12 px inclusive
+ok - lateral offset must be < 15 px
+ok - vertical speed must be < 3 m/s
+ok - closing on the body is a clang miss and costs a life
+ok - closing on empty air is a harmless whiff
+ok - score = 1000 + precision (<=500) + fuel bonus
+ok - the fuel bonus tops out near +300, inside the leaderboard bound of 1,800 per catch
+ok - a pilot who never steers keeps the full catch window
+ok - every booster in every round gives a pilot who never steers at least 1.2 s to catch it
+ok - 3.85 s of lateral thrust leaves about half the window
+ok - steering through the hover empties the tank: early cutoff, then the booster falls
+ok - the same inputs give the same flight, fuel and score
+ok - an unattended booster crashes into the pad
+ok - double catch unlocks at 3000 points
+ok - single rounds are boosters; double rounds add the ship at tower B
+ok - the ship is caught at tower B with the booster tolerances
+ok - arms below the ship's engines whiff where a booster would clang
+ok - the ship lights its landing burn with its pins where a booster does
+ok - an unattended ship crashes into the pad and costs a life
+ok - demo is deterministic and catches everything, the ship last
+
+21 tests passed
+ok - unconfigured backend answers 503 so the game falls back to the local board
+ok - handles follow X rules, with or without @
+ok - scores the game cannot produce are rejected
+ok - a submit returns the rank and the board
+ok - each handle keeps its best score
+ok - a player below the top 10 gets their rank, the field size and their neighbors
+ok - one IP is rate limited
+
+7 api tests passed

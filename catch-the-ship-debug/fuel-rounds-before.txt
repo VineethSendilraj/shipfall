@@ -1,0 +1,48 @@
+round |   n   min  median  max | zero  <1.2 | worst spawn (vy0 m/s, catch y px) | hover px @ m/s | cutoffs
+    1 | 288  4.55   4.57   4.58 |    0     0 | 42.16  270 win  4.55 | 22.0 @ 1.30 | {"ENGINE CUTOFF":288} fuel@cut min 2.0
+    2 | 288  3.67   3.72   3.72 |    0     0 | 48.66  250 win  3.67 | 19.8 @ 1.47 | {"ENGINE CUTOFF":288} fuel@cut min 6.5
+    3 | 288  2.97   2.98   3.02 |    0     0 | 49.16  255 win  2.97 | 17.6 @ 1.64 | {"ENGINE CUTOFF":288} fuel@cut min 9.7
+    4 | 288  2.25   2.42   2.42 |    0     0 | 56.66  240 win  2.25 | 15.4 @ 1.81 | {"ENGINE CUTOFF":288} fuel@cut min 12.0
+    5 | 288  0.00   1.92   1.92 |    7    17 | 59.16  240 win  0.00 | 13.2 @ 1.98 | {"ENGINE CUTOFF":288} fuel@cut min 13.4
+        vy0 57.16 zeroY 240 ign y -13.16 v at zeroY 10.16 m/s win  0.88 ENGINE CUTOFF crashed
+        vy0 57.66 zeroY 240 ign y -15.60 v at zeroY 10.50 m/s win  0.85 ENGINE CUTOFF crashed
+        vy0 58.16 zeroY 240 ign y -13.57 v at zeroY 14.37 m/s win  0.07 ENGINE CUTOFF crashed
+        vy0 58.16 zeroY 245 ign y -13.57 v at zeroY 11.00 m/s win  0.75 ENGINE CUTOFF crashed
+        vy0 58.66 zeroY 240 ign y -16.10 v at zeroY 14.15 m/s win  0.05 ENGINE CUTOFF crashed
+        vy0 58.66 zeroY 245 ign y -16.10 v at zeroY 11.33 m/s win  0.72 ENGINE CUTOFF crashed
+    6 | 288  0.00   1.50   1.52 |   50    66 | 59.66  240 win  0.00 | 11.0 @ 2.15 | {"ENGINE CUTOFF":288} fuel@cut min 14.2
+        vy0 59.66 zeroY 240 ign y -16.72 v at zeroY 17.80 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 59.66 zeroY 245 ign y -16.72 v at zeroY 14.98 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 59.66 zeroY 250 ign y -16.72 v at zeroY 12.17 m/s win  0.25 ENGINE CUTOFF crashed
+        vy0 59.66 zeroY 255 ign y -16.72 v at zeroY  7.67 m/s win  0.83 ENGINE CUTOFF crashed
+        vy0 60.16 zeroY 240 ign y -14.76 v at zeroY 20.55 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 60.16 zeroY 245 ign y -14.76 v at zeroY 18.30 m/s win  0.00 ENGINE CUTOFF crashed
+    7 | 288  0.00   1.13   1.15 |  102   288 | 63.16  240 win  0.00 |  8.8 @ 2.32 | {"ENGINE CUTOFF":288} fuel@cut min 14.9
+        vy0 63.16 zeroY 240 ign y -12.63 v at zeroY 28.84 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 63.16 zeroY 245 ign y -12.63 v at zeroY 27.16 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 63.16 zeroY 250 ign y -12.63 v at zeroY 25.47 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 63.16 zeroY 255 ign y -12.63 v at zeroY 23.78 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 63.16 zeroY 260 ign y -12.63 v at zeroY 22.09 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 63.16 zeroY 265 ign y -12.63 v at zeroY 19.84 m/s win  0.00 ENGINE CUTOFF crashed
+    8 | 288  0.00   0.00   0.90 |  155   288 | 66.66  240 win  0.00 |  7.0 @ 2.49 | {"ENGINE CUTOFF":288} fuel@cut min 15.0
+        vy0 66.66 zeroY 240 ign y -14.46 v at zeroY 35.23 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 66.66 zeroY 245 ign y -14.46 v at zeroY 34.10 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 66.66 zeroY 250 ign y -14.46 v at zeroY 32.42 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 66.66 zeroY 255 ign y -14.46 v at zeroY 31.29 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 66.66 zeroY 260 ign y -14.46 v at zeroY 29.60 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 66.66 zeroY 265 ign y -14.46 v at zeroY 28.48 m/s win  0.00 ENGINE CUTOFF crashed
+    9 | 288  0.00   0.00   0.83 |  207   288 | 70.16  240 win  0.00 |  7.0 @ 2.60 | {"ENGINE CUTOFF":288} fuel@cut min 14.2
+        vy0 70.16 zeroY 240 ign y -12.36 v at zeroY 41.78 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 70.16 zeroY 245 ign y -12.36 v at zeroY 40.65 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 70.16 zeroY 250 ign y -12.36 v at zeroY 39.53 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 70.16 zeroY 255 ign y -12.36 v at zeroY 38.40 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 70.16 zeroY 260 ign y -12.36 v at zeroY 37.28 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 70.16 zeroY 265 ign y -12.36 v at zeroY 36.15 m/s win  0.00 ENGINE CUTOFF crashed
+   10 | 288  0.00   0.00   0.83 |  262   288 | 73.66  240 win  0.00 |  7.0 @ 2.60 | {"ENGINE CUTOFF":288} fuel@cut min 14.0
+        vy0 73.66 zeroY 240 ign y -16.60 v at zeroY 46.47 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 73.66 zeroY 245 ign y -16.60 v at zeroY 45.35 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 73.66 zeroY 250 ign y -16.60 v at zeroY 44.79 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 73.66 zeroY 255 ign y -16.60 v at zeroY 43.66 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 73.66 zeroY 260 ign y -16.60 v at zeroY 42.54 m/s win  0.00 ENGINE CUTOFF crashed
+        vy0 73.66 zeroY 265 ign y -16.60 v at zeroY 41.41 m/s win  0.00 ENGINE CUTOFF crashed
+JSON [{"round":1,"n":288,"min":4.55,"median":4.566666666666666,"max":4.583333333333333,"zero":0,"under":0,"fuelMin":1.957305194805236},{"round":2,"n":288,"min":3.6666666666666665,"median":3.716666666666667,"max":3.716666666666667,"zero":0,"under":0,"fuelMin":6.49480519480511},{"round":3,"n":288,"min":2.966666666666667,"median":2.9833333333333334,"max":3.0166666666666666,"zero":0,"under":0,"fuelMin":9.669805194777354},{"round":4,"n":288,"min":2.25,"median":2.4166666666666665,"max":2.4166666666666665,"zero":0,"under":0,"fuelMin":11.977759738246322},{"round":5,"n":288,"min":0,"median":1.9166666666666667,"max":1.9166666666666667,"zero":7,"under":17,"fuelMin":13.41866871653884},{"round":6,"n":288,"min":0,"median":1.5,"max":1.5166666666666666,"zero":50,"under":66,"fuelMin":14.240255159869744},{"round":7,"n":288,"min":0,"median":1.1333333333333333,"max":1.15,"zero":102,"under":288,"fuelMin":14.93790884084392},{"round":8,"n":288,"min":0,"median":0,"max":0.9,"zero":155,"under":288,"fuelMin":15.015922001273383},{"round":9,"n":288,"min":0,"median":0,"max":0.8333333333333334,"zero":207,"under":288,"fuelMin":14.181852852023649},{"round":10,"n":288,"min":0,"median":0,"max":0.8333333333333334,"zero":262,"under":288,"fuelMin":14.036298371253494}]

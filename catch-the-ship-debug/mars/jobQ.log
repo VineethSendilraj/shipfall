@@ -1,0 +1,13 @@
+round 1 http://localhost:41773/ 181.2
+round 1 http://localhost:41772/ 265.2
+round 2 http://localhost:41772/ 243.8
+round 2 http://localhost:41773/ 207.9
+round 3 http://localhost:41773/ 229.8
+round 3 http://localhost:41772/ 234.4
+round 4 http://localhost:41772/ 238.5
+round 4 http://localhost:41773/ 189.9
+round 5 http://localhost:41773/ 241.2
+round 5 http://localhost:41772/ 240.8
+{"url":"http://localhost:41773/","median":207.9,"min":181.2,"max":241.2,"runs":[181.2,207.9,229.8,189.9,241.2]}
+{"url":"http://localhost:41772/","median":240.8,"min":234.4,"max":265.2,"runs":[265.2,243.8,234.4,238.5,240.8]}
+### done

@@ -1,0 +1,17 @@
+### node mars-shots.mjs http://localhost:41772 1280 720 mars mars/m4 366,408
+### node mars-shots.mjs http://localhost:41772 480 480 mars mars/m4e 366 embed
+### node crash-scan.mjs http://localhost:41772 1280 720 starbase mars/sb5-crash 3,5,8,14,25,45,70,100,300
+impact at sim frame 684
+{"map":"starbase","size":"1280x720","frames":460,"oneFrameFlashes":1,"maxMeanRise":{"d":0.045,"f":4},"maxCellRise":{"d":0.257,"f":6,"cell":23},"events":[{"f":5,"n":1,"amp":0.16,"cells":[{"x":6,"y":1,"amp":0.16,"abc":[0.5691,0.4089,0.6199]}]}]}
+mean    -2:0.344 -1:0.344 0:0.348 1:0.350 2:0.370 3:0.374 4:0.419 5:0.453 6:0.487 7:0.495 8:0.486 9:0.475 10:0.462 11:0.449 12:0.441
+cell 23 -2:0.275 -1:0.279 0:0.300 1:0.330 2:0.390 3:0.421 4:0.497 5:0.555 6:0.812 7:0.857 8:0.835 9:0.789 10:0.741 11:0.707 12:0.694
+### node crash-scan.mjs http://localhost:41772 1280 720 mars mars/mc5-crash 3,5,8,14,25,45,70,100,300
+impact at sim frame 684
+{"map":"mars","size":"1280x720","frames":460,"oneFrameFlashes":1,"maxMeanRise":{"d":0.0322,"f":5},"maxCellRise":{"d":0.242,"f":16,"cell":143},"events":[{"f":1,"n":1,"amp":0.068,"cells":[{"x":7,"y":8,"amp":0.068,"abc":[0.4603,0.3854,0.4531]}]}]}
+mean    -2:0.376 -1:0.376 0:0.377 1:0.379 2:0.397 3:0.402 4:0.433 5:0.465 6:0.491 7:0.497 8:0.488 9:0.478 10:0.467 11:0.458 12:0.451
+cell 143 -2:0.299 -1:0.293 0:0.267 1:0.256 2:0.213 3:0.177 4:0.176 5:0.172 6:0.195 7:0.216 8:0.216 9:0.210 10:0.205 11:0.204 12:0.205
+### node ident.mjs http://localhost:41771 http://localhost:41772 1280 720 130,366,1300
+frame 130: {"differing":0,"max":0,"mean":0}
+frame 366: {"differing":0,"max":0,"mean":0}
+frame 1300: {"differing":0,"max":0,"mean":0}
+### done

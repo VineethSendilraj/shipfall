@@ -1,0 +1,164 @@
+<div id="app">
+  <canvas id="gl" aria-label="Catch the Booster game view"></canvas>
+
+  <div id="popups" aria-hidden="true"></div>
+  <div id="banner" class="banner" aria-live="polite">
+    <div class="banner-title"></div>
+    <div class="banner-sub"></div>
+  </div>
+
+  <div id="hud" class="hud hidden">
+    <div class="panel hud-bar">
+      <div class="cluster left">
+        <figure class="engines" id="h-eng-a"><svg viewBox="0 0 64 64" aria-hidden="true"></svg><figcaption>BOOSTER</figcaption></figure>
+        <div class="gauge" id="g-alt"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">ALTITUDE</span><b class="g-val">—</b><span class="g-unit">M</span></div>
+        <div class="gauge" id="g-spd"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">SPEED</span><b class="g-val">—</b><span class="g-unit">M/S</span></div>
+      </div>
+      <div class="mission">
+        <svg id="h-timeline" class="timeline" viewBox="0 0 600 70" aria-hidden="true">
+          <path class="tl-track" d="M10,66 Q300,-6 590,66" />
+          <path class="tl-done" d="M10,66 Q300,-6 590,66" />
+          <circle class="mark m-burn" r="3.6" /><text class="l-burn">LANDING BURN</text>
+          <circle class="mark m-catch" r="3.6" /><text class="l-catch">CATCH</text>
+          <circle class="tl-now" r="4.6" cx="10" cy="66" />
+        </svg>
+        <div class="clock"><span class="tplus">T+</span><span id="h-clock">00:00:00</span></div>
+        <div class="mscore" id="h-mscore">0</div>
+        <div class="flight" id="h-flight"></div>
+      </div>
+      <div class="cluster right">
+        <div class="gauge" id="g-fuel"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">FUEL</span><b class="g-val">—</b><span class="g-unit">%</span></div>
+        <figure class="align" id="h-align"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="rim" cx="32" cy="32" r="30.5" /><line class="axis" x1="32" y1="6" x2="32" y2="58" /><line class="arm" x1="9" y1="32" x2="21" y2="32" /><line class="arm" x1="43" y1="32" x2="55" y2="32" /><clipPath id="align-clip"><circle cx="32" cy="32" r="29.5" /></clipPath><g clip-path="url(#align-clip)"><g class="sil"><rect x="-3" y="-14" width="6" height="27" rx="3" /><rect class="pins" x="-6" y="-12.6" width="12" height="2.2" rx="1" /></g></g></svg><figcaption>ALIGN</figcaption></figure>
+        <figure class="engines ship hidden" id="h-eng-b"><svg viewBox="0 0 64 64" aria-hidden="true"></svg><figcaption>SHIP</figcaption></figure>
+      </div>
+    </div>
+    <div class="coach" id="h-coach" aria-live="polite"></div>
+    <div class="status-stack">
+      <div class="status" id="h-status"></div>
+      <div class="gust" id="h-gust"></div>
+    </div>
+    <div class="panel scorebox">
+      <div class="lbl">SCORE</div>
+      <div class="score" id="h-score">0</div>
+      <div class="meta">
+        <span>ROUND <b id="h-round">1</b></span>
+        <span class="lives" id="h-lives"></span>
+      </div>
+      <div class="tower-tag" id="h-tower"></div>
+    </div>
+  </div>
+
+  <button id="sound" class="icon-btn" type="button" aria-pressed="false" title="Toggle sound (M)">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="mute" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l6 6M22 9l-6 6"/></svg>
+    <span class="sr">Sound</span>
+  </button>
+
+  <section id="title-screen" class="overlay">
+    <div class="card">
+      <h1>catch the booster</h1>
+      <p class="lede">A booster is coming home. Steer it with cold-gas thrusters, bring the tower's chopstick arms to its catch pins, and close them gently.</p>
+      <div class="rules">
+        <div><b>Catch window</b><span>pins within ±3 m of the arms · lateral offset under 3.75 m · descent under 3 m/s</span></div>
+      </div>
+      <div class="controls">
+        <div><kbd>←</kbd><kbd>→</kbd> <kbd>A</kbd><kbd>D</kbd><span>lateral thrusters (use landing fuel)</span></div>
+        <div><kbd>↑</kbd><kbd>↓</kbd> <kbd>W</kbd><kbd>S</kbd><span>move the catch arms</span></div>
+        <div><kbd class="wide">Space</kbd><span>close the arms</span></div>
+      </div>
+      <div class="map-pick" role="group" aria-label="Launch site">
+        <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
+        <button type="button" data-map="mars" aria-pressed="false">Mars</button>
+      </div>
+      <div class="actions title-actions">
+        <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
+        <button class="btn open-board" type="button">Leaderboard</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="quick-start" class="overlay quick">
+    <div class="quick-card">
+      <h1>catch the booster</h1>
+      <div class="map-pick" role="group" aria-label="Launch site">
+        <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
+        <button type="button" data-map="mars" aria-pressed="false">Mars</button>
+      </div>
+      <button id="quick-play" class="btn primary play-big" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg>
+        Play
+      </button>
+      <p class="hint">◀ ▶ steer (uses fuel) · ▲ ▼ arms · <b>CATCH</b> on green</p>
+      <p class="hint keys">or keys: ← → · ↑ ↓ · Space</p>
+      <div class="quick-links">
+        <button class="ext open-board" type="button">leaderboard</button>
+        <a class="ext" href="/" target="_blank" rel="noopener">open full screen ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="gameover" class="overlay hidden">
+    <div class="card">
+      <p class="kicker" id="go-kicker">mission report</p>
+      <h1 class="go-score"><span id="go-score">0</span><small>pts</small></h1>
+      <p class="lede" id="go-stats"></p>
+      <form id="initials-form" class="initials hidden" autocomplete="off" novalidate>
+        <label for="initials">Add your X @ to the leaderboard</label>
+        <div class="initials-row">
+          <div class="handle-field"><span aria-hidden="true">@</span><input id="initials" maxlength="16" placeholder="yourhandle" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" /></div>
+          <button class="btn primary" type="submit">Submit</button>
+        </div>
+        <p class="form-note" id="initials-note" aria-live="polite"></p>
+      </form>
+      <div class="board">
+        <h2 id="board-over-h">Your best catches</h2>
+        <ol id="board-over"></ol>
+      </div>
+      <div class="actions">
+        <button id="again" class="btn primary" type="button">Fly again</button>
+        <a id="share" class="btn share" href="https://x.com/intent/post" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>
+          Post on X
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="leaderboard" class="overlay hidden">
+    <div class="card">
+      <div class="board">
+        <h2 id="board-h">Your best catches</h2>
+        <ol id="board"></ol>
+      </div>
+      <div class="actions">
+        <button id="board-back" class="btn" type="button">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="demo-title" class="demo-card hidden">
+    <h1>catch the booster</h1>
+    <p class="tag">steer it in · line up the arms · close gently</p>
+  </div>
+  <div id="demo-end" class="demo-card hidden">
+    <p class="kicker">final score</p>
+    <h1 class="end-score" id="demo-score">0</h1>
+    <p class="tag" id="demo-stats"></p>
+    <p class="disclaim">not affiliated with SpaceX</p>
+  </div>
+
+  <div id="touch" class="touch hidden" aria-label="On-screen controls">
+    <div class="cluster">
+      <button data-k="left" type="button" aria-label="Thrust left">◀</button>
+      <button data-k="right" type="button" aria-label="Thrust right">▶</button>
+    </div>
+    <div class="cluster">
+      <button data-k="up" type="button" aria-label="Arms up">▲</button>
+      <button data-k="down" type="button" aria-label="Arms down">▼</button>
+      <button data-k="close" type="button" class="catch" aria-label="Close arms">CATCH</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="error" class="overlay hidden"><div class="card"><h1>WebGL unavailable</h1><p class="lede">This game needs WebGL 2. Try a recent Chrome, Edge, Firefox or Safari.</p></div></div>
+  <footer class="disclaimer">not affiliated with SpaceX</footer>
+</div>

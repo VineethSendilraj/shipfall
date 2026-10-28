@@ -1,0 +1,7 @@
+5:80,1>8: {"ms":24.8,"escMs":17.1,"escCalls":19252,"otherCalls":4667,"line":true}
+3:80,1>8: {"ms":18,"escMs":14.7,"escCalls":17159,"otherCalls":2477,"line":false}
+4:80,1>2: {"ms":14.7,"escMs":12.4,"escCalls":14237,"otherCalls":2354,"line":true}
+3:80,1>2: {"ms":14.6,"escMs":12.6,"escCalls":14175,"otherCalls":2347,"line":false}
+4:80,1>8: {"ms":13.6,"escMs":10.9,"escCalls":12684,"otherCalls":2494,"line":false}
+5:80,1>7: {"ms":12.9,"escMs":10.5,"escCalls":12123,"otherCalls":2521,"line":false}
+2:0,0.5>3: {"ms":10.4,"escMs":7.6,"escCalls":8238,"otherCalls":2366,"line":false}

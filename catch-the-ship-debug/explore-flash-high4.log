@@ -1,0 +1,41 @@
+glide stack->engines {"cam":[62,10,200],"tgt":[0,76,0],"turnDeg":-17,"hop":23,"base":23,"seconds":2.26}
+glide engines->fins {"cam":[0,10,6.3],"tgt":[0,19.6,0],"turnDeg":38,"hop":29,"base":29,"seconds":1.93}
+glide fins->ring {"cam":[11,98.9,14],"tgt":[0,91.4,0],"turnDeg":-3,"hop":2,"base":2,"seconds":1.22}
+glide ring->nose {"cam":[10,99.4,14],"tgt":[0,96.9,0],"turnDeg":-18,"hop":17,"base":17,"seconds":1.69}
+glide nose->flaps {"cam":[8,142.8,25.5],"tgt":[0,139.8,0],"turnDeg":-1,"hop":13,"base":13,"seconds":1.6}
+glide flaps->chopsticks {"cam":[9,110.8,30],"tgt":[0,106.8,0],"turnDeg":-39,"hop":10,"base":10,"seconds":1.61}
+glide chopsticks->tower {"cam":[-6,139.8,40],"tgt":[10,130.8,0],"turnDeg":70,"hop":9,"base":9,"seconds":1.84}
+glide tower->farm {"cam":[60,160,30],"tgt":[26,148,0],"turnDeg":-17,"hop":147,"base":147,"seconds":2.47}
+glide farm->stack {"cam":[-140.7,30,-190],"tgt":[-188.7,14,-268],"turnDeg":-14,"hop":133,"base":133,"seconds":2.6}
+glide stack->engines {"cam":[62,10,200],"tgt":[0,76,0],"turnDeg":-17,"hop":23,"base":23,"seconds":2.26}
+glide engines->farm {"cam":[0,10,6.3],"tgt":[0,19.6,0],"turnDeg":32,"hop":131,"base":131,"seconds":2.34}
+glide farm->fins {"cam":[-140.7,30,-190],"tgt":[-188.7,14,-268],"turnDeg":7,"hop":193,"base":135,"seconds":2.37}
+glide fins->farm {"cam":[11,98.9,14],"tgt":[0,91.4,0],"turnDeg":-7,"hop":193,"base":135,"seconds":2.37}
+glide farm->tower {"cam":[-140.7,30,-190],"tgt":[-188.7,14,-268],"turnDeg":17,"hop":147,"base":147,"seconds":2.47}
+glide tower->engines {"cam":[60,160,30],"tgt":[26,148,0],"turnDeg":-49,"hop":52,"base":52,"seconds":2.17}
+glide engines->nose {"cam":[0,10,6.3],"tgt":[0,19.6,0],"turnDeg":17,"hop":48,"base":48,"seconds":2.09}
+glide nose->engines {"cam":[8,142.8,25.5],"tgt":[0,139.8,0],"turnDeg":-17,"hop":48,"base":48,"seconds":2.09}
+glide engines->chopsticks {"cam":[0,10,6.3],"tgt":[0,19.6,0],"turnDeg":-22,"hop":45,"base":45,"seconds":2.09}
+glide chopsticks->ring {"cam":[-6,139.8,40],"tgt":[10,130.8,0],"turnDeg":57,"hop":14,"base":14,"seconds":1.73}
+glide ring->flaps {"cam":[10,99.4,14],"tgt":[0,96.9,0],"turnDeg":-19,"hop":4,"base":4,"seconds":1.48}
+glide flaps->stack {"cam":[9,110.8,30],"tgt":[0,106.8,0],"turnDeg":1,"hop":12,"base":12,"seconds":2.26}
+glide stack->engines {"cam":[62,10,200],"tgt":[0,76,0],"turnDeg":-17,"hop":23,"base":23,"seconds":2.26}
+glide engines->nose {"cam":[0,10.8,-0.9],"tgt":[0,19.3,-0.9],"turnDeg":209,"hop":48,"base":48,"seconds":2.09}
+glide nose->tower {"cam":[9,141.6,-4.5],"tgt":[4.1,141,-1.6],"turnDeg":-73,"hop":135,"base":9,"seconds":1.81}
+lattice zoom aims at {"x":546.0852813742385,"y":440.4852813742386,"d":41.91703619900129}
+glide tower->stack {"cam":[38.8,153.5,-15.4],"tgt":[34.4,151,-6.9],"turnDeg":-135,"hop":33,"base":33,"seconds":2.37}
+glide stack->fins {"cam":[-88.3,10,189.9],"tgt":[0,76,0],"turnDeg":63,"hop":6,"base":6,"seconds":2.3}
+glide fins->nose {"cam":[-1.2,98.9,17.8],"tgt":[0,91.4,0],"turnDeg":21,"hop":19,"base":19,"seconds":1.7}
+caught spikes (rows of explore-spikes):
+0 {"f":1102,"label":"glide farm->stack","amp":0.316,"cam":[[-16.5,139.6,37.9],[-14,142.3,43.1],[-11.5,144.9,48.3]],"tgt":[-123.1,35.6,-174.8]}
+1 {"f":1733,"label":"glide fins->farm","amp":0.159,"cam":[[35,160.2,43.4],[36.1,165,44.7],[37.1,169.9,46.1]],"tgt":[-30.1,79,-42.7]}
+2 {"f":2138,"label":"glide tower->engines","amp":0.153,"cam":[[3,12.7,15.8],[2.7,12.2,15],[2.5,11.8,14.2]],"tgt":[1.8,28.7,0]}
+3 {"f":3461,"label":"glide engines->nose","amp":0.326,"cam":[[-2.8,16.7,-8.5],[-3.4,17.8,-9.2],[-4,19,-9.8]],"tgt":[0,38.8,-0.7]}
+4 {"f":2429,"label":"glide nose->engines","amp":0.171,"cam":[[0.5,14.2,16.4],[0.4,13.5,15.5],[0.3,12.9,14.7]],"tgt":[0,29.7,0]}
+5 {"f":2899,"label":"glide flaps->stack","amp":0.258,"cam":[[18.4,105.9,60.6],[18.7,105.7,61.9],[19.1,105.5,63.1]],"tgt":[0,97.9,0]}
+6 {"f":3698,"label":"orbit tiles","amp":0.345,"cam":[[3,140.7,-5.2],[3.7,140.7,-4.9],[4.3,140.7,-4.6]],"tgt":[0.2,139.6,3.6]}
+7 {"f":3871,"label":"glide nose->tower","amp":0.265,"cam":[[30.1,148.3,-14.5],[32.9,149.7,-15.6],[35.9,151.3,-16.7]],"tgt":[5.4,141.4,-1.5]}
+8 {"f":4098,"label":"orbit lattice","amp":0.275,"cam":[[18.5,152.1,-9.3],[19.6,152.1,-10.1],[20.7,152.1,-10.7]],"tgt":[28.6,147.4,5.4]}
+9 {"f":5522,"label":"glide fins->nose","amp":0.191,"cam":[[2.6,137,37.8],[2.8,138.2,38.3],[3.1,139.4,38.7]],"tgt":[0,109.9,0]}
+{"quality":"high","size":"1280x720","frames":6082,"segments":38,"spikeFrames":228,"top":[{"f":3698,"label":"orbit tiles","n":3,"amp":0.345,"cell":{"x":5,"y":4,"amp":0.345,"abc":[0.54,0.8848,0.4887]}},{"f":3461,"label":"glide engines->nose","n":23,"amp":0.326,"cell":{"x":7,"y":8,"amp":0.326,"abc":[0.3632,0.0234,0.3497]}},{"f":1102,"label":"glide farm->stack","n":2,"amp":0.316,"cell":{"x":15,"y":8,"amp":0.316,"abc":[0.1256,0.4418,0.1175]}},{"f":3696,"label":"orbit tiles","n":11,"amp":0.31,"cell":{"x":3,"y":3,"amp":0.31,"abc":[0.5162,0.8788,0.5691]}},{"f":3697,"label":"orbit tiles","n":6,"amp":0.283,"cell":{"x":4,"y":3,"amp":0.283,"abc":[0.5259,0.809,0.4988]}},{"f":3462,"label":"glide engines->nose","n":13,"amp":0.276,"cell":{"x":7,"y":7,"amp":0.276,"abc":[0.1549,0.4307,0.1358]}},{"f":4098,"label":"orbit lattice","n":2,"amp":0.275,"cell":{"x":15,"y":8,"amp":0.275,"abc":[0.0745,0.3783,0.1036]}},{"f":4096,"label":"orbit lattice","n":6,"amp":0.268,"cell":{"x":6,"y":8,"amp":0.268,"abc":[0.113,0.3813,0.1088]}},{"f":4097,"label":"orbit lattice","n":4,"amp":0.266,"cell":{"x":11,"y":8,"amp":0.266,"abc":[0.1012,0.3935,0.1274]}},{"f":3871,"label":"glide nose->tower","n":6,"amp":0.265,"cell":{"x":3,"y":8,"amp":0.265,"abc":[0.2419,0.6385,0.3733]}},{"f":4095,"label":"orbit lattice","n":6,"amp":0.264,"cell":{"x":2,"y":8,"amp":0.264,"abc":[0.1326,0.397,0.1261]}},{"f":3695,"label":"orbit tiles","n":3,"amp":0.261,"cell":{"x":2,"y":2,"amp":0.261,"abc":[0.452,0.7345,0.4738]}},{"f":3691,"label":"orbit tiles","n":2,"amp":0.259,"cell":{"x":15,"y":4,"amp":0.259,"abc":[0.6191,0.8784,0.5441]}},{"f":2899,"label":"glide flaps->stack","n":16,"amp":0.258,"cell":{"x":9,"y":8,"amp":0.258,"abc":[0.4752,0.7327,0.4609]}},{"f":3866,"label":"glide nose->tower","n":6,"amp":0.22,"cell":{"x":0,"y":4,"amp":0.22,"abc":[0.0355,0.305,0.0845]}}]}
+FLASH_DONE

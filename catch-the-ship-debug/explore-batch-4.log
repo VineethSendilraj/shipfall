@@ -1,0 +1,41 @@
+432 glides, 69 bent, 41 on a line
+step: p50 2.49 p95 7.9 max 10.62
+jerk: p50 0.131 p95 0.852 max 4.494
+natural: p50 0.106 p95 0.387 max 1.489
+extra: p50 0 p95 0.592 max 4.444
+push: p50 0 p95 0 max 2.17
+bend: p50 0 p95 6.13 max 32.05
+ms: p50 0.4 p95 1.7 max 10.2
+closest to the shapes after the clamp: 1.6 m
+extra jerk over 0.3: 42; push over 0.3: 7
+worst 14 by extra jerk:
+  {"label":"2:80,1>5 free engines(80,1) -> nose","line":true,"frames":126,"step":4.8,"jerk":4.494,"natural":0.051,"extra":4.444,"jerkAt":0.14,"push":1.78,"near":1.6,"bend":24.42,"ms":7.4}
+  {"label":"2:80,1>7 free engines(80,1) -> chopsticks","line":true,"frames":126,"step":3.03,"jerk":3.232,"natural":0.051,"extra":3.181,"jerkAt":0.13,"push":1.39,"near":1.6,"bend":21.53,"ms":6.8}
+  {"label":"2:80,1>6 free engines(80,1) -> flaps","line":true,"frames":120,"step":4.44,"jerk":3.128,"natural":0.043,"extra":3.084,"jerkAt":0.16,"push":1.42,"near":1.6,"bend":23.77,"ms":4.4}
+  {"label":"2:80,1>8 free engines(80,1) -> tower","line":true,"frames":130,"step":3.53,"jerk":2.391,"natural":0.057,"extra":2.334,"jerkAt":0.12,"push":1.66,"near":1.6,"bend":32.05,"ms":4.1}
+  {"label":"2:80,1>4 free engines(80,1) -> ring","line":true,"frames":117,"step":3.2,"jerk":2.237,"natural":0.04,"extra":2.198,"jerkAt":0.15,"push":2.17,"near":1.6,"bend":30.18,"ms":9.3}
+  {"label":"2:80,1>3 free engines(80,1) -> fins","line":true,"frames":116,"step":3.08,"jerk":2.209,"natural":0.039,"extra":2.169,"jerkAt":0.15,"push":2.17,"near":1.6,"bend":30.72,"ms":8.8}
+  {"label":"9:160,1>3 free farm(160,1) -> fins","line":false,"frames":156,"step":8.39,"jerk":2.004,"natural":0.36,"extra":1.644,"jerkAt":0.77,"push":0.34,"near":1.6,"bend":6.58,"ms":0.9}
+  {"label":"9:80,1>4 free farm(80,1) -> ring","line":false,"frames":150,"step":7.27,"jerk":1.75,"natural":0.326,"extra":1.424,"jerkAt":0.69,"push":0,"near":1.82,"bend":1.1,"ms":0.8}
+  {"label":"9:160,1>4 free farm(160,1) -> ring","line":false,"frames":156,"step":8.29,"jerk":1.523,"natural":0.353,"extra":1.171,"jerkAt":0.78,"push":0,"near":1.81,"bend":1.92,"ms":1}
+  {"label":"5:160,1>3 free nose(160,1) -> fins","line":false,"frames":108,"step":2.36,"jerk":1.156,"natural":0.119,"extra":1.037,"jerkAt":0.67,"push":0,"near":1.83,"bend":5.53,"ms":1}
+  {"label":"2:0,0.5>5 free engines(0,0.5) -> nose","line":false,"frames":125,"step":3.05,"jerk":1.012,"natural":0.127,"extra":0.885,"jerkAt":0.21,"push":0,"near":1.88,"bend":5.03,"ms":1}
+  {"label":"2:0,0.5>7 free engines(0,0.5) -> chopsticks","line":false,"frames":125,"step":2.91,"jerk":0.993,"natural":0.116,"extra":0.877,"jerkAt":0.21,"push":0,"near":1.84,"bend":4.61,"ms":1.1}
+  {"label":"3:80,1>1 free fins(80,1) -> stack","line":true,"frames":140,"step":2.49,"jerk":0.893,"natural":0.071,"extra":0.822,"jerkAt":0.18,"push":0,"near":1.8,"bend":3.89,"ms":1}
+  {"label":"4:80,1>1 free ring(80,1) -> stack","line":true,"frames":139,"step":2.49,"jerk":0.857,"natural":0.071,"extra":0.787,"jerkAt":0.17,"push":0,"near":1.75,"bend":3.55,"ms":0.9}
+worst 14 by push:
+  {"label":"2:80,1>3 free engines(80,1) -> fins","line":true,"frames":116,"step":3.08,"jerk":2.209,"natural":0.039,"extra":2.169,"jerkAt":0.15,"push":2.17,"near":1.6,"bend":30.72,"ms":8.8}
+  {"label":"2:80,1>4 free engines(80,1) -> ring","line":true,"frames":117,"step":3.2,"jerk":2.237,"natural":0.04,"extra":2.198,"jerkAt":0.15,"push":2.17,"near":1.6,"bend":30.18,"ms":9.3}
+  {"label":"2:80,1>5 free engines(80,1) -> nose","line":true,"frames":126,"step":4.8,"jerk":4.494,"natural":0.051,"extra":4.444,"jerkAt":0.14,"push":1.78,"near":1.6,"bend":24.42,"ms":7.4}
+  {"label":"2:80,1>8 free engines(80,1) -> tower","line":true,"frames":130,"step":3.53,"jerk":2.391,"natural":0.057,"extra":2.334,"jerkAt":0.12,"push":1.66,"near":1.6,"bend":32.05,"ms":4.1}
+  {"label":"2:80,1>6 free engines(80,1) -> flaps","line":true,"frames":120,"step":4.44,"jerk":3.128,"natural":0.043,"extra":3.084,"jerkAt":0.16,"push":1.42,"near":1.6,"bend":23.77,"ms":4.4}
+  {"label":"2:80,1>7 free engines(80,1) -> chopsticks","line":true,"frames":126,"step":3.03,"jerk":3.232,"natural":0.051,"extra":3.181,"jerkAt":0.13,"push":1.39,"near":1.6,"bend":21.53,"ms":6.8}
+  {"label":"9:160,1>3 free farm(160,1) -> fins","line":false,"frames":156,"step":8.39,"jerk":2.004,"natural":0.36,"extra":1.644,"jerkAt":0.77,"push":0.34,"near":1.6,"bend":6.58,"ms":0.9}
+  {"label":"1>2 stack -> engines","line":false,"frames":136,"step":3.04,"jerk":0.192,"natural":0.192,"extra":0,"jerkAt":0.01,"push":0,"near":2.86,"bend":0,"ms":0.5}
+  {"label":"1>3 stack -> fins","line":false,"frames":137,"step":3.16,"jerk":0.174,"natural":0.174,"extra":0,"jerkAt":0.01,"push":0,"near":8.51,"bend":0,"ms":0.5}
+  {"label":"1>4 stack -> ring","line":false,"frames":137,"step":3.13,"jerk":0.175,"natural":0.175,"extra":0,"jerkAt":0.01,"push":0,"near":9.3,"bend":0,"ms":0.5}
+  {"label":"1>5 stack -> nose","line":false,"frames":139,"step":3.03,"jerk":0.132,"natural":0.132,"extra":0,"jerkAt":0.01,"push":0,"near":12.28,"bend":0,"ms":0.4}
+  {"label":"1>6 stack -> flaps","line":false,"frames":136,"step":2.74,"jerk":0.133,"natural":0.133,"extra":0,"jerkAt":0.01,"push":0,"near":22.95,"bend":0,"ms":0.5}
+  {"label":"1>7 stack -> chopsticks","line":false,"frames":138,"step":2.97,"jerk":0.114,"natural":0.114,"extra":0,"jerkAt":0.01,"push":0,"near":18.57,"bend":0,"ms":0.4}
+  {"label":"1>8 stack -> tower","line":false,"frames":139,"step":3.26,"jerk":0.108,"natural":0.108,"extra":0,"jerkAt":0.01,"push":0,"near":26.46,"bend":0,"ms":0.5}
+BATCH_DONE

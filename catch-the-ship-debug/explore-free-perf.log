@@ -1,0 +1,13 @@
+nose(80,1) -> flaps {"frames":110,"maxGap":16.8,"missed":0,"focusMs":13.8}
+nose(80,1) -> ring {"frames":109,"maxGap":16.8,"missed":0,"focusMs":9}
+nose(80,1) -> fins {"frames":104,"maxGap":16.8,"missed":0,"focusMs":8.1}
+nose(80,1) -> engines {"frames":127,"maxGap":16.8,"missed":0,"focusMs":8.2}
+engines(160,1) -> ring {"frames":121,"maxGap":16.8,"missed":0,"focusMs":8.9}
+engines(160,1) -> fins {"frames":122,"maxGap":16.8,"missed":0,"focusMs":10.2}
+engines(80,1) -> tower {"frames":134,"maxGap":16.8,"missed":0,"focusMs":9.8}
+nose(80,1) -> tower {"frames":109,"maxGap":16.8,"missed":0,"focusMs":7.5}
+engines(80,1) -> ring {"frames":121,"maxGap":16.8,"missed":0,"focusMs":7.5}
+engines(80,1) -> flaps {"frames":121,"maxGap":16.8,"missed":0,"focusMs":5.1}
+engines(80,1) -> fins {"frames":116,"maxGap":16.8,"missed":0,"focusMs":6.4}
+engines(160,1) -> nose {"frames":127,"maxGap":16.8,"missed":0,"focusMs":5.7}
+missed frames in all 0 quality {"level":"high","fps":59.99803285138209,"dpr":1}

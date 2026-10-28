@@ -1,0 +1,13 @@
+1-mount {"frame":40,"phase":"ready","y":22.3,"agl":0,"x":-30,"z":-70,"v":0,"thr":0,"fuel":100,"yaw":0,"fx":0}
+2-liftoff {"frame":145,"phase":"flying","y":23.7,"agl":1.4,"x":-30,"z":-70,"v":3.7,"thr":1,"fuel":99,"yaw":0,"fx":465}
+2b-clear {"frame":295,"phase":"flying","y":48.1,"agl":25.9,"x":-30,"z":-70,"v":15.8,"thr":1,"fuel":96.9,"yaw":0,"fx":1112}
+3-tower {"frame":747,"phase":"flying","y":80.3,"agl":80.3,"x":-11.8,"z":-64.3,"v":10.8,"thr":0.71,"fuel":93.6,"yaw":-1.57,"fx":166}
+3b-tower-past {"frame":927,"phase":"flying","y":80.7,"agl":80.7,"x":13.8,"z":-51.9,"v":18,"thr":0.72,"fuel":91.8,"yaw":-1.57,"fx":63}
+4-high {"frame":2356,"phase":"flying","y":600.4,"agl":600.4,"x":256.7,"z":-59.8,"v":25,"thr":0.69,"fuel":76.6,"yaw":1.57,"fx":0}
+5-approach {"frame":4946,"phase":"flying","y":85.2,"agl":85.2,"x":-30.3,"z":-25.1,"v":12.5,"thr":0.65,"fuel":53.8,"yaw":0,"fx":0}
+6-touchdown {"frame":6772,"phase":"landed","y":22.3,"agl":0,"x":-30,"z":-69.8,"v":0,"thr":0.66,"fuel":37,"yaw":0,"fx":982}
+7-landed-card {"frame":6970,"phase":"landed","y":22.2,"agl":0,"x":-30,"z":-69.7,"v":0,"thr":0,"fuel":37,"yaw":0,"fx":185}
+8-crash {"frame":1199,"phase":"crashed","y":95,"agl":95,"x":42.5,"z":-13.6,"v":0,"thr":0,"fuel":89.1,"yaw":-1.57,"fx":645}
+8b-crash-smoke {"frame":1259,"phase":"crashed","y":95,"agl":95,"x":42.5,"z":-13.6,"v":0,"thr":0,"fuel":89.1,"yaw":-1.57,"fx":596}
+9-crash-card {"frame":1409,"phase":"crashed","y":95,"agl":95,"x":42.5,"z":-13.6,"v":0,"thr":0,"fuel":89.1,"yaw":-1.57,"fx":274}
+errors: none

@@ -1,0 +1,24 @@
+  frame 60 (sim 118) · 18 s elapsed
+  frame 120 (sim 238) · 36 s elapsed
+  frame 180 (sim 358) · 53 s elapsed
+  frame 240 (sim 478) · 71 s elapsed
+  frame 300 (sim 598) · 88 s elapsed
+  frame 360 (sim 718) · 106 s elapsed
+  frame 420 (sim 838) · 124 s elapsed
+  frame 480 (sim 958) · 140 s elapsed
+  frame 540 (sim 1078) · 157 s elapsed
+  frame 600 (sim 1198) · 174 s elapsed
+  frame 660 (sim 1318) · 192 s elapsed
+  frame 720 (sim 1438) · 210 s elapsed
+  frame 780 (sim 1558) · 227 s elapsed
+  frame 840 (sim 1678) · 245 s elapsed
+
+window.__demoDone = true; captured 860 frames in 304 s
+final score on end card: 6,923 ({"catches":4,"perfects":3,"misses":0,"doubles":1})
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/booster-demo.mp4  28.67 s  24.3 MB  (1080x1080, H.264 yuv420p, 30 fps)
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/booster-demo.gif  28.66 s  14.1 MB  (640 px, 12 fps)
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/booster-still-title.png
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/booster-still-approach.png
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/booster-still-catch.png
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/booster-still-double.png
+/Users/vsendilraj/dev/scratch/catch-the-ship-debug/finals/clip/qa-frames/ (14 QA frames)

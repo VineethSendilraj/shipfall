@@ -1,0 +1,21 @@
+// Drag on the scene orbits the free-flight camera, then it swings back behind the stack. Usage: node ff-orbit.mjs <base>
+import { chromium } from '/Users/vsendilraj/dev/scratch/catch-the-ship/node_modules/playwright/index.mjs';
+const [base] = process.argv.slice(2);
+const D = '/Users/vsendilraj/dev/scratch/catch-the-ship-debug';
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=metal', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.goto(`${base}/?mode=flight&capture=1`, { timeout: 120000 });
+await page.waitForFunction(() => window.__flightReady === true, null, { timeout: 120000 });
+await page.evaluate(() => window.__flight.step({ climb: 1 }, 60 * 7));
+const cam = () => page.evaluate(() => ({ yaw: +window.__flight.view.camera.orbitYaw.toFixed(3), pitch: +window.__flight.view.camera.orbitPitch.toFixed(3) }));
+await page.mouse.move(640, 300);
+await page.mouse.down();
+await page.mouse.move(400, 260, { steps: 10 });
+const during = await cam();
+await page.evaluate(() => window.__flight.step({}, 30));
+await page.screenshot({ path: `${D}/ff-orbit-dragged.png`, timeout: 180000 });
+await page.mouse.up();
+await page.evaluate(() => window.__flight.step({}, 60 * 5));
+const after = await cam();
+console.log(JSON.stringify({ during, after }));
+await browser.close();

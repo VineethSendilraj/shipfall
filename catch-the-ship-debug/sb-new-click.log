@@ -1,0 +1,10 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+frame.waitForTimeout: Target page, context or browser has been closed
+    at /Users/vsendilraj/dev/scratch/catch-the-ship-debug/sandbox-submit.mjs:38:13 {
+  log: []
+}
+
+Node.js v25.6.1

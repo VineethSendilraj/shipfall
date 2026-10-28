@@ -1,0 +1,6 @@
+frame 130: {"differing":0,"max":0,"mean":0}
+frame 366: {"differing":0,"max":0,"mean":0}
+frame 408: {"differing":0,"max":0,"mean":0}
+frame 700: {"differing":0,"max":0,"mean":0}
+frame 1300: {"differing":0,"max":0,"mean":0}
+done

@@ -1,0 +1,28 @@
+4:80,1>5: 106 frames, peak step 0.78 m, jerk 0.029 at frame 1, min clearance 1.96
+  first 16 steps: 0.01 0.04 0.07 0.1 0.13 0.15 0.18 0.21 0.23 0.26 0.28 0.3 0.33 0.35 0.37 0.39
+  middle max: 0.78
+  last 12 steps: 0.29 0.27 0.24 0.22 0.19 0.17 0.14 0.11 0.09 0.06 0.03 0
+4:80,1>7: 110 frames, peak step 0.91 m, jerk 0.033 at frame 1, min clearance 1.98
+  first 16 steps: 0.02 0.05 0.08 0.11 0.14 0.17 0.2 0.23 0.26 0.29 0.31 0.34 0.37 0.39 0.42 0.44
+  middle max: 0.91
+  last 12 steps: 0.32 0.29 0.27 0.24 0.21 0.18 0.15 0.12 0.09 0.05 0.02 0
+3:80,1>7: 110 frames, peak step 0.92 m, jerk 0.033 at frame 1, min clearance 1.81
+  first 16 steps: 0.02 0.05 0.08 0.11 0.14 0.18 0.2 0.23 0.26 0.29 0.32 0.34 0.37 0.4 0.42 0.45
+  middle max: 0.92
+  last 12 steps: 0.33 0.3 0.28 0.25 0.22 0.19 0.16 0.13 0.1 0.07 0.03 0
+5:80,1>8: 106 frames, peak step 1.57 m, jerk 1.123 at frame 18, min clearance 1.63
+  first 16 steps: 0.06 0.19 0.31 0.43 0.54 0.65 0.66 0.75 0.84 0.93 1.02 1.11 1.2 1.29 1.39 1.48
+  middle max: 1.04
+  last 12 steps: 0.29 0.27 0.24 0.22 0.19 0.17 0.14 0.11 0.09 0.06 0.03 0
+6:160,1>3: 103 frames, peak step 0.85 m, jerk 0.122 at frame 59, min clearance 2.25
+  first 16 steps: 0.01 0.04 0.07 0.09 0.12 0.14 0.17 0.19 0.21 0.23 0.26 0.28 0.3 0.32 0.34 0.36
+  middle max: 0.85
+  last 12 steps: 0.27 0.25 0.23 0.21 0.18 0.16 0.13 0.11 0.09 0.06 0.03 0.01
+9>2: 141 frames, peak step 2.59 m, jerk 0.073 at frame 1, min clearance 2.26
+  first 16 steps: 0.04 0.11 0.18 0.25 0.32 0.39 0.46 0.52 0.59 0.65 0.72 0.78 0.84 0.9 0.96 1.02
+  middle max: 2.59
+  last 12 steps: 0.73 0.67 0.61 0.54 0.47 0.41 0.34 0.27 0.2 0.13 0.06 0
+3>5: 102 frames, peak step 1.65 m, jerk 0.103 at frame 51, min clearance 8.52
+  first 16 steps: 0.03 0.08 0.13 0.19 0.24 0.29 0.34 0.4 0.45 0.5 0.56 0.61 0.67 0.73 0.78 0.84
+  middle max: 1.65
+  last 12 steps: 0.32 0.3 0.28 0.26 0.23 0.21 0.18 0.15 0.12 0.08 0.05 0.01

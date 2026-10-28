@@ -1,0 +1,32 @@
+432 glides, 77 bent, 29 on a line
+step: p50 2.52 p95 7.89 max 10.62
+jerk: p50 0.134 p95 0.388 max 1.738
+natural: p50 0.112 p95 0.388 max 1.738
+extra: p50 0 p95 0.141 max 0.276
+push: p50 0 p95 0 max 0.01
+bend: p50 0 p95 5.73 max 15.35
+ms: p50 0.2 p95 4.9 max 9.9
+closest to the shapes after the clamp: 1.6 m
+extra jerk over 0.3: 0; push over 0.3: 0
+worst 6 by extra jerk:
+  {"label":"5:160,1>3 free nose(160,1) -> fins","line":true,"curve":5.74,"straight":2.33,"hop":19.4,"frames":108,"step":1.65,"jerk":0.351,"natural":0.074,"extra":0.276,"jerkAt":0.56,"push":0,"near":2.19,"bend":2.33,"ms":1.2}
+  {"label":"4:160,1>6 free ring(160,1) -> flaps","line":false,"curve":11.47,"straight":11.7,"hop":4,"frames":104,"step":1.7,"jerk":0.333,"natural":0.067,"extra":0.266,"jerkAt":0.48,"push":0,"near":2.21,"bend":11.47,"ms":2.2}
+  {"label":"2:0,0.5>3 free engines(0,0.5) -> fins","line":false,"curve":7.67,"straight":14.62,"hop":28.7,"frames":115,"step":2.72,"jerk":0.354,"natural":0.101,"extra":0.253,"jerkAt":0.25,"push":0,"near":1.71,"bend":7.67,"ms":5.1}
+  {"label":"2:0,0.5>4 free engines(0,0.5) -> ring","line":false,"curve":7.53,"straight":14.89,"hop":30.9,"frames":115,"step":2.69,"jerk":0.346,"natural":0.099,"extra":0.246,"jerkAt":0.26,"push":0.01,"near":1.6,"bend":7.53,"ms":5.4}
+  {"label":"2:0,0.5>7 free engines(0,0.5) -> chopsticks","line":false,"curve":5.05,"straight":14.37,"hop":44.6,"frames":125,"step":2.91,"jerk":0.356,"natural":0.116,"extra":0.24,"jerkAt":0.21,"push":0,"near":2.11,"bend":5.05,"ms":3}
+  {"label":"2:0,0.5>6 free engines(0,0.5) -> flaps","line":false,"curve":6.19,"straight":14.12,"hop":34.9,"frames":119,"step":2.54,"jerk":0.336,"natural":0.099,"extra":0.237,"jerkAt":0.24,"push":0,"near":1.79,"bend":6.19,"ms":3.6}
+worst 6 by natural jerk:
+  {"label":"9:0,2>2 free farm(0,2) -> engines","line":false,"curve":8.7,"straight":18.27,"hop":131.1,"frames":129,"step":3.96,"jerk":1.738,"natural":1.738,"extra":0,"jerkAt":0.69,"push":0,"near":2.02,"bend":8.7,"ms":1.8}
+  {"label":"2:0,2>9 free engines(0,2) -> farm","line":false,"curve":1.23,"straight":46.2,"hop":131.1,"frames":141,"step":5.16,"jerk":1.489,"natural":1.489,"extra":0,"jerkAt":0.31,"push":0,"near":2.31,"bend":1.23,"ms":2.4}
+  {"label":"2:160,1>9 free engines(160,1) -> farm","line":false,"curve":0.5,"straight":1,"hop":131.1,"frames":140,"step":5.1,"jerk":1.43,"natural":1.43,"extra":0,"jerkAt":0.29,"push":0,"near":1.9,"bend":0.5,"ms":1}
+  {"label":"2:80,1>9 free engines(80,1) -> farm","line":false,"curve":1.29,"straight":4.29,"hop":131.1,"frames":141,"step":5.07,"jerk":1.4,"natural":1.4,"extra":0,"jerkAt":0.3,"push":0,"near":1.71,"bend":1.29,"ms":1.7}
+  {"label":"2:0,0.5>9 free engines(0,0.5) -> farm","line":false,"curve":6.98,"straight":23.52,"hop":131.1,"frames":140,"step":4.93,"jerk":1.361,"natural":1.361,"extra":0,"jerkAt":0.28,"push":0,"near":2.35,"bend":6.98,"ms":3.7}
+  {"label":"1:160,1>9 free stack(160,1) -> farm","line":false,"curve":0,"straight":0,"hop":133.4,"frames":129,"step":8.84,"jerk":0.559,"natural":0.559,"extra":0,"jerkAt":0.5,"push":0,"near":109.71,"bend":0,"ms":0.2}
+worst 6 by push:
+  {"label":"2:0,0.5>4 free engines(0,0.5) -> ring","line":false,"curve":7.53,"straight":14.89,"hop":30.9,"frames":115,"step":2.69,"jerk":0.346,"natural":0.099,"extra":0.246,"jerkAt":0.26,"push":0.01,"near":1.6,"bend":7.53,"ms":5.4}
+  {"label":"1>2 stack -> engines","line":false,"curve":0,"straight":0,"hop":22.6,"frames":136,"step":3.04,"jerk":0.192,"natural":0.192,"extra":0,"jerkAt":0.01,"push":0,"near":2.86,"bend":0,"ms":0.5}
+  {"label":"1>3 stack -> fins","line":false,"curve":0,"straight":0,"hop":6.1,"frames":137,"step":3.16,"jerk":0.174,"natural":0.174,"extra":0,"jerkAt":0.01,"push":0,"near":8.51,"bend":0,"ms":0.2}
+  {"label":"1>4 stack -> ring","line":false,"curve":0,"straight":0,"hop":8.3,"frames":137,"step":3.13,"jerk":0.175,"natural":0.175,"extra":0,"jerkAt":0.01,"push":0,"near":9.3,"bend":0,"ms":0.1}
+  {"label":"1>5 stack -> nose","line":false,"curve":0,"straight":0,"hop":25.5,"frames":139,"step":3.03,"jerk":0.132,"natural":0.132,"extra":0,"jerkAt":0.01,"push":0,"near":12.28,"bend":0,"ms":0.2}
+  {"label":"1>6 stack -> flaps","line":false,"curve":0,"straight":0,"hop":12.3,"frames":136,"step":2.74,"jerk":0.133,"natural":0.133,"extra":0,"jerkAt":0.01,"push":0,"near":22.95,"bend":0,"ms":0.2}
+BATCH_DONE

@@ -1,0 +1,10 @@
+### window.__view.scene.environmentIntensity = 0
+impact at sim frame 746
+{"map":"mars","size":"1280x720","frames":460,"oneFrameFlashes":2,"maxMeanRise":{"d":0.0292,"f":5},"maxCellRise":{"d":0.299,"f":2,"cell":102},"events":[{"f":1,"n":1,"amp":0.079,"cells":[{"x":6,"y":7,"amp":0.079,"abc":[0.341,0.2231,0.3023]}]},{"f":229,"n":2,"amp":0.216,"cells":[{"x":6,"y":2,"amp":0.112,"abc":[0.1964,0.3088,0.1965]},{"x":7,"y":2,"amp":0.216,"abc":[0.215,0.4333,0.217]}]}]}
+### window.__view.world.keyLight.intensity = 0
+impact at sim frame 746
+{"map":"mars","size":"1280x720","frames":460,"oneFrameFlashes":1,"maxMeanRise":{"d":0.0372,"f":4},"maxCellRise":{"d":0.296,"f":2,"cell":102},"events":[{"f":1,"n":1,"amp":0.081,"cells":[{"x":6,"y":7,"amp":0.081,"abc":[0.2687,0.1878,0.2722]}]}]}
+### window.__view.world.skyMat.visible = true; window.__view.world.sky.visible = false
+impact at sim frame 746
+{"map":"mars","size":"1280x720","frames":460,"oneFrameFlashes":1,"maxMeanRise":{"d":0.0441,"f":5},"maxCellRise":{"d":0.332,"f":196,"cell":103},"events":[{"f":229,"n":5,"amp":0.329,"cells":[{"x":6,"y":1,"amp":0.068,"abc":[0,0.0683,0]},{"x":7,"y":1,"amp":0.102,"abc":[0,0.1025,0]},{"x":6,"y":2,"amp":0.168,"abc":[0.0137,0.1825,0.0142]}]}]}
+### done

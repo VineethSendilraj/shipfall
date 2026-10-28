@@ -1,0 +1,30 @@
+{
+  "name": "catch-the-booster",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D browser game: guide a falling rocket booster into the tower's catch arms. Not affiliated with SpaceX.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "node scripts/serve.mjs",
+    "test": "node scripts/test-sim.mjs && node scripts/test-api.mjs",
+    "check:card": "node scripts/check-card.mjs",
+    "card": "vite build && node scripts/make-card.mjs",
+    "record": "vite build && node scripts/record.mjs",
+    "record:embed": "vite build && node scripts/record-embed.mjs",
+    "author-demo": "node scripts/author-demo.mjs"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "^1.48.0",
+    "vite": "^8.3.5"
+  },
+  "license": "MIT"
+}

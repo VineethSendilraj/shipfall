@@ -1,0 +1,48 @@
+console: debug [vite] connecting...
+console: debug [vite] connected.
+ready after 1058 ms
+{
+ "exposure": 1.15,
+ "toneMapping": 6,
+ "envI": 0.8,
+ "env": [
+  768,
+  1024
+ ],
+ "background": false,
+ "shadowType": 1,
+ "modelSteel": {
+  "role": "steel",
+  "tangent": true,
+  "color": false,
+  "verts": 25413
+ },
+ "meshes": 12,
+ "mat": {
+  "type": "MeshPhysicalMaterial",
+  "rough": 0.72,
+  "metal": 1,
+  "envMapIntensity": 1.6,
+  "aniso": 0.8,
+  "vc": false,
+  "color": "ffffff",
+  "bumpScale": 1.5
+ },
+ "lights": [
+  "HemisphereLight:0.8@0,1,0",
+  "DirectionalLight:1.3@-197,192,-349:shadow",
+  "DirectionalLight:0.3@60,40,300",
+  "SpotLight:15000.0@130,35,55",
+  "SpotLight:12000.0@-215,35,50",
+  "SpotLight:9000.0@-40,35,-95",
+  "PointLight:260.0@40,12,30",
+  "PointLight:260.0@-95,12,25",
+  "PointLight:260.0@-20,12,70",
+  "PointLight:0.0@19,29,6",
+  "PointLight:0.0@0,0,0",
+  "PointLight:0.0@0,0,0",
+  "PointLight:0.0@0,0,0",
+  "SpotLight:90.0@35,113,0",
+  "SpotLight:0.0@10,6,0"
+ ]
+}

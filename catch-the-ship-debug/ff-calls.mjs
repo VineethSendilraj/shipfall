@@ -1,0 +1,20 @@
+// Draw calls and triangles per full frame (scene + post), catch vs free flight. Usage: node ff-calls.mjs <base>
+import { chromium } from '/Users/vsendilraj/dev/scratch/catch-the-ship/node_modules/playwright/index.mjs';
+const [base] = process.argv.slice(2);
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=metal', '--ignore-gpu-blocklist'] });
+const count = (drawSrc) => `(() => { const v = window.__view, r = v.renderer; const draw = ${drawSrc}; r.info.autoReset = false; r.info.reset(); draw(); const i = { calls: r.info.render.calls, tris: r.info.render.triangles, points: r.info.render.points, lines: r.info.render.lines, programs: r.info.programs.length }; r.info.autoReset = true; return i; })()`;
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.goto(`${base}/`);
+await page.waitForTimeout(4000);
+await page.click('#play');
+await page.waitForTimeout(3500);
+console.log('catch', JSON.stringify(await page.evaluate(count('() => v.render(window.__game)'))));
+await page.close();
+const fp = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await fp.goto(`${base}/?mode=flight&capture=1`);
+await fp.waitForFunction(() => window.__flightReady === true, null, { timeout: 120000 });
+await fp.evaluate(() => window.__flight.step({ climb: 1 }, 150));
+console.log('flight liftoff', JSON.stringify(await fp.evaluate(count('() => window.__flight.draw()'))));
+await fp.evaluate(() => window.__flight.step({ climb: 0.3, fwd: 1 }, 720));
+console.log('flight cruise', JSON.stringify(await fp.evaluate(count('() => window.__flight.draw()'))));
+await browser.close();

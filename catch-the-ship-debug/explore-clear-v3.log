@@ -1,0 +1,122 @@
+walls (relative to foot): [[[-10.8,17.3,-9.6],[10.5,149.3,9.6]],[[14,-2.8,-12],[46.7,177,12]],[[-12,121.7,-24.8],[36.9,139.6,24.8]]]
+glide title -> stack (entry): {"samples":112,"hits":0,"closest":[]}
+ok stack -> engines: frames 136 hop 23
+ok stack -> fins: frames 137 hop 6
+ok stack -> ring: frames 137 hop 8
+ok stack -> nose: frames 139 hop 26
+ok stack -> flaps: frames 136 hop 12
+ok stack -> chopsticks: frames 138 hop 22
+ok stack -> tower: frames 139 hop 31
+ok stack -> farm: frames 157 hop 133
+ok engines -> stack: frames 136 hop 23
+ok engines -> fins: frames 116 hop 29
+ok engines -> ring: frames 117 hop 31
+ok engines -> nose: frames 126 hop 48
+ok engines -> flaps: frames 120 hop 35
+ok engines -> chopsticks: frames 126 hop 45
+ok engines -> tower: frames 131 hop 52
+ok engines -> farm: frames 141 hop 131
+ok fins -> stack: frames 137 hop 6
+ok fins -> engines: frames 116 hop 29
+ok fins -> ring: frames 74 hop 2
+ok fins -> nose: frames 102 hop 19
+ok fins -> flaps: frames 89 hop 6
+ok fins -> chopsticks: frames 105 hop 16
+ok fins -> tower: frames 114 hop 25
+ok fins -> farm: frames 143 hop 193
+ok ring -> stack: frames 137 hop 8
+ok ring -> engines: frames 117 hop 31
+ok ring -> fins: frames 74 hop 2
+ok ring -> nose: frames 102 hop 17
+ok ring -> flaps: frames 89 hop 4
+ok ring -> chopsticks: frames 104 hop 14
+ok ring -> tower: frames 114 hop 23
+ok ring -> farm: frames 143 hop 135
+ok nose -> stack: frames 139 hop 26
+ok nose -> engines: frames 126 hop 48
+ok nose -> fins: frames 102 hop 19
+ok nose -> ring: frames 102 hop 17
+ok nose -> flaps: frames 96 hop 13
+ok nose -> chopsticks: frames 90 hop 5
+ok nose -> tower: frames 106 hop 11
+ok nose -> farm: frames 145 hop 140
+ok flaps -> stack: frames 136 hop 12
+ok flaps -> engines: frames 120 hop 35
+ok flaps -> fins: frames 89 hop 6
+ok flaps -> ring: frames 89 hop 4
+ok flaps -> nose: frames 96 hop 13
+ok flaps -> chopsticks: frames 97 hop 10
+ok flaps -> tower: frames 111 hop 20
+ok flaps -> farm: frames 144 hop 136
+ok chopsticks -> stack: frames 138 hop 22
+ok chopsticks -> engines: frames 126 hop 45
+ok chopsticks -> fins: frames 105 hop 16
+ok chopsticks -> ring: frames 104 hop 14
+ok chopsticks -> nose: frames 90 hop 5
+ok chopsticks -> flaps: frames 97 hop 10
+ok chopsticks -> tower: frames 111 hop 9
+ok chopsticks -> farm: frames 145 hop 141
+ok tower -> stack: frames 139 hop 31
+ok tower -> engines: frames 131 hop 52
+ok tower -> fins: frames 114 hop 25
+ok tower -> ring: frames 114 hop 23
+ok tower -> nose: frames 106 hop 11
+ok tower -> flaps: frames 111 hop 20
+ok tower -> chopsticks: frames 111 hop 9
+ok tower -> farm: frames 149 hop 147
+ok farm -> stack: frames 157 hop 133
+ok farm -> engines: frames 141 hop 131
+ok farm -> fins: frames 143 hop 193
+ok farm -> ring: frames 143 hop 135
+ok farm -> nose: frames 145 hop 140
+ok farm -> flaps: frames 144 hop 136
+ok farm -> chopsticks: frames 145 hop 141
+ok farm -> tower: frames 149 hop 147
+free engines(80,1) -> stack: {"frames":137,"hop":165,"samples":131,"hits":22,"closest":[{"i":13,"at":[18.2,1.5,4],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":14,"at":[19.7,1.5,4.4],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":15,"at":[21.3,1.5,4.9],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":16,"at":[23,1.5,5.4],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.1,0.11,0.11,0.12]}
+free engines(80,1) -> fins: {"frames":116,"hop":198,"samples":114,"hits":19,"closest":[{"i":11,"at":[19.3,1.5,3.9],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":12,"at":[21.4,1.5,4.4],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":13,"at":[23.6,1.5,5],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":14,"at":[26.1,1.5,5.6],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.1,0.11,0.11,0.12]}
+free engines(80,1) -> ring: {"frames":117,"hop":210,"samples":114,"hits":19,"closest":[{"i":10,"at":[17.7,1.5,3.5],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":11,"at":[19.7,1.5,4],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":12,"at":[21.9,1.5,4.6],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":13,"at":[24.2,1.5,5.2],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.09,0.1,0.11,0.11]}
+free engines(80,1) -> nose: {"frames":126,"hop":213,"samples":124,"hits":20,"closest":[{"i":11,"at":[17.9,1.5,3.8],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":12,"at":[19.8,1.5,4.3],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":13,"at":[21.8,1.5,4.8],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":14,"at":[24,1.5,5.4],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.09,0.1,0.1,0.11]}
+free engines(80,1) -> flaps: {"frames":120,"hop":231,"samples":118,"hits":18,"closest":[{"i":10,"at":[18.2,1.5,3.8],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":11,"at":[20.3,1.5,4.3],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":12,"at":[22.5,1.5,4.9],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":13,"at":[24.9,1.5,5.6],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.08,0.09,0.1,0.11]}
+free engines(80,1) -> chopsticks: {"frames":126,"hop":200,"samples":124,"hits":19,"closest":[{"i":11,"at":[17.6,1.5,4],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":12,"at":[19.4,1.5,4.6],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":13,"at":[21.3,1.5,5.2],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":14,"at":[23.4,1.5,6],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.09,0.1,0.1,0.11]}
+free engines(80,1) -> tower: {"frames":130,"hop":230,"samples":128,"hits":19,"closest":[{"i":11,"at":[19,1.5,3.5],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":12,"at":[21,1.5,3.9],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":13,"at":[23.2,1.5,4.4],"d":0.1,"view":false,"name":"towerStatic_concrete"},{"i":14,"at":[25.6,1.5,4.9],"d":0.1,"view":false,"name":"towerStatic_concrete"}],"where":[0.09,0.09,0.1,0.11]}
+free engines(-80,1) -> stack: {"frames":137,"hop":23,"samples":119,"hits":1,"closest":[{"i":6,"at":[-9.9,9.2,2.8],"d":1.47,"view":false,"name":"props_concrete"}],"where":[0.05]}
+free engines(-80,1) -> nose: {"frames":126,"hop":48,"samples":112,"hits":2,"closest":[{"i":5,"at":[-10.1,10.6,2.5],"d":1.18,"view":false,"name":"props_concrete"},{"i":6,"at":[-10.6,10.8,2.7],"d":1.41,"view":false,"name":"props_concrete"}],"where":[0.04,0.05]}
+free engines(-80,1) -> flaps: {"frames":120,"hop":35,"samples":102,"hits":1,"closest":[{"i":5,"at":[-10,10.7,2.6],"d":1.32,"view":false,"name":"props_concrete"}],"where":[0.05]}
+free engines(-80,1) -> chopsticks: {"frames":126,"hop":45,"samples":109,"hits":2,"closest":[{"i":5,"at":[-10.2,10.6,2.4],"d":1.07,"view":false,"name":"props_concrete"},{"i":6,"at":[-11.3,11.1,2.8],"d":1.48,"view":false,"name":"props_concrete"}],"where":[0.05,0.06]}
+free engines(-80,1) -> farm: {"frames":140,"hop":131,"samples":137,"hits":32,"closest":[{"i":7,"at":[-11.4,5.9,-1.4],"d":0.06,"view":false,"name":"props_concrete"},{"i":5,"at":[-9.4,7.4,-0.4],"d":0.31,"view":false,"name":"props_concrete"},{"i":5,"at":[-9.4,7.4,-0.4],"d":0.42,"view":false,"name":"props_concrete"},{"i":4,"at":[-8.6,8.1,0],"d":1.15,"view":false,"name":"props_concrete"}],"where":[0.05,0.04,0.04,0.03]}
+free engines(160,1) -> nose: {"frames":126,"hop":48,"samples":112,"hits":6,"closest":[{"i":4,"at":[3.9,10.3,-8.5],"d":0.39,"view":false,"name":"props_concrete"},{"i":4,"at":[3.9,10.3,-8.5],"d":0.43,"view":false,"name":"props_concrete"},{"i":9,"at":[6.2,11.8,-11.3],"d":0.68,"view":false,"name":"props_concrete"},{"i":4,"at":[3.9,10.3,-8.5],"d":0.75,"view":false,"name":"props_concrete"}],"where":[0.04,0.04,0.08,0.04]}
+free engines(160,1) -> chopsticks: {"frames":126,"hop":45,"samples":113,"hits":1,"closest":[{"i":4,"at":[2.7,10.1,-9],"d":1.13,"view":false,"name":"props_concrete"}],"where":[0.04]}
+free engines(160,1) -> tower: {"frames":131,"hop":52,"samples":117,"hits":8,"closest":[{"i":8,"at":[6.3,10.7,-10.7],"d":0.15,"view":false,"name":"props_concrete"},{"i":8,"at":[6.3,10.7,-10.7],"d":0.21,"view":true,"name":"props_concrete"},{"i":8,"at":[6.3,10.7,-10.7],"d":0.26,"view":false,"name":"props_concrete"},{"i":4,"at":[4.1,10,-8.4],"d":0.42,"view":false,"name":"props_concrete"}],"where":[0.07,0.07,0.07,0.03]}
+free engines(0,0.5) -> stack: {"frames":137,"hop":23,"samples":115,"hits":13,"closest":[{"i":14,"at":[0.7,17.8,13.8],"d":0.03,"view":true,"name":"props_mountSteel"},{"i":14,"at":[0.7,17.8,13.8],"d":0.05,"view":false,"name":"props_mountSteel"},{"i":14,"at":[0.7,17.8,13.8],"d":0.05,"view":false,"name":"props_mountSteel"},{"i":13,"at":[0.6,17.4,13.2],"d":0.39,"view":false,"name":"props_mountSteel"}],"where":[0.12,0.12,0.12,0.11]}
+free engines(0,0.5) -> fins: {"frames":115,"hop":29,"samples":93,"hits":10,"closest":[{"i":10,"at":[0.6,17.7,9.8],"d":0.04,"view":false,"name":"props_mountSteel"},{"i":10,"at":[0.6,17.7,9.8],"d":0.06,"view":true,"name":"props_mountSteel"},{"i":10,"at":[0.6,17.7,9.8],"d":0.06,"view":false,"name":"props_mountSteel"},{"i":16,"at":[1.4,22.2,14],"d":0.29,"view":false,"name":"props_mountSteel"}],"where":[0.11,0.11,0.11,0.17]}
+free engines(0,0.5) -> ring: {"frames":115,"hop":31,"samples":96,"hits":8,"closest":[{"i":10,"at":[0.6,17.7,9.9],"d":0.02,"view":false,"name":"props_mountSteel"},{"i":10,"at":[0.6,17.7,9.9],"d":0.03,"view":true,"name":"props_mountSteel"},{"i":10,"at":[0.6,17.7,9.9],"d":0.03,"view":false,"name":"props_mountSteel"},{"i":9,"at":[0.5,17.2,9.3],"d":0.52,"view":false,"name":"props_mountSteel"}],"where":[0.1,0.1,0.1,0.09]}
+free engines(0,0.5) -> nose: {"frames":125,"hop":48,"samples":109,"hits":10,"closest":[{"i":14,"at":[0.5,20.1,14.3],"d":0.04,"view":false,"name":"props_mountSteel"},{"i":14,"at":[0.5,20.1,14.3],"d":0.06,"view":true,"name":"props_mountSteel"},{"i":10,"at":[0.3,17.4,11],"d":0.39,"view":false,"name":"props_mountSteel"},{"i":13,"at":[0.4,19.3,13.4],"d":0.46,"view":false,"name":"props_mountSteel"}],"where":[0.13,0.13,0.09,0.12]}
+free engines(0,0.5) -> flaps: {"frames":119,"hop":35,"samples":94,"hits":12,"closest":[{"i":15,"at":[0.5,21,14.2],"d":0.18,"view":false,"name":"props_mountSteel"},{"i":14,"at":[0.5,20.1,13.3],"d":0.23,"view":false,"name":"props_mountSteel"},{"i":15,"at":[0.5,21,14.2],"d":0.23,"view":true,"name":"props_mountSteel"},{"i":10,"at":[0.3,17.5,10.4],"d":0.29,"view":false,"name":"props_mountSteel"}],"where":[0.16,0.15,0.16,0.11]}
+free engines(0,0.5) -> chopsticks: {"frames":125,"hop":45,"samples":108,"hits":11,"closest":[{"i":14,"at":[0.5,19.5,13.9],"d":0.1,"view":false,"name":"props_mountSteel"},{"i":14,"at":[0.5,19.5,13.9],"d":0.14,"view":false,"name":"props_mountSteel"},{"i":14,"at":[0.5,19.5,13.9],"d":0.15,"view":true,"name":"props_mountSteel"},{"i":11,"at":[0.5,17.5,11.4],"d":0.23,"view":false,"name":"props_mountSteel"}],"where":[0.13,0.13,0.13,0.1]}
+free engines(0,0.5) -> tower: {"frames":130,"hop":52,"samples":115,"hits":12,"closest":[{"i":14,"at":[3.4,18.7,13.8],"d":0.2,"view":false,"name":"props_mountSteel"},{"i":14,"at":[3.4,18.7,13.8],"d":0.27,"view":true,"name":"props_mountSteel"},{"i":12,"at":[2.8,17.4,12],"d":0.33,"view":false,"name":"props_mountSteel"},{"i":12,"at":[2.8,17.4,12],"d":0.46,"view":true,"name":"props_mountSteel"}],"where":[0.12,0.12,0.1,0.1]}
+free engines(0,0.5) -> farm: {"frames":140,"hop":131,"samples":135,"hits":1,"closest":[{"i":14,"at":[-8.2,1.7,2.7],"d":1.18,"view":false,"name":"props_mountSteel"}],"where":[0.1]}
+free fins(80,1) -> stack: {"frames":140,"hop":6,"samples":122,"hits":8,"closest":[{"i":16,"at":[27.8,99.1,-6.8],"d":0.03,"view":false,"name":"towerStatic_lattice"},{"i":15,"at":[27.1,99.1,-7],"d":0.35,"view":false,"name":"towerStatic_lattice"},{"i":5,"at":[19.2,98.8,-8.4],"d":0.63,"view":false,"name":"towerStatic_lattice"},{"i":15,"at":[27.1,99.1,-7],"d":0.66,"view":false,"name":"towerStatic_lattice"}],"where":[0.13,0.12,0.04,0.12]}
+free fins(80,1) -> engines: {"frames":117,"hop":29,"samples":97,"hits":15,"closest":[{"i":16,"at":[27,93.3,-6.8],"d":0.06,"view":false,"name":"towerStatic_lattice"},{"i":15,"at":[26.2,93.6,-7.1],"d":0.4,"view":false,"name":"towerStatic_lattice"},{"i":24,"at":[33.6,91.2,-3],"d":0.46,"view":false,"name":"towerStatic_lattice"},{"i":15,"at":[26.2,93.6,-7.1],"d":0.51,"view":false,"name":"towerStatic_lattice"}],"where":[0.16,0.15,0.25,0.15]}
+free fins(80,1) -> ring: {"frames":91,"hop":2,"samples":36,"hits":17,"closest":[{"i":19,"at":[18.7,101.7,6.1],"d":0.15,"view":false,"name":"towerStatic_lattice"},{"i":19,"at":[18.7,101.7,6.1],"d":0.17,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[18.1,99.8,-4.8],"d":0.2,"view":false,"name":"towerStatic_carriage"},{"i":11,"at":[19.4,100.9,-1.1],"d":0.25,"view":false,"name":"towerStatic_lattice"}],"where":[0.53,0.53,0.17,0.31]}
+free fins(80,1) -> nose: {"frames":106,"hop":48,"samples":98,"hits":1,"closest":[{"i":5,"at":[18.7,101.2,-9.1],"d":1.4,"view":false,"name":"towerStatic_lattice"}],"where":[0.05]}
+free fins(80,1) -> flaps: {"frames":100,"hop":6,"samples":72,"hits":12,"closest":[{"i":29,"at":[27.6,111.7,6.7],"d":0.07,"view":false,"name":"towerStatic_lattice"},{"i":29,"at":[27.6,111.7,6.7],"d":0.07,"view":false,"name":"towerStatic_lattice"},{"i":4,"at":[18.1,100.4,-7.3],"d":0.12,"view":false,"name":"towerStatic_lattice"},{"i":4,"at":[18.1,100.4,-7.3],"d":0.16,"view":false,"name":"towerStatic_lattice"}],"where":[0.4,0.4,0.06,0.06]}
+free fins(80,1) -> chopsticks: {"frames":110,"hop":16,"samples":95,"hits":19,"closest":[{"i":6,"at":[19.6,101.9,-7.7],"d":0.01,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[19.6,101.9,-7.7],"d":0.01,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[19.6,101.9,-7.7],"d":0.01,"view":true,"name":"towerStatic_lattice"},{"i":9,"at":[21.4,103.5,-7.2],"d":0.07,"view":false,"name":"towerStatic_lattice"}],"where":[0.06,0.06,0.06,0.09]}
+free fins(80,1) -> tower: {"frames":115,"hop":25,"samples":90,"hits":2,"closest":[{"i":5,"at":[18.7,101.4,-8.9],"d":1.19,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[19.2,101.9,-9],"d":1.27,"view":false,"name":"towerStatic_lattice"}],"where":[0.06,0.07]}
+free ring(80,1) -> stack: {"frames":139,"hop":8,"samples":122,"hits":18,"closest":[{"i":6,"at":[20.1,98.5,-7.3],"d":0.32,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[20.1,98.5,-7.3],"d":0.34,"view":true,"name":"towerStatic_lattice"},{"i":9,"at":[23.2,98.1,-6.9],"d":0.45,"view":false,"name":"towerStatic_lattice"},{"i":3,"at":[17.8,98.9,-7.4],"d":0.49,"view":false,"name":"towerStatic_lattice"}],"where":[0.05,0.05,0.07,0.02]}
+free ring(80,1) -> engines: {"frames":117,"hop":31,"samples":98,"hits":31,"closest":[{"i":12,"at":[23.3,94,-6.9],"d":0,"view":false,"name":"towerStatic_lattice"},{"i":12,"at":[23.3,94,-6.9],"d":0.01,"view":false,"name":"towerStatic_lattice"},{"i":10,"at":[21.9,94.8,-7.2],"d":0.02,"view":false,"name":"towerStatic_lattice"},{"i":7,"at":[20.1,95.9,-7.4],"d":0.08,"view":false,"name":"towerStatic_lattice"}],"where":[0.12,0.12,0.1,0.07]}
+free ring(80,1) -> fins: {"frames":91,"hop":2,"samples":36,"hits":17,"closest":[{"i":10,"at":[19.1,100.8,-1.5],"d":0,"view":false,"name":"towerStatic_lattice"},{"i":10,"at":[19.1,100.8,-1.5],"d":0,"view":false,"name":"towerStatic_lattice"},{"i":10,"at":[19.1,100.8,-1.5],"d":0.01,"view":false,"name":"towerStatic_lattice"},{"i":19,"at":[18.8,101.7,6.2],"d":0.07,"view":false,"name":"towerStatic_lattice"}],"where":[0.28,0.28,0.28,0.53]}
+free ring(80,1) -> nose: {"frames":106,"hop":28,"samples":91,"hits":25,"closest":[{"i":14,"at":[25.9,107.9,-7.1],"d":0,"view":false,"name":"towerStatic_lattice"},{"i":14,"at":[25.9,107.9,-7.1],"d":0,"view":false,"name":"towerStatic_lattice"},{"i":14,"at":[25.9,107.9,-7.1],"d":0,"view":false,"name":"towerStatic_lattice"},{"i":14,"at":[25.9,107.9,-7.1],"d":0,"view":true,"name":"towerStatic_lattice"}],"where":[0.15,0.15,0.15,0.15]}
+free ring(80,1) -> flaps: {"frames":100,"hop":4,"samples":68,"hits":10,"closest":[{"i":6,"at":[18.9,101.1,-5.1],"d":0.47,"view":false,"name":"towerStatic_carriage"},{"i":7,"at":[19.5,101.5,-4.6],"d":0.57,"view":false,"name":"towerStatic_carriage"},{"i":7,"at":[19.5,101.5,-4.6],"d":0.6,"view":true,"name":"towerStatic_carriage"},{"i":25,"at":[24.8,107.9,6.2],"d":0.73,"view":false,"name":"towerStatic_lattice"}],"where":[0.09,0.1,0.1,0.37]}
+free ring(80,1) -> tower: {"frames":115,"hop":23,"samples":87,"hits":14,"closest":[{"i":4,"at":[18.5,101.2,-7.9],"d":0.12,"view":false,"name":"towerStatic_lattice"},{"i":5,"at":[19.1,101.6,-7.9],"d":0.19,"view":false,"name":"towerStatic_lattice"},{"i":21,"at":[33,114.2,-8.1],"d":0.32,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[19.7,102,-8],"d":0.36,"view":false,"name":"towerStatic_lattice"}],"where":[0.05,0.06,0.24,0.07]}
+free nose(80,1) -> stack: {"frames":141,"hop":26,"samples":131,"hits":2,"closest":[{"i":9,"at":[32.9,140.5,-2.2],"d":0.21,"view":false,"name":"towerStatic_lattice"},{"i":7,"at":[31.6,140.9,-2.5],"d":1.3,"view":false,"name":"towerStatic_lattice"}],"where":[0.07,0.05]}
+free nose(80,1) -> engines: {"frames":126,"hop":104,"samples":119,"hits":3,"closest":[{"i":7,"at":[33.2,140.6,-3.1],"d":0.11,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[32.1,140.9,-3.2],"d":0.7,"view":false,"name":"towerStatic_lattice"},{"i":6,"at":[32.1,140.9,-3.2],"d":0.87,"view":false,"name":"towerStatic_lattice"}],"where":[0.06,0.05,0.05]}
+free nose(80,1) -> ring: {"frames":104,"hop":43,"samples":94,"hits":1,"closest":[{"i":8,"at":[32.8,142.4,-2.5],"d":0.93,"view":false,"name":"towerStatic_lattice"}],"where":[0.09]}
+free nose(80,1) -> flaps: {"frames":104,"hop":13,"samples":81,"hits":16,"closest":[{"i":11,"at":[33.1,141.3,2.6],"d":0.02,"view":false,"name":"towerStatic_lattice"},{"i":11,"at":[33.1,141.3,2.6],"d":0.03,"view":false,"name":"towerStatic_lattice"},{"i":11,"at":[33.1,141.3,2.6],"d":0.03,"view":true,"name":"towerStatic_lattice"},{"i":12,"at":[33.5,141.4,3.1],"d":0.22,"view":false,"name":"towerStatic_lattice"}],"where":[0.14,0.14,0.14,0.15]}
+free nose(80,1) -> chopsticks: {"frames":106,"hop":5,"samples":84,"hits":4,"closest":[{"i":17,"at":[33,143.9,8.2],"d":0.44,"view":false,"name":"towerStatic_lattice"},{"i":14,"at":[32.2,143.5,5.9],"d":0.5,"view":false,"name":"towerStatic_lattice"},{"i":9,"at":[30.7,143,2.6],"d":0.63,"view":false,"name":"towerStatic_lattice"},{"i":18,"at":[33.2,144.1,9],"d":1.27,"view":false,"name":"towerStatic_lattice"}],"where":[0.2,0.17,0.11,0.21]}
+free nose(80,1) -> tower: {"frames":104,"hop":11,"samples":67,"hits":3,"closest":[{"i":10,"at":[33.9,145.5,-1.5],"d":0.75,"view":false,"name":"towerStatic_lattice"},{"i":10,"at":[33.9,145.5,-1.5],"d":0.76,"view":true,"name":"towerStatic_lattice"},{"i":11,"at":[34.6,145.9,-1.2],"d":1.49,"view":true,"name":"towerStatic_lattice"}],"where":[0.15,0.15,0.16]}
+free nose(80,1) -> farm: {"frames":144,"hop":140,"samples":139,"hits":2,"closest":[{"i":5,"at":[29.7,142.1,-6.8],"d":0.65,"view":false,"name":"towerStatic_lattice"},{"i":7,"at":[31.2,142,-8.3],"d":1.14,"view":false,"name":"towerStatic_lattice"}],"where":[0.04,0.05]}
+free farm(80,1) -> engines: {"frames":149,"hop":188,"samples":144,"hits":13,"closest":[{"i":132,"at":[-4,1.5,8.7],"d":0.2,"view":false,"name":"props_concrete"},{"i":132,"at":[-4,1.5,8.7],"d":0.36,"view":false,"name":"props_concrete"},{"i":127,"at":[-6.5,1.5,11],"d":0.5,"view":false,"name":"props_concrete"},{"i":128,"at":[-6,1.5,10.5],"d":0.5,"view":false,"name":"props_concrete"}],"where":[0.92,0.92,0.88,0.89]}
+free poses: 352 glides scanned, 8 skipped (start within 1.5 m of geometry), 44 come within 1.5 m
+72 preset glides scanned
+44 paths come within 1.5 m of geometry
+CLEAR_DONE

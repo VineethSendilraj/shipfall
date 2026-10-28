@@ -1,0 +1,58 @@
+### node ident.mjs http://localhost:41773 http://localhost:41772 1280 720 130,366,700,1000,1300
+frame 130: {"differing":0,"max":0,"mean":0}
+frame 366: {"differing":0,"max":0,"mean":0}
+frame 700: {"differing":0,"max":0,"mean":0}
+frame 1000: {"differing":0,"max":0,"mean":0}
+frame 1300: {"differing":0,"max":0,"mean":0}
+### node crash-scan.mjs http://localhost:41772 1280 720 starbase mars/pr/sb1280 0,1,2,3,6,12,25,45,70,100,150,600
+impact at sim frame 684
+{"map":"starbase","size":"1280x720","frames":640,"oneFrameFlashes":0,"maxMeanRise":{"d":0.0238,"f":5},"maxCellRise":{"d":0.199,"f":196,"cell":103},"events":[]}
+mean    -2:0.344 -1:0.344 0:0.348 1:0.351 2:0.372 3:0.380 4:0.393 5:0.417 6:0.433 7:0.441 8:0.444 9:0.446 10:0.445 11:0.440 12:0.434
+cell 103 -2:0.669 -1:0.668 0:0.708 1:0.712 2:0.798 3:0.829 4:0.859 5:0.913 6:0.926 7:0.925 8:0.919 9:0.914 10:0.897 11:0.878 12:0.854
+### node crash-scan.mjs http://localhost:41772 1280 720 mars mars/pr/mars1280 0,1,2,3,6,12,25,45,70,100,150,600
+impact at sim frame 684
+{"map":"mars","size":"1280x720","frames":640,"oneFrameFlashes":1,"maxMeanRise":{"d":0.0223,"f":5},"maxCellRise":{"d":0.249,"f":16,"cell":143},"events":[{"f":1,"n":1,"amp":0.069,"cells":[{"x":7,"y":8,"amp":0.069,"abc":[0.4573,0.3811,0.4505]}]}]}
+mean    -2:0.368 -1:0.368 0:0.369 1:0.370 2:0.390 3:0.396 4:0.402 5:0.425 6:0.435 7:0.442 8:0.444 9:0.445 10:0.443 11:0.440 12:0.436
+cell 143 -2:0.292 -1:0.286 0:0.261 1:0.249 2:0.205 3:0.168 4:0.161 5:0.155 6:0.178 7:0.201 8:0.202 9:0.195 10:0.191 11:0.190 12:0.192
+### node crash-scan.mjs http://localhost:41772 480 480 starbase mars/pr/sb480 6,12,25,45,70,100 embed
+impact at sim frame 684
+{"map":"starbase","size":"480x480","frames":460,"oneFrameFlashes":0,"maxMeanRise":{"d":0.0279,"f":5},"maxCellRise":{"d":0.179,"f":2,"cell":103},"events":[]}
+mean    -2:0.309 -1:0.309 0:0.308 1:0.311 2:0.338 3:0.333 4:0.353 5:0.381 6:0.396 7:0.407 8:0.407 9:0.408 10:0.407 11:0.403 12:0.395
+cell 103 -2:0.437 -1:0.433 0:0.468 1:0.494 2:0.674 3:0.695 4:0.810 5:0.874 6:0.891 7:0.897 8:0.890 9:0.885 10:0.877 11:0.864 12:0.842
+### node crash-scan.mjs http://localhost:41772 480 480 mars mars/pr/mars480 6,12,25,45,70,100 embed
+impact at sim frame 684
+{"map":"mars","size":"480x480","frames":460,"oneFrameFlashes":0,"maxMeanRise":{"d":0.0223,"f":2},"maxCellRise":{"d":0.16,"f":2,"cell":102},"events":[]}
+mean    -2:0.378 -1:0.378 0:0.379 1:0.380 2:0.402 3:0.398 4:0.406 5:0.421 6:0.427 7:0.433 8:0.433 9:0.433 10:0.431 11:0.429 12:0.426
+cell 102 -2:0.430 -1:0.427 0:0.490 1:0.513 2:0.673 3:0.654 4:0.731 5:0.789 6:0.774 7:0.755 8:0.729 9:0.702 10:0.673 11:0.642 12:0.609
+### node mars-shots.mjs http://localhost:41772 1280 720 mars mars/pr/mars1280 366,408
+### node mars-shots.mjs http://localhost:41772 480 480 mars mars/pr/mars480 366,408 embed
+### node mars-shots.mjs http://localhost:41772 1280 720 starbase mars/pr/sb1280 366
+### node switch-leak.mjs http://localhost:41772 4
+{"map":"starbase","geo":119,"tex":19,"prog":24,"heapMB":34.8}
+{"map":"mars","geo":58,"tex":23,"prog":35,"heapMB":33.7,"clickMs":10951}
+{"map":"starbase","geo":40,"tex":19,"prog":27,"heapMB":47.2,"clickMs":2728}
+{"map":"mars","geo":59,"tex":23,"prog":35,"heapMB":51.3,"clickMs":2167}
+{"map":"starbase","geo":40,"tex":19,"prog":27,"heapMB":39.9,"clickMs":2368}
+{"map":"mars","geo":59,"tex":23,"prog":34,"heapMB":70.5,"clickMs":4085}
+{"map":"starbase","geo":39,"tex":19,"prog":27,"heapMB":66.9,"clickMs":3505}
+{"map":"mars","geo":59,"tex":23,"prog":34,"heapMB":45.3,"clickMs":2626}
+{"map":"starbase","geo":39,"tex":19,"prog":27,"heapMB":39.8,"clickMs":2955}
+{"starbaseGrowth":{"geo":false,"tex":false,"prog":false},"marsGrowth":{"geo":false,"tex":false,"prog":false}}
+### node fps-ab.mjs 3 4 boom http://localhost:41773/ http://localhost:41772/ http://localhost:41772/?map=mars
+round 1 http://localhost:41773/ 290.2
+round 1 http://localhost:41772/ 237.4
+round 1 http://localhost:41772/?map=mars 278.6
+round 2 http://localhost:41772/ 190.3
+round 2 http://localhost:41772/?map=mars 148.1
+round 2 http://localhost:41773/ 107.4
+round 3 http://localhost:41772/?map=mars 172
+round 3 http://localhost:41773/ 154.7
+round 3 http://localhost:41772/ 145
+{"url":"http://localhost:41773/","median":154.7,"min":107.4,"max":290.2,"runs":[290.2,107.4,154.7]}
+{"url":"http://localhost:41772/","median":190.3,"min":145,"max":237.4,"runs":[237.4,190.3,145]}
+{"url":"http://localhost:41772/?map=mars","median":172,"min":148.1,"max":278.6,"runs":[278.6,148.1,172]}
+### node flicker-det.mjs http://localhost:41772 1280 720
+{"frames":1718,"spikeFrames":8,"perSec":{"8":{"frames":1,"maxAmp":0.101},"15":{"frames":2,"maxAmp":0.109},"24":{"frames":1,"maxAmp":0.107},"25":{"frames":4,"maxAmp":0.293}},"top":[{"f":1539,"n":1,"amp":0.293,"cell":{"x":5,"y":3,"amp":0.293,"abc":[0.3623,0.7798,0.4865]}},{"f":1550,"n":2,"amp":0.113,"cell":{"x":15,"y":8,"amp":0.113,"abc":[0.7321,0.8447,0.719]}},{"f":924,"n":1,"amp":0.109,"cell":{"x":10,"y":6,"amp":0.109,"abc":[0.0888,0.2278,0.119]}},{"f":1467,"n":2,"amp":0.107,"cell":{"x":15,"y":7,"amp":0.107,"abc":[0.4924,0.5997,0.4917]}},{"f":499,"n":3,"amp":0.101,"cell":{"x":7,"y":8,"amp":0.101,"abc":[0.0916,0.2136,0.1128]}},{"f":1552,"n":1,"amp":0.079,"cell":{"x":14,"y":8,"amp":0.079,"abc":[0.6772,0.7655,0.6866]}},{"f":1549,"n":1,"amp":0.071,"cell":{"x":15,"y":4,"amp":0.071,"abc":[0.5004,0.5995,0.5286]}},{"f":923,"n":1,"amp":0.07,"cell":{"x":9,"y":7,"amp":0.07,"abc":[0.0943,0.0246,0.1214]}}]}
+### node flicker-det.mjs http://localhost:41772 480 480
+{"frames":1718,"spikeFrames":3,"perSec":{"8":{"frames":1,"maxAmp":0.146},"25":{"frames":2,"maxAmp":0.385}},"top":[{"f":1539,"n":3,"amp":0.385,"cell":{"x":0,"y":1,"amp":0.385,"abc":[0.2782,0.6631,0.2167]}},{"f":499,"n":3,"amp":0.146,"cell":{"x":7,"y":7,"amp":0.146,"abc":[0.143,0.2967,0.1511]}},{"f":1551,"n":1,"amp":0.094,"cell":{"x":15,"y":7,"amp":0.094,"abc":[0.4766,0.5843,0.4904]}}]}
+### done

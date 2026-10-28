@@ -1,0 +1,23 @@
+### node crash-scan.mjs http://localhost:41772 1280 720 mars mars/mc7-crash 0,2,3,4,5,8,14,25,45,70,100,180,300
+impact at sim frame 684
+{"map":"mars","size":"1280x720","frames":460,"oneFrameFlashes":0,"maxMeanRise":{"d":0.0784,"f":4},"maxCellRise":{"d":0.265,"f":4,"cell":23},"events":[]}
+mean    -2:0.368 -1:0.368 0:0.369 1:0.370 2:0.387 3:0.381 4:0.460 5:0.474 6:0.472 7:0.466 8:0.456 9:0.451 10:0.447 11:0.443 12:0.438
+cell 23 -2:0.334 -1:0.334 0:0.330 1:0.335 2:0.425 3:0.557 4:0.823 5:0.834 6:0.806 7:0.767 8:0.726 9:0.705 10:0.697 11:0.692 12:0.684
+### node crash-scan.mjs http://localhost:41772 1280 720 starbase mars/sb7-crash 0,2,3,4,5,8,14,25,45,70,100,180,300
+impact at sim frame 684
+{"map":"starbase","size":"1280x720","frames":460,"oneFrameFlashes":0,"maxMeanRise":{"d":0.0947,"f":4},"maxCellRise":{"d":0.31,"f":4,"cell":7},"events":[]}
+mean    -2:0.344 -1:0.344 0:0.348 1:0.351 2:0.369 3:0.364 4:0.458 5:0.476 6:0.476 7:0.471 8:0.461 9:0.456 10:0.451 11:0.445 12:0.438
+cell 7 -2:0.186 -1:0.188 0:0.199 1:0.212 2:0.249 3:0.298 4:0.608 5:0.641 6:0.625 7:0.632 8:0.625 9:0.622 10:0.610 11:0.599 12:0.590
+### node switch-leak.mjs http://localhost:41772 4
+{"map":"starbase","geo":77,"tex":19,"prog":24,"heapMB":32.7}
+{"map":"mars","geo":56,"tex":23,"prog":35,"heapMB":38.4,"clickMs":1465}
+{"map":"starbase","geo":45,"tex":19,"prog":27,"heapMB":41.2,"clickMs":93}
+{"map":"mars","geo":58,"tex":23,"prog":35,"heapMB":49.7,"clickMs":322}
+{"map":"starbase","geo":41,"tex":19,"prog":27,"heapMB":55.1,"clickMs":110}
+{"map":"mars","geo":58,"tex":23,"prog":35,"heapMB":62.8,"clickMs":434}
+{"map":"starbase","geo":40,"tex":19,"prog":27,"heapMB":77.4,"clickMs":94}
+{"map":"mars","geo":58,"tex":23,"prog":35,"heapMB":60.4,"clickMs":307}
+{"map":"starbase","geo":40,"tex":19,"prog":27,"heapMB":54.7,"clickMs":99}
+{"starbaseGrowth":{"geo":false,"tex":false,"prog":false},"marsGrowth":{"geo":false,"tex":false,"prog":false}}
+### node mars-shots.mjs http://localhost:41772 1280 720 mars mars/m7 366
+### done

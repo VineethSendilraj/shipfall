@@ -1,0 +1,11 @@
+import { chromium } from '/Users/vsendilraj/dev/scratch/catch-the-ship/node_modules/playwright/index.mjs';
+const [url, out, w, h, play] = process.argv.slice(2);
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=metal', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: Number(w), height: Number(h) }, hasTouch: true, isMobile: Number(w) < 700 });
+await page.goto(url);
+await page.waitForTimeout(1200);
+await page.click(play);
+await page.waitForTimeout(3000);
+await page.screenshot({ path: out, type: 'jpeg', quality: 85 });
+console.log(JSON.stringify(await page.evaluate(() => { const c = document.getElementById('h-coach').getBoundingClientRect(); const t = document.querySelector('#touch .cluster').getBoundingClientRect(); return { coachBottom: c.bottom, touchTop: t.top, overlap: c.bottom > t.top }; })));
+await browser.close();
