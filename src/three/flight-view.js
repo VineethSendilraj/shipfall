@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ENGINE_Y } from './booster.js';
 import { SHIP_ENGINE_Y, SKIRT, WIND } from './ship.js';
 import { COL_IDLE, COL_READY, COL_OFF } from './view.js';
-import { createLook, setAirCamera, CENTER, AIR_TOP } from './flight-world.js';
+import { createLook, setAirCamera, CENTER, AIR_TOP, AH } from './flight-world.js';
 import { Craft } from './flight-craft.js';
 import { FlightDirector, alongAxis, shipMid } from './flight-camera.js';
 import { toX } from './director.js';
@@ -271,7 +271,9 @@ export class FlightView {
     air.material.uniforms.uFade.value = 1 - catchW;
     planet.material.uniforms.uClouds.value = smooth(cam.alt, 2000, 6000);
     setAirCamera(camera.position);
-    scene.fog.density = this.saved.fog * catchW;
+    // The site's haze thins with height like the air, so a sight line that climbs to the target crosses less of it.
+    const dh = Math.abs(local(this.director.tgt.x, this.director.tgt.y).alt - cam.alt) / AH;
+    scene.fog.density = this.saved.fog * catchW * (dh > 1e-3 ? (1 - Math.exp(-dh)) / dh : 1);
 
     this.syncSite();
     const show = { site: nearSite, disc: nearSite && cam.alt < 1500, haze: nearSite && cam.alt < 400, off: false };

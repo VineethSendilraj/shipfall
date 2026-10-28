@@ -7,7 +7,7 @@ export const CENTER = new THREE.Vector3(SITE_X, -R, 0);
 // The ground sphere sits just under the launch site's flat pad and outer disc.
 const PR = R - 3;
 export const AIR_TOP = R + 12000;
-const AH = 1100;
+export const AH = 1100;
 const MOON_DIR = new THREE.Vector3(-0.42, 0.36, -0.83).normalize();
 
 const NOISE_GLSL = /* glsl */ `
