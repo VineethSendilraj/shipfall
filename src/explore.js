@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ARM_REACH, GROUND_Y, PX_PER_M } from './sim.js';
 import { toX } from './three/director.js';
-import { ENGINE_Y } from './three/booster.js';
+import { ENGINE_Y, R } from './three/booster.js';
 import { createStack, SHIELD_Y, SHIP_Y } from './three/stack.js';
 
 const $ = (id) => document.getElementById(id);
@@ -21,6 +21,11 @@ const FLOOR_Y = 1.5; // low enough to look up at the engines from under the moun
 const IDLE_S = 8;
 const GLIDE_S = 1.2; // a short glide; one across the site takes about twice as long
 const AIM_MS = 150;
+// The inspection lights fade in from LIGHT_FAR meters off the model and are full from LIGHT_NEAR.
+const LIGHT_FAR = 40;
+const LIGHT_NEAR = 25;
+const LAMP_LUX = 4.5; // what the camera lamp puts on the nearest part of the model
+const FILL_CD = 800;
 
 /** Focus presets in chip and key (1-9) order. Positions are relative to the foot of the stack unless `world`. */
 const PRESETS = [
@@ -166,12 +171,23 @@ export class Explore {
     this.stack = createStack(view.boosterMats, view.shipMats, models);
     this.stack.root.position.set(this.foot.x, BOOSTER_Y, this.foot.z);
     view.scene.add(this.stack.root);
+    this.stackBox = new THREE.Box3().setFromObject(this.stack.root);
+    // The engines are off, and their glow discs would hide the insides of the bells.
+    this.stack.booster.throatMat.visible = false;
+    // Inspection lights for close-ups: a lamp beside the camera, and a spot from under the mount on the engine bells.
+    this.lamp = new THREE.PointLight(0xfff2e2, 0, 0, 2);
+    this.fill = new THREE.SpotLight(0xfff2e2, 0, 0, THREE.MathUtils.degToRad(22), 0.6, 2);
+    this.fill.position.set(this.foot.x, 6, this.foot.z);
+    this.fill.target.position.set(this.foot.x, BOOSTER_Y, this.foot.z);
+    this.lights = new THREE.Group().add(this.lamp, this.fill, this.fill.target);
+    view.scene.add(this.lights);
     this.moveMount = mountMover(view, this.foot);
     this.pickables = [this.stack.root, view.towers[0].root, view.scene.getObjectByName('props') ?? view.world.dressing.mount];
   }
 
   stage(on) {
     this.stack.root.visible = on;
+    this.lights.visible = on;
     this.moveMount(on);
   }
 
@@ -353,12 +369,31 @@ export class Explore {
     return this.walls.some((b) => b.containsPoint(p));
   }
 
+  /** Distance from p to the stack, taken as an upright cylinder of the booster's radius. */
+  toModel(p) {
+    const { min, max } = this.stackBox;
+    const out = Math.max(0, Math.hypot(p.x - this.foot.x, p.z - this.foot.z) - R);
+    return Math.hypot(out, Math.max(0, min.y - p.y, p.y - max.y));
+  }
+
+  /** Scales the inspection lights to the camera's distance from the model, so the wide views keep the night. */
+  light() {
+    const { camera } = this.view;
+    const near = Math.max(1, this.toModel(camera.position));
+    const fade = 1 - THREE.MathUtils.smoothstep(near, LIGHT_NEAR, LIGHT_FAR);
+    // Up and to the right of the camera, so the light shapes the surface instead of flattening it.
+    this.lamp.position.set(0.2 * near, 0.3 * near, 0).applyQuaternion(camera.quaternion).add(camera.position);
+    this.lamp.intensity = LAMP_LUX * near * near * fade;
+    this.fill.intensity = FILL_CD * fade;
+  }
+
   frame(dt) {
     this.game.t += dt;
     this.idle += dt;
     if (this.flight) this.fly(dt);
     else this.orbit(dt);
     this.clamp();
+    if (this.stack) this.light();
     this.view.render(this.game);
     // Only a render places the tower and its arms.
     if (this.stack) this.walls ??= this.keepOut();
