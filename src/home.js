@@ -93,7 +93,8 @@ export function bindHome({ root, modes, view }) {
   });
   $('.close-how').addEventListener('click', (ev) => {
     setHelp(false);
-    if (ev.detail === 0) helpBtn.focus({ preventScroll: true });
+    if (ev.detail > 0) ev.currentTarget.blur();
+    else helpBtn.focus({ preventScroll: true });
   });
 
   let swipe = null;
