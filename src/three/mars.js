@@ -888,7 +888,8 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
   }
   root.add(dots);
 
-  // Thin dust haze hanging low around the site.
+  // Thin dust haze hanging low around the site. Seen from outside and above, its far wall draws an arc on the
+  // ground, so it fades out for a camera there (the title shot). Play cameras never reach that zone.
   const haze = new THREE.Mesh(
     new THREE.CylinderGeometry(250, 250, 90, 96, 1, true),
     new THREE.ShaderMaterial({
@@ -896,7 +897,8 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
       fragmentShader: /* glsl */ `
         varying float vY;
         void main() {
-          float a = exp(-clamp(vY, 0.0, 90.0) / 20.0) * 0.22;
+          float outside = smoothstep(250.0, 280.0, length(cameraPosition.xz)) * smoothstep(90.0, 120.0, cameraPosition.y);
+          float a = exp(-clamp(vY, 0.0, 90.0) / 20.0) * 0.22 * (1.0 - outside);
           gl_FragColor = vec4(vec3(0.42, 0.21, 0.09) * a, a * 0.6);
         }`,
       transparent: true,
@@ -922,6 +924,9 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
     outer,
     haze,
     envTarget,
+    // Title screen: from high above the approach, the tower and the domes left of the title card, the lander on
+    // the right and the mesas across the top.
+    establish: { pos: [270, 240, 380], tgt: [180, 0, -200], focus: [45, 0, 0], fov: 42 },
     fx: MARS_FX,
     keep: [beamMat],
     makeProps(model) {
