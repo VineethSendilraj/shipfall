@@ -291,7 +291,7 @@ function groundGeometry() {
       const b = j * SEG + ((i + 1) % SEG);
       const c = a + SEG;
       const d = b + SEG;
-      idx.push(a, c, b, b, c, d);
+      idx.push(a, b, c, b, d, c);
     }
   }
   const geo = new THREE.BufferGeometry();
@@ -437,10 +437,9 @@ function rockGeometry(seed) {
     v.y *= 0.62;
     p.setXYZ(i, v.x, v.y, v.z);
   }
-  const flat = g.toNonIndexed();
-  flat.computeVertexNormals();
-  g.dispose();
-  return flat;
+  // IcosahedronGeometry is non-indexed, so each face gets its own normal: faceted rocks.
+  g.computeVertexNormals();
+  return g;
 }
 
 function scatterRocks(root, rng) {
