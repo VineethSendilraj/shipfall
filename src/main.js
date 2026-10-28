@@ -6,10 +6,16 @@ import { Sound } from './audio.js';
 import { UI } from './ui.js';
 import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
+import { Flight, NO_FLIGHT_INPUT } from './flight.js';
+import { FlightView } from './three/flight-view.js';
+import { FlightInput } from './flight-input.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
 const CAPTURE = DEMO_MODE && params.get('capture') === '1';
+const FLIGHT_LINK = params.get('mode') === 'flight';
+// ?mode=flight&capture=1: free flight advanced only by window.__flight.step(), for scripted screenshots.
+const FLIGHT_CAPTURE = FLIGHT_LINK && params.get('capture') === '1';
 const EMBED = document.body.classList.contains('embed');
 const SITE_URL = __SITE_URL__;
 const SOUND_KEY = 'catch-the-booster.sound';
@@ -125,14 +131,24 @@ async function runDemo() {
 // ------------------------------------------------------------------ play
 
 function runGame() {
-  view = createView({ pixelRatio: 1, cinematic: false, samples: 4 });
+  view = createView({ pixelRatio: 1, cinematic: false, samples: 4, preserve: FLIGHT_CAPTURE });
   if (!view) return;
   ui = new UI(view);
   const quality = new AutoQuality(view, { forced: params.get('quality') });
   fit();
   window.addEventListener('resize', fit);
-  loadFonts();
-  loadModels().then((models) => view.useModels(models));
+  const fonts = loadFonts();
+  let models = null;
+  let flightView = null;
+  let flight = null;
+  const modelsLoaded = loadModels().then((m) => {
+    models = m;
+    view.useModels(m);
+    if (flightView) {
+      flightView.useModels(m);
+      if (flight) flight.stackH = flightView.stackH;
+    }
+  });
 
   const sound = new Sound();
   let game = new Game({ width: WORLD_W, seed: 1 });
@@ -256,6 +272,140 @@ function runGame() {
     shareLink.href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
   }
 
+  // ---------------------------------------------------------------- free flight
+
+  const flightOverEl = $('flight-over');
+  const sticksEl = $('sticks');
+  const flightInput = new FlightInput(sticksEl);
+  let flightOverTimer = -1;
+  let flightScript = null;
+
+  function startFlight() {
+    flightView ??= new FlightView(view, models);
+    flight = new Flight({ mount: flightView.mount, colliders: flightView.colliders(), stackH: flightView.stackH });
+    state = 'flight';
+    paused = false;
+    flightOverTimer = -1;
+    flightInput.clear();
+    ui.clearPopups();
+    flightView.enter(flight);
+    titleEl.classList.add('hidden');
+    overEl.classList.add('hidden');
+    flightOverEl.classList.add('hidden');
+    touchEl.classList.add('hidden');
+    sticksEl.classList.toggle('hidden', !showButtons);
+    document.body.classList.toggle('touch-ui', showButtons);
+    document.body.classList.add('playing', 'flight-mode');
+    ui.safeDirty = true;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }
+
+  /** Leaves free flight (or the catch game's game over) for the title screen. */
+  function goHome() {
+    if (flight) {
+      flightView.exit();
+      flight = null;
+      flightOverEl.classList.add('hidden');
+      sticksEl.classList.add('hidden');
+      document.body.classList.remove('flight-mode');
+      ui.clearPopups();
+      paused = false;
+      showTitle();
+      view.snapshot(game);
+      return;
+    }
+    showTitle();
+  }
+
+  const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  const fmtDist = (m) => (m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`);
+
+  function showFlightOver() {
+    state = 'flightOver';
+    sticksEl.classList.add('hidden');
+    document.body.classList.remove('touch-ui', 'playing');
+    const r = flight.result;
+    const st = flight.stats;
+    const kicker = $('fo-kicker');
+    const bullseye = r.onMount && st.offset < 1.5;
+    kicker.textContent = r.landed ? (r.onMount ? (bullseye ? 'bullseye' : 'mission success') : 'off the mount') : flight.outOfFuel ? 'out of fuel' : 'vehicle lost';
+    kicker.className = `kicker ${r.landed ? (bullseye ? 'gold' : r.onMount ? 'good' : '') : 'bad'}`;
+    $('fo-title').textContent = r.title;
+    $('fo-sub').textContent = r.landed
+      ? r.onMount
+        ? `${st.offset.toFixed(1)} m from center at ${st.touchdown.toFixed(1)} m/s`
+        : `${fmtDist(st.offset)} from the launch mount`
+      : r.reason.charAt(0).toUpperCase() + r.reason.slice(1);
+    $('fo-time').textContent = fmtTime(flight.clock);
+    $('fo-alt').textContent = fmtDist(st.maxAlt);
+    $('fo-dist').textContent = fmtDist(st.dist);
+    $('fo-td-l').textContent = r.landed ? 'Touchdown' : 'Impact';
+    $('fo-td').textContent = `${st.touchdown.toFixed(1)} m/s`;
+    $('fo-fuel').textContent = `${Math.round(st.fuel)}%`;
+    const time = fmtTime(flight.clock);
+    const text = r.landed
+      ? r.onMount
+        ? `I flew the full rocket stack around the launch site for ${time} and landed it back on the launch mount, ${st.offset.toFixed(1)} m from center. Your turn:`
+        : `I flew the full rocket stack for ${time}, up to ${fmtDist(st.maxAlt)}, and set it down ${fmtDist(st.offset)} from the launch mount. Your turn:`
+      : `I flew the full rocket stack for ${time}, up to ${fmtDist(st.maxAlt)}, then it ${r.kind === 'tower' ? 'hit the tower' : 'blew up'}. Your turn:`;
+    $('fo-share').href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/?mode=flight`)}`;
+    flightOverEl.classList.remove('hidden');
+    $('fo-again').focus({ preventScroll: true });
+  }
+
+  const FLIGHT_SOUNDS = { ignite: 'ignite', liftoff: 'liftoff', lowfuel: 'lowfuel', bingo: 'lowfuel', enginesOut: 'enginesOut', land: 'land', crash: 'crash' };
+
+  function flightStep() {
+    flightView.snapshot(flight);
+    const input = state !== 'flight' ? NO_FLIGHT_INPUT : (flightScript ?? flightInput.read(flightView.camera.viewHeading));
+    flight.step(input);
+    flightView.step(flight);
+    for (const ev of flight.events) {
+      if (FLIGHT_SOUNDS[ev.type]) sound.play(FLIGHT_SOUNDS[ev.type]);
+      if (ev.type === 'land') flightOverTimer = 2.8;
+      else if (ev.type === 'crash') flightOverTimer = 3.4;
+    }
+    if (flightOverTimer > 0) {
+      flightOverTimer -= DT;
+      if (flightOverTimer <= 0 && state === 'flight') showFlightOver();
+    }
+  }
+
+  $('flight').addEventListener('click', startFlight);
+  $('quick-flight').addEventListener('click', startFlight);
+  $('fo-again').addEventListener('click', startFlight);
+  $('fo-home').addEventListener('click', goHome);
+
+  // Dragging on the scene orbits the free-flight camera; it swings back behind the stack when let go.
+  let dragId = null;
+  let dragX = 0;
+  let dragY = 0;
+  canvas.addEventListener('pointerdown', (ev) => {
+    if (!flight || state !== 'flight' || dragId !== null) return;
+    dragId = ev.pointerId;
+    dragX = ev.clientX;
+    dragY = ev.clientY;
+    flightView.camera.dragging = true;
+    try {
+      canvas.setPointerCapture(ev.pointerId);
+    } catch {
+      // Synthetic pointers can't always be captured.
+    }
+  });
+  canvas.addEventListener('pointermove', (ev) => {
+    if (ev.pointerId !== dragId || !flight) return;
+    flightView.camera.drag(ev.clientX - dragX, ev.clientY - dragY);
+    dragX = ev.clientX;
+    dragY = ev.clientY;
+  });
+  const endDrag = (ev) => {
+    if (ev.pointerId !== dragId) return;
+    dragId = null;
+    if (flightView) flightView.camera.dragging = false;
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const handle = normalizeHandle(handleInput.value);
@@ -322,12 +472,29 @@ function runGame() {
   });
 
   const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
+  function flightKey(ev) {
+    if (flightInput.key(ev.code, true)) ev.preventDefault();
+    const focused = document.activeElement;
+    const onMenuButton = state === 'flightOver' && (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement);
+    if (ev.code === 'Escape') goHome();
+    else if (ev.code === 'Enter' && state === 'flightOver' && !onMenuButton && !ev.repeat) startFlight();
+    else if (ev.code === 'KeyM') {
+      unlocked = true;
+      setSound(!sound.enabled);
+    } else if (ev.code === 'KeyP' && state === 'flight') {
+      paused = !paused;
+      toast(paused ? 'Paused — press P to resume' : 'Resumed');
+    } else if (ev.code === 'Space') ev.preventDefault();
+  }
+
   window.addEventListener('keydown', (ev) => {
     if (ev.target instanceof HTMLInputElement) return;
     if (!boardEl.classList.contains('hidden')) {
       if (ev.code === 'Escape') closeBoard();
       return;
     }
+    if (flight) return flightKey(ev);
+    if (ev.code === 'KeyF' && state === 'title' && !ev.repeat) return startFlight();
     const k = KEYMAP[ev.code];
     if (k) {
       held[k] = true;
@@ -359,9 +526,11 @@ function runGame() {
   window.addEventListener('keyup', (ev) => {
     const k = KEYMAP[ev.code];
     if (k) held[k] = false;
+    flightInput.key(ev.code, false);
   });
   window.addEventListener('blur', () => {
     for (const k in held) held[k] = false;
+    flightInput.clear();
   });
 
   for (const btn of touchEl.querySelectorAll('button')) {
@@ -419,6 +588,19 @@ function runGame() {
     if (idle) acc = 0;
     quality.frame(now, !idle);
     let n = 0;
+    if (flight) {
+      if (FLIGHT_CAPTURE) acc = 0;
+      while (acc >= DT && n < 6) {
+        flightStep();
+        acc -= DT;
+        n++;
+      }
+      sound.update(flight.throttle * 0.8, false);
+      ui.updateFlight(flight, flightView.camera.viewHeading, { hidden: state === 'flightOver', ship: flightView.hasShip });
+      flightView.draw(flight, FLIGHT_CAPTURE ? 1 : Math.min(1, acc / DT));
+      requestAnimationFrame(frame);
+      return;
+    }
     while (acc >= DT && n < 6) {
       step();
       acc -= DT;
@@ -431,6 +613,43 @@ function runGame() {
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
+
+  if (FLIGHT_CAPTURE) {
+    // Scripted flights: each step() call advances the simulation with the given input, then draws.
+    window.__flight = {
+      get flight() {
+        return flight;
+      },
+      start() {
+        startFlight();
+        flightView.draw(flight, 1);
+      },
+      step(input = NO_FLIGHT_INPUT, frames = 1) {
+        return this.run(() => input, frames);
+      },
+      /** Steps with inputFn(flight) each frame, up to maxFrames or until until(flight), then draws once. */
+      run(inputFn, maxFrames = 1, until = null) {
+        for (let i = 0; i < maxFrames && !(until && until(flight)); i++) {
+          flightScript = { ...NO_FLIGHT_INPUT, ...inputFn(flight) };
+          flightStep();
+        }
+        flightScript = null;
+        ui.updateFlight(flight, flightView.camera.viewHeading, { hidden: state === 'flightOver', ship: flightView.hasShip });
+        flightView.draw(flight, 1);
+        return { frame: flight.frame, phase: flight.phase, state };
+      },
+      draw() {
+        flightView.draw(flight, 1);
+      },
+      get view() {
+        return flightView;
+      },
+    };
+    Promise.all([modelsLoaded, fonts]).then(() => {
+      startFlight();
+      window.__flightReady = true;
+    });
+  } else if (FLIGHT_LINK) startFlight();
 }
 
 if (DEMO_MODE) runDemo();

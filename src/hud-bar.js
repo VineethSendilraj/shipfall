@@ -51,6 +51,10 @@ export class HudBar {
       track: document.querySelector('#h-timeline .tl-track'),
       done: document.querySelector('#h-timeline .tl-done'),
       now: document.querySelector('#h-timeline .tl-now'),
+      nav: $('h-nav'),
+      navArrow: document.querySelector('#h-nav .nav-arrow'),
+      navD: $('h-nav-d'),
+      navL: $('h-nav-l'),
     };
     this.boosterDots = engineIcon($('h-eng-a'), BOOSTER_RINGS);
     this.shipDots = engineIcon(this.el.engB, SHIP_RINGS);
@@ -170,5 +174,52 @@ export class HudBar {
     const catchState = lost ? ['BOOSTER LOST', 'bad'] : h.ready ? ['CATCH', 'ok'] : game.phase === 'outro' ? ['SECURED', 'ok'] : ['CATCH', ''];
     this.set('catchL', catchState[0], (v) => (this.marks.catch.label.textContent = v));
     this.set('catchC', catchState[1], (v) => this.marks.catch.label.setAttribute('class', `l-catch ${v}`));
+  }
+
+  /**
+   * Free flight on the same instruments: engine rings lit by throttle, radar altitude, speed and fuel,
+   * the stack's tilt on ALIGN, and distance and bearing to the launch mount in place of the timeline.
+   * heading: the camera heading (the mount's bearing is shown relative to it). ship: the upper stage is on.
+   */
+  updateFlight(f, heading, { compact, ship, ready }) {
+    const e = this.el;
+    const t = clock(f.clock);
+    this.set('flight', compact ? `FREE FLIGHT · T+${t}` : 'CATCH THE BOOSTER · FREE FLIGHT', (v) => (e.flight.textContent = v));
+    this.set('clock', t, (v) => (e.clock.textContent = v));
+
+    const thr = f.throttle;
+    // Deep throttle runs the center engines only, then the inner ring, then all 33.
+    this.light('a', this.boosterDots, thr > 0.02 ? [3, thr > 0.3 ? 10 : 0, thr > 0.55 ? 20 : 0] : [0, 0, 0]);
+    this.set('shipOn', ship, (v) => e.engB.classList.toggle('hidden', !v));
+    if (ship) this.light('b', this.shipDots, [0, 0]);
+
+    const alt = Math.max(0, f.agl);
+    const speed = Math.hypot(f.vel.x, f.vel.y, f.vel.z);
+    const sink = -f.vel.y;
+    this.gauge('alt', alt / 1000, alt >= 100 ? alt.toFixed(0) : alt.toFixed(1));
+    const low = f.airborne && alt < 80;
+    this.gauge('spd', speed / 60, speed.toFixed(1), low && sink > 6 ? 'bad' : low && sink > 3 ? 'warn' : '');
+    this.gauge('fuel', f.fuel / 100, f.fuel.toFixed(0), f.fuel <= 20 ? 'bad' : f.fuel <= 35 ? 'warn' : '');
+
+    // ALIGN: the stack's lean as seen from the camera, nudged toward the mount when it is close.
+    const s = Math.sin(heading);
+    const c = Math.cos(heading);
+    const roll = (Math.atan(f.lean.x * c - f.lean.z * s) * 180) / Math.PI;
+    const dx = f.mount.x - f.base.x;
+    const dz = f.mount.z - f.base.z;
+    const lat = -(dx * c - dz * s);
+    const lx = f.mountDist < 120 ? clamp(lat * 0.35, -22, 22) : 0;
+    this.set('sil', `translate(${(32 + lx).toFixed(1)} 44) rotate(${roll.toFixed(1)})`, (v) => e.sil.setAttribute('transform', v));
+    this.set('ready', ready ? 'align ready' : 'align', (v) => (e.align.className = v));
+
+    // Launch mount: distance and bearing (0 = straight ahead of the camera, positive to the right).
+    const over = f.mountDist <= 9.5;
+    const bearing = (Math.atan2(dx * c - dz * s, -dx * s - dz * c) * 180) / Math.PI;
+    const d = f.mountDist;
+    this.set('navD', over ? '0' : d >= 1000 ? (d / 1000).toFixed(2) : d.toFixed(0), (v) => (e.navD.textContent = v));
+    this.set('navU', d >= 1000 && !over ? 'KM' : 'M', (v) => (e.nav.querySelector('.nav-u').textContent = v));
+    this.set('navL', over ? (f.airborne ? 'OVER THE LAUNCH MOUNT' : 'ON THE LAUNCH MOUNT') : 'TO LAUNCH MOUNT', (v) => (e.navL.textContent = v));
+    this.set('navC', over ? 'nav over' : 'nav', (v) => (e.nav.className = v));
+    this.set('navA', over ? '' : `rotate(${bearing.toFixed(0)} 12 12)`, (v) => e.navArrow.setAttribute('transform', v));
   }
 }

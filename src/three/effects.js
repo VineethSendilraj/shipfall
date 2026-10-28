@@ -115,7 +115,7 @@ const pointsFrag = /* glsl */ `
     gl_FragColor = vec4(vColor.rgb * a, a);
   }`;
 
-function makePoints(max, additive, soft) {
+export function makePoints(max, additive, soft) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(max * 3), 3).setUsage(THREE.DynamicDrawUsage));
   geo.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(max * 4), 4).setUsage(THREE.DynamicDrawUsage));

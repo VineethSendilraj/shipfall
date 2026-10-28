@@ -415,14 +415,17 @@ export function buildWorld(scene, renderer, towerMats) {
 
   const dressing = setDressing(scene, rng, towerMats);
 
+  // uFade stays 1 in the catch game; free flight fades the haze out as its camera climbs above it.
   const haze = new THREE.Mesh(
     new THREE.CylinderGeometry(250, 250, 90, 96, 1, true),
     new THREE.ShaderMaterial({
+      uniforms: { uFade: { value: 1 } },
       vertexShader: /* glsl */ `varying float vY; void main() { vY = position.y + 45.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
       fragmentShader: /* glsl */ `
+        uniform float uFade;
         varying float vY;
         void main() {
-          float a = exp(-clamp(vY, 0.0, 90.0) / 16.0) * 0.32;
+          float a = exp(-clamp(vY, 0.0, 90.0) / 16.0) * 0.32 * uFade;
           gl_FragColor = vec4(vec3(0.42, 0.29, 0.19) * a, a * 0.55);
         }`,
       transparent: true,
@@ -437,5 +440,5 @@ export function buildWorld(scene, renderer, towerMats) {
   haze.position.y = 45;
   haze.renderOrder = 2;
   scene.add(haze);
-  return { sky, skyMat, floods, moon, dressing };
+  return { sky, skyMat, floods, moon, dressing, haze, outer };
 }

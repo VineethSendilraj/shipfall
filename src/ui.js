@@ -2,6 +2,7 @@ import { HudBar } from './hud-bar.js';
 
 const $ = (id) => document.getElementById(id);
 const easeOutBack = (x) => 1 + 2.4 * (x - 1) ** 3 + 1.4 * (x - 1) ** 2;
+const FLIGHT_WARN = { lowfuel: 'LOW FUEL', bingo: 'BINGO FUEL · LAND NOW', out: 'ENGINES OUT', fence: 'RETURN TO THE SITE', ceiling: 'MAX ALTITUDE' };
 
 /** DOM overlay renderer (HUD, popups, banners, demo cards). Everything is derived from sim state. */
 export class UI {
@@ -116,6 +117,53 @@ export class UI {
     }
     this.updatePopups(game);
     this.updateBanner(game);
+  }
+
+  /**
+   * Free-flight HUD: the webcast bar fed from the flight, warnings in the status line, a coach line for the
+   * controls, and the flight's popups and banner. heading: camera heading; hidden: the result card is up.
+   */
+  updateFlight(f, heading, { hidden = false, ship = false } = {}) {
+    const e = this.el;
+    this.dip = 0;
+    this.set('hudHidden', e.hud, 'class', hidden ? 'hud hidden' : 'hud');
+    this.set('hudOpacity', e.hud, 'opacity', '1');
+    if (!hidden) {
+      if (this.safeDirty) this.measureSafe();
+      const zone = f.landingZone;
+      this.bar.updateFlight(f, heading, { compact: document.body.classList.contains('compact'), ship, ready: zone === 2 });
+      const status = zone === 2 ? 'LANDING WINDOW' : zone === 1 ? 'OVER THE MOUNT' : '';
+      this.set('status', e.status, 'text', status);
+      this.set('statusC', e.status, 'class', status ? 'status on' : 'status');
+      const warn = FLIGHT_WARN[f.warn] || '';
+      this.set('gust', e.gust, 'text', warn);
+      this.set('gustC', e.gust, 'class', warn ? (f.warn === 'bingo' || f.warn === 'out' ? 'gust on bad' : 'gust on') : 'gust');
+      const coach = this.flightCoach(f);
+      this.set('coach', e.coach, 'text', coach);
+      this.set('coachC', e.coach, 'class', coach ? 'coach on' : 'coach');
+    }
+    this.updatePopups(f);
+    this.updateBanner(f);
+  }
+
+  flightCoach(f) {
+    const touch = document.body.classList.contains('touch-ui');
+    if (f.phase === 'ready') return touch ? 'push the left stick up to lift off' : 'hold W to light the engines and lift off';
+    if (f.phase !== 'flying') return '';
+    if (!f.airborne) return touch ? 'keep pushing up' : 'keep holding W';
+    if (f.clock < 5) return touch ? 'left stick: climb and turn · right stick: fly' : 'W S climb · A D turn · arrows fly';
+    if (f.landingZone > 0 && f.agl > 3) return touch ? 'pull the left stick down to set it down' : 'hold S to set it down';
+    return '';
+  }
+
+  /** Drops every popup element, e.g. when switching between the catch game and free flight. */
+  clearPopups() {
+    for (const el of this.popupEls.values()) el.remove();
+    this.popupEls.clear();
+    this.cut.clear();
+    this.popupMax = 0;
+    this.bannerRef = null;
+    this.el.banner.style.opacity = '0';
   }
 
   /** Screen band between the HUD panels and the on-screen buttons; only used where they crowd the popups. */

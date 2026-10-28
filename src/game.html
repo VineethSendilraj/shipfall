@@ -22,6 +22,7 @@
           <circle class="mark m-catch" r="3.6" /><text class="l-catch">CATCH</text>
           <circle class="tl-now" r="4.6" cx="10" cy="66" />
         </svg>
+        <div class="nav" id="h-nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="nav-arrow" d="M12 2.5 18.5 20 12 16 5.5 20z" /><circle class="nav-dot" cx="12" cy="12" r="4.5" /></svg><b id="h-nav-d">0</b><span class="nav-u">M</span><span class="nav-l" id="h-nav-l">TO LAUNCH MOUNT</span></div>
         <div class="clock"><span class="tplus">T+</span><span id="h-clock">00:00:00</span></div>
         <div class="mscore" id="h-mscore">0</div>
         <div class="flight" id="h-flight"></div>
@@ -67,8 +68,10 @@
       </div>
       <div class="actions title-actions">
         <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
+        <button id="flight" class="btn" type="button">Free flight <span>F</span></button>
         <button class="btn open-board" type="button">Leaderboard</button>
       </div>
+      <p class="flight-note">Free flight: lift the full stack off the launch mount, fly it around the site and land it back.</p>
     </div>
   </section>
 
@@ -79,6 +82,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg>
         Play
       </button>
+      <button id="quick-flight" class="btn quick-flight" type="button">Free flight</button>
       <p class="hint">◀ ▶ steer · ▲ ▼ arms · <b>CATCH</b> on green</p>
       <p class="hint keys">or keys: ← → · ↑ ↓ · Space</p>
       <div class="quick-links">
@@ -108,6 +112,29 @@
           Post on X
         </a>
         <button class="btn open-board" type="button">Leaderboard</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="flight-over" class="overlay hidden">
+    <div class="card">
+      <p class="kicker" id="fo-kicker">free flight</p>
+      <h1 class="fo-title" id="fo-title">Landed</h1>
+      <p class="lede fo-sub" id="fo-sub"></p>
+      <dl class="fo-stats">
+        <div><dt>Time aloft</dt><dd id="fo-time">0:00</dd></div>
+        <div><dt>Max altitude</dt><dd id="fo-alt">0 m</dd></div>
+        <div><dt>Distance flown</dt><dd id="fo-dist">0 m</dd></div>
+        <div><dt id="fo-td-l">Touchdown</dt><dd id="fo-td">0 m/s</dd></div>
+        <div><dt>Fuel left</dt><dd id="fo-fuel">0%</dd></div>
+      </dl>
+      <div class="actions">
+        <button id="fo-again" class="btn primary" type="button">Fly again</button>
+        <button id="fo-home" class="btn" type="button">Home</button>
+        <a id="fo-share" class="btn share" href="https://x.com/intent/post" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>
+          Post on X
+        </a>
       </div>
     </div>
   </section>
@@ -145,6 +172,11 @@
       <button data-k="down" type="button" aria-label="Arms down">▼</button>
       <button data-k="close" type="button" class="catch" aria-label="Close arms">CATCH</button>
     </div>
+  </div>
+
+  <div id="sticks" class="sticks hidden" aria-label="Flight controls">
+    <div class="stick" data-stick="l"><span class="knob"></span><span class="stick-cap">climb · turn</span></div>
+    <div class="stick right" data-stick="r"><span class="knob"></span><span class="stick-cap">fly</span></div>
   </div>
 
   <div id="toast" class="toast" role="status"></div>

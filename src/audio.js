@@ -128,6 +128,19 @@ export class Sound {
       case 'gust':
         this.burst(1.0, 700, 0.18);
         break;
+      case 'liftoff':
+        this.burst(2.2, 520, 0.7);
+        this.tone(48, 1.6, { gain: 0.35, slide: 0.8 });
+        break;
+      case 'land':
+        [392, 523, 784].forEach((f, i) => this.tone(f, 0.55, { type: 'triangle', gain: 0.13, at: 0.1 + i * 0.09 }));
+        break;
+      case 'lowfuel':
+        [880, 880].forEach((f, i) => this.tone(f, 0.12, { type: 'square', gain: 0.05, at: i * 0.2 }));
+        break;
+      case 'enginesOut':
+        this.tone(330, 0.8, { type: 'sawtooth', gain: 0.06, slide: 0.4 });
+        break;
       default:
         break;
     }
