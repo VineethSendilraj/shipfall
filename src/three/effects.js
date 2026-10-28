@@ -20,7 +20,7 @@ const plumeFrag = /* glsl */ `
     return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
   void main() {
     float v = 1.0 - vUv.y;
-    float edge = pow(max(vFres, 1e-4), uPow);
+    float edge = pow(clamp(vFres, 1e-4, 1.0), uPow);
     float flick = 0.65 + 0.35 * n2(vec2(vUv.x * 10.0, v * 7.0 - uTime * 16.0));
     // Many engines merging into one column: fine vertical streaks that drift with the flow.
     float streak = 0.55 + 0.45 * n2(vec2(vUv.x * 46.0, v * 2.5 - uTime * 9.0));
