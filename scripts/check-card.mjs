@@ -1,4 +1,4 @@
-// Verifies the X player-card setup end to end: builds the site, serves dist/ locally (with the _headers
+// Verifies the share-card setup end to end: builds the site, serves dist/ locally (with the _headers
 // rules applied), and checks meta tags, the card image, HTML size, header configs and the JS budget.
 // Usage: npm run check:card   (honours VITE_SITE_URL / SITE_URL like the build does)
 import { spawnSync } from 'node:child_process';
@@ -13,7 +13,6 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FRAME_ANCESTORS = "frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com";
 const MAX_HTML = 2 * 1024 * 1024;
 const MAX_JS_GZIP = 2.5 * 1024 * 1024;
-const MIN_CARD_PX = 68_600;
 
 const results = [];
 const check = (ok, label, detail = '') => results.push({ ok: !!ok, label, detail });
@@ -63,11 +62,8 @@ try {
     check(!res.headers.has('x-frame-options'), `GET ${path}: no X-Frame-Options`);
     const m = metaTags(html);
     const expect = {
-      'twitter:card': 'player',
+      'twitter:card': 'summary_large_image',
       'twitter:title': CARD.title,
-      'twitter:player': `${site.url}${CARD.player}`,
-      'twitter:player:width': String(CARD.playerWidth),
-      'twitter:player:height': String(CARD.playerHeight),
       'twitter:image': `${site.url}${CARD.image}`,
       'og:title': CARD.title,
       'og:image': `${site.url}${CARD.image}`,
@@ -95,9 +91,8 @@ try {
   const buf = Buffer.from(await img.arrayBuffer());
   const dim = jpegSize(buf);
   check(img.status === 200 && img.headers.get('content-type') === 'image/jpeg', `GET ${CARD.image} is a JPEG (200)`, `status ${img.status}, ${img.headers.get('content-type')}`);
-  check(dim && dim.width >= 480 && dim.height >= 480, `${CARD.image} is at least 480x480`, dim ? `${dim.width}x${dim.height}` : 'unreadable');
-  check(dim && dim.width * dim.height >= MIN_CARD_PX, `${CARD.image} has at least 68,600 px`, dim ? `${(dim.width * dim.height).toLocaleString('en-US')} px` : '');
-  check(dim && dim.width === CARD.imageSize && dim.height === CARD.imageSize, `${CARD.image} matches og:image size ${CARD.imageSize}x${CARD.imageSize}`);
+  check(dim && dim.width >= 300 && dim.height >= 157, `${CARD.image} is at least 300x157 (X's large image card minimum)`, dim ? `${dim.width}x${dim.height}` : 'unreadable');
+  check(dim && dim.width === CARD.imageWidth && dim.height === CARD.imageHeight, `${CARD.image} matches og:image size ${CARD.imageWidth}x${CARD.imageHeight}`);
   check(buf.length < 5 * 1024 * 1024, `${CARD.image} under 5 MB`, `${(buf.length / 1024).toFixed(0)} KB`);
 } finally {
   server.close();
