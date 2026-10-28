@@ -89,11 +89,6 @@ body.demo .coach { display: none; }
 .kicker { margin: 0 0 8px; font-size: 12px; letter-spacing: 0.16em; font-weight: 600; text-transform: uppercase; color: var(--muted); }
 .card h1 { margin: 0; font-size: clamp(36px, 7vw, 52px); line-height: 1; letter-spacing: -0.01em; font-weight: 600; color: var(--ink); }
 .lede { color: #c3cde3; line-height: 1.55; font-size: 15.5px; margin: 14px 0 16px; }
-.rules { font-size: 13px; color: var(--muted); border-left: 2px solid var(--line); padding: 2px 0 2px 12px; margin-bottom: 16px; }
-.rules b { color: var(--ink); display: block; font-weight: 600; margin-bottom: 2px; }
-.controls { display: grid; gap: 8px; font-size: 14px; color: #c3cde3; margin-bottom: 20px; }
-.controls > div { display: flex; align-items: center; gap: 6px; }
-.controls span { margin-left: 8px; }
 kbd { font-family: var(--mono); font-size: 12px; min-width: 26px; text-align: center; padding: 3px 7px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4); }
 kbd.wide { min-width: 64px; }
 .btn {
@@ -107,8 +102,6 @@ kbd.wide { min-width: 64px; }
 .btn.primary:hover { background: #ffffff; }
 .btn.primary span { opacity: 0.6; margin-left: 6px; }
 .btn.ghost { background: transparent; }
-#play { flex: 2; padding: 14px; font-size: 16px; }
-.title-actions { margin-top: 0; }
 .board { margin-top: 20px; }
 .board h2 { font-size: 12px; font-family: var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 8px; }
 .board ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -182,7 +175,6 @@ body.demo #corner, body.demo #touch, body.demo #title-screen, body.demo #gameove
 @media (max-width: 760px) and (orientation: portrait) {
   .touch { bottom: 26px; }
 }
-body.embed #title-screen, body:not(.embed) #quick-start, body.demo #quick-start { display: none !important; }
 
 /* Webcast-style instrument bar: bottom of the screen on desktop, a strip along the top in small embeds. */
 .hud-bar {
@@ -236,20 +228,7 @@ body.embed #title-screen, body:not(.embed) #quick-start, body.demo #quick-start 
 body:not(.compact).playing .disclaimer, body:not(.compact).demo .disclaimer { top: calc(16px * var(--ui)); bottom: auto; left: calc(20px * var(--ui)); transform: none; }
 body.playing:not(.compact):not(.touch-ui) #corner { bottom: calc(144px * var(--ui)); }
 
-/* ------------------------------------------------------- embed: quick start */
-.overlay.quick { background: linear-gradient(180deg, rgba(2, 4, 10, 0.05) 30%, rgba(2, 4, 10, 0.6)); align-content: end; padding-bottom: 12%; }
-.quick-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; max-width: 420px; }
-.quick-card .kicker { margin: 0; font-size: 11px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
-.quick-card h1 { margin: 0 0 6px; font-size: clamp(34px, 9vw, 52px); line-height: 0.95; letter-spacing: -0.01em; font-weight: 600; color: var(--ink);
-  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7); }
-.play-big { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 200px; padding: 15px 30px; font-size: 19px; font-weight: 600; border-radius: 6px; }
-.play-big:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-.quick-card .hint { margin: 2px 0 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; color: #d3ddf3; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95); }
-.quick-card .hint b { color: var(--green); font-weight: 700; }
-.quick-card .hint.keys { color: var(--muted); margin-top: -4px; }
-@media (pointer: coarse) { .quick-card .hint.keys { display: none; } }
 .ext { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.08em; color: var(--cyan); text-decoration: none; padding: 6px 10px; border-radius: 8px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
-.quick-links { display: flex; gap: 2px; }
 button.ext { background: none; border: 0; cursor: pointer; }
 .ext:hover, .ext:focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
 a.btn { text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; }
@@ -283,7 +262,6 @@ body.compact.touch-ui #corner { top: 104px; right: 10px; }
 body.compact #corner { right: 10px; bottom: 10px; }
 body.compact .icon-btn { width: 36px; height: 36px; }
 body.compact .overlay { padding: 12px; }
-body.compact .overlay.quick { padding-bottom: 28px; }
 body.compact #gameover .card, body.compact #leaderboard .card { padding: 16px 18px 14px; border-radius: 16px; max-height: calc(100% - 16px); }
 body.compact #gameover h1 { font-size: 38px; }
 body.compact #gameover .lede { margin: 6px 0 10px; font-size: 13px; }
@@ -301,7 +279,6 @@ body.compact .form-note.placed { margin: 0; font-size: 15px; }
 
 /* Tall viewports: phone apps open the embed in a sheet that can cover the bottom ~30%. */
 body.tall .touch { bottom: calc(30% + 12px); }
-body.tall .overlay.quick { align-content: center; padding-bottom: 30%; }
 body.tall #gameover, body.tall #leaderboard { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 body.tall #gameover .card, body.tall #leaderboard .card { max-height: 100%; }
 body.tall #corner { bottom: auto; top: 104px; }
@@ -326,7 +303,91 @@ body.paused.touch-ui #corner, body.paused.compact #corner { top: auto; bottom: 1
 .map-pick button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
 .map-pick button[aria-pressed='true'] { color: var(--ink); background: rgba(255, 255, 255, 0.16); }
 .map-pick button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
-.card .map-pick { margin: 0 0 12px; }
-.quick-card .map-pick { width: 200px; margin: -2px 0 2px; }
-.quick-card .map-pick button { font-size: 12.5px; padding: 6px 10px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
-body.compact .quick-card .map-pick button { padding: 5px 10px; }
+
+/* ------------------------------------------------------- home (src/home.js) */
+/* --hero-y: where the hero vehicle's middle sits, as HERO_LAYOUT in src/three/view.js frames it. */
+.overlay.home { --hero-y: 43%; display: block; padding: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 4, 7, 0.55), rgba(3, 4, 7, 0) 24%, rgba(3, 4, 7, 0) 55%, rgba(3, 4, 7, 0.82)); }
+.home > * { pointer-events: auto; }
+.home-top { position: absolute; top: 26px; left: 34px; right: 34px; display: flex; align-items: center; justify-content: space-between; gap: 20px; pointer-events: none; }
+.home-top > * { pointer-events: auto; }
+.wordmark { margin: 0; font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -0.005em; color: var(--ink); text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55); }
+.modes { display: flex; gap: 18px; }
+.modes button { font: 600 12.5px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); background: none; border: 0; border-bottom: 1px solid transparent; padding: 6px 0; cursor: pointer; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
+.modes button:hover { color: var(--ink); }
+.modes button[aria-pressed='true'] { color: var(--ink); border-bottom-color: var(--ink); }
+.modes button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.pick { position: absolute; inset: 0; pointer-events: none; }
+.pick-arrow { position: absolute; top: var(--hero-y); left: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; display: grid; place-items: center; pointer-events: auto; cursor: pointer;
+  color: var(--ink); border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(10, 11, 13, 0.42); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background 0.15s, border-color 0.15s, transform 0.08s; }
+.pick-arrow[data-step='-1'] { transform: translateX(-230px); }
+.pick-arrow[data-step='1'] { transform: translateX(230px); }
+.pick-arrow:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.45); }
+.pick-arrow[data-step='-1']:active { transform: translateX(-231px); }
+.pick-arrow[data-step='1']:active { transform: translateX(231px); }
+.pick-arrow:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pick-label { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%); width: max-content; max-width: 100%; padding: 10px 48px; display: flex; flex-direction: column; align-items: center; text-align: center; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75);
+  background: radial-gradient(closest-side, rgba(3, 4, 7, 0.5), rgba(3, 4, 7, 0)); }
+.pick-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: #c9ced6; }
+.pick-name { margin-top: 2px; font-size: 34px; line-height: 1.05; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink); }
+.pick-note { margin-top: 4px; font-size: 14px; letter-spacing: 0.03em; color: #c9ced6; }
+.pick-dots { display: flex; gap: 6px; margin-top: 10px; }
+.pick-dots i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.55); }
+.pick-dots i.on { background: var(--ink); border-color: var(--ink); }
+.pick.fixed .pick-arrow, .pick.fixed .pick-kicker, .pick.fixed .pick-dots { display: none; }
+
+.home-dock { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px;
+  border: 1px solid var(--line); background: rgba(10, 11, 13, 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.home-dock .map-pick { border-color: rgba(255, 255, 255, 0.12); }
+.btn.play { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 190px; padding: 13px 26px; font-size: 18px; }
+.btn.play kbd { font-size: 11px; min-width: 0; padding: 1px 6px; color: rgba(11, 12, 14, 0.6); border-color: rgba(11, 12, 14, 0.25); background: none; box-shadow: none; }
+.btn.play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.home-links { display: flex; }
+.home-links .ext { white-space: nowrap; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); padding: 10px 12px; text-shadow: none; }
+.home-links .ext:hover, .home-links .ext:focus-visible { color: var(--ink); }
+.home-links .full { display: none; }
+body.embed .home-links .full { display: inline; }
+@media (pointer: coarse) { .btn.play kbd { display: none; } }
+
+.how { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: min(440px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto;
+  padding: 22px 24px 20px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
+.home.helping .pick, .home.helping .home-dock { visibility: hidden; }
+.how .lede { margin: 0 0 16px; font-size: 15px; }
+.how .controls { display: grid; gap: 9px; font-size: 14px; color: #c3cde3; }
+.how .controls > div { display: flex; align-items: center; gap: 6px; }
+.how .controls span:last-child { margin-left: 8px; }
+.how .taps { display: none; font-size: 12px; color: var(--ink); letter-spacing: 0.1em; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.how .taps.catch { color: var(--green); border-color: rgba(95, 211, 141, 0.6); }
+.how .rules { margin: 16px 0 18px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.how .close-how { width: 100%; }
+body.embed .how .taps { display: inline; }
+@media (pointer: coarse) { .how kbd { display: none; } .how .taps { display: inline; } }
+
+/* Small embeds and phones: the title on top, then the vehicle, then a stacked dock with a big play button. */
+body.compact .overlay.home { --hero-y: 36%; }
+body.compact .home-top { top: 14px; left: 12px; right: 12px; flex-direction: column; gap: 6px; }
+body.compact .wordmark { font-size: 27px; }
+body.compact .modes { gap: 14px; }
+body.compact .modes button { font-size: 11px; padding: 4px 0; }
+body.compact .pick-arrow { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+body.compact .pick-arrow[data-step='-1'] { transform: translateX(min(-120px, -26vw)); }
+body.compact .pick-arrow[data-step='1'] { transform: translateX(max(120px, 26vw)); }
+body.compact .pick-label { bottom: 146px; }
+body.compact:not(.tall) .pick-note { display: none; }
+body.compact .pick-kicker { font-size: 9.5px; }
+body.compact .pick-name { font-size: 24px; }
+body.compact .pick-note { font-size: 12px; }
+body.compact .pick-dots { margin-top: 7px; }
+body.compact .home-dock { bottom: 24px; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+body.compact .btn.play { order: -1; min-width: 210px; padding: 13px 28px; font-size: 19px; }
+body.compact .home-dock .map-pick { width: 210px; padding: 2px; }
+body.compact .home-dock .map-pick button { font-size: 12.5px; padding: 5px 10px; }
+body.compact .home-links .ext { font-size: 12px; padding: 4px 8px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
+body.compact .how { padding: 16px 18px 14px; }
+body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
+body.compact .how .rules { margin: 12px 0 14px; font-size: 12px; }
+body.tall .overlay.home { --hero-y: 26%; }
+body.tall .home-dock { bottom: calc(30% + 8px); }
+body.tall .pick-label { bottom: calc(30% + 134px); }
+body.tall .how { top: 35%; }

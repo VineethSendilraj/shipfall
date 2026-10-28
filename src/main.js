@@ -7,6 +7,7 @@ import { UI } from './ui.js';
 import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows, clipRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
 import { initialMap, bindMapPicker } from './maps.js';
+import { bindHome } from './home.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
@@ -145,7 +146,7 @@ function runGame() {
   const held = { left: false, right: false, up: false, down: false };
   let closeLatch = false;
 
-  const titleEl = EMBED ? $('quick-start') : $('title-screen');
+  const titleEl = $('title-screen');
   const overEl = $('gameover');
   const touchEl = $('touch');
   const soundBtn = $('sound');
@@ -232,7 +233,7 @@ function runGame() {
   function startGame() {
     setPaused(false);
     mapPicker.apply();
-    game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0 });
+    game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0, target: home.target });
     game.start();
     view.director.reset();
     ui.resetScore();
@@ -258,7 +259,12 @@ function runGame() {
     touchEl.classList.add('hidden');
     document.body.classList.remove('touch-ui', 'playing');
     titleEl.classList.remove('hidden');
+    home.show();
   }
+
+  // Home screen modes, in picker order. `targets`: the player picks what to catch.
+  const MODES = [{ id: 'catch', label: 'Catch', blurb: 'Bring it home in the tower arms', targets: true, start: startGame }];
+  const home = bindHome({ root: titleEl, modes: MODES, view });
 
   function showGameOver() {
     state = 'over';
@@ -346,8 +352,7 @@ function runGame() {
   window.addEventListener('pointerdown', unlockAudio, { capture: true });
   window.addEventListener('keydown', unlockAudio, { capture: true });
 
-  $('play').addEventListener('click', startGame);
-  $('quick-play').addEventListener('click', startGame);
+  $('play').addEventListener('click', () => home.start());
   $('again').addEventListener('click', showTitle);
   for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
   $('board-back').addEventListener('click', closeBoard);
@@ -366,6 +371,7 @@ function runGame() {
   const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
   window.addEventListener('keydown', (ev) => {
     if (ev.target instanceof HTMLInputElement) return;
+    if (state === 'title' && ev.code === 'Escape' && home.closeHelp()) return;
     if (!boardEl.classList.contains('hidden')) {
       if (ev.code === 'Escape') closeBoard();
       return;
@@ -376,6 +382,7 @@ function runGame() {
       return;
     }
     const k = KEYMAP[ev.code];
+    if (state === 'title' && !ev.repeat && (k === 'left' || k === 'right')) home.cycle(k === 'left' ? -1 : 1);
     if (k) {
       held[k] = true;
       ev.preventDefault();
@@ -386,12 +393,12 @@ function runGame() {
     if (ev.code === 'Space' && !onMenuButton) {
       ev.preventDefault();
       if (state === 'playing' && !ev.repeat) closeLatch = true;
-      else if (state === 'title' && !ev.repeat) startGame();
+      else if (state === 'title' && !ev.repeat) home.start();
     }
     if (ev.code === 'Enter' && !ev.repeat && !onMenuButton) {
       if (state === 'title') {
         ev.preventDefault();
-        startGame();
+        home.start();
       } else if (state === 'over') showTitle();
     }
     if (ev.code === 'KeyM') {

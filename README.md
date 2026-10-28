@@ -34,9 +34,13 @@ Otherwise it's a miss: the arms clang off the booster, or it slides past and hit
 
 Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (6.5 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises, and from then on each round brings a booster to tower A and a ship to tower B (+500 for catching both). The ship uses the same catch tolerances; it is 50 m tall against the booster's 80 m, so the arms clang on it over a shorter span. Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
 
+### Home screen
+
+The home screen holds the picked vehicle in the tower's arms. **‹ ›** (or ← →, A D, a swipe) picks what to catch: **Booster**, **Ship**, or **Random**, which draws booster or ship each round from the game's seed (its own stream, so a seed flies the same rounds whatever the pick). Double-catch rounds always bring a booster to tower A and a ship to tower B. Game modes appear as tabs once there is more than one: each is an entry in `MODES` in `src/main.js`. The mode, vehicle and map picks are remembered on the device; rules and controls sit behind **How to play**.
+
 ### Maps
 
-The title card (and the compact page's start card) has a **Starbase | Mars** switch. Starbase is the night launch site; Mars is a dusk site on a red regolith plain with mesas on the horizon, a butterscotch sky with the blue Martian sunset glow, Phobos and Deimos, and a small base (habitat domes, solar arrays, landing pads, cargo, antenna masts) around the same towers and launch mount. A map changes only the scenery, lighting and effect colours: physics, rules and scoring are identical. The choice is remembered on the device, `?map=mars` selects it from a link, and switching rebuilds the world in place (the old one's GPU resources are freed). `?demo=1` and `share.jpg` use Starbase unless `?map=mars` is given.
+The home screen has a **Starbase | Mars** switch. Starbase is the night launch site; Mars is a dusk site on a red regolith plain with mesas on the horizon, a butterscotch sky with the blue Martian sunset glow, Phobos and Deimos, and a small base (habitat domes, solar arrays, landing pads, cargo, antenna masts) around the same towers and launch mount. A map changes only the scenery, lighting and effect colours: physics, rules and scoring are identical. The choice is remembered on the device, `?map=mars` selects it from a link, and switching rebuilds the world in place (the old one's GPU resources are freed). `?demo=1` and `share.jpg` use Starbase unless `?map=mars` is given.
 
 ## Run locally
 
@@ -144,7 +148,8 @@ styles.css                 HUD, overlays, embed + compact + tall layouts
 src/sim.js                 fixed-step physics, catch rules, scoring, rounds (DOM-free)
 src/demo.js                demo config + runner; src/demo-script.js frame-keyed inputs
 src/three/                 3D view: booster, ship, tower, world/sky (mars.js: the Mars map), effects and crash explosion, camera director, post-processing, model loader
-src/maps.js                map list, saved choice and the title-card map picker
+src/maps.js                map list, saved choice and the home screen's map picker
+src/home.js                home screen: game mode tabs, what-to-catch picker, How to play
 blender/                   Blender script that builds public/models/*.glb, and the build wrapper
 src/quality.js             automatic render-quality fallback
 src/ui.js                  DOM HUD, popups, banners, demo cards

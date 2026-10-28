@@ -59,46 +59,49 @@
     </button>
   </div>
 
-  <section id="title-screen" class="overlay">
-    <div class="card">
-      <h1>catch the booster</h1>
-      <p class="lede">A booster is coming home. Steer it with cold-gas thrusters, bring the tower's chopstick arms to its catch pins, and close them gently.</p>
-      <div class="rules">
-        <div><b>Catch window</b><span>pins within ±3 m of the arms · lateral offset under 3.75 m · descent under 3 m/s</span></div>
+  <section id="title-screen" class="overlay home">
+    <header class="home-top">
+      <h1 class="wordmark">catch the booster</h1>
+      <nav class="modes" aria-label="Game mode"></nav>
+    </header>
+    <div class="pick" role="group" aria-label="What to catch">
+      <button class="pick-arrow" type="button" data-step="-1" aria-label="Previous vehicle">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14.5 5.5L8 12l6.5 6.5"/></svg>
+      </button>
+      <div class="pick-label" aria-live="polite">
+        <span class="pick-kicker">catch</span>
+        <b class="pick-name">Booster</b>
+        <span class="pick-note"></span>
+        <span class="pick-dots" aria-hidden="true"></span>
       </div>
-      <div class="controls">
-        <div><kbd>←</kbd><kbd>→</kbd> <kbd>A</kbd><kbd>D</kbd><span>lateral thrusters (use landing fuel)</span></div>
-        <div><kbd>↑</kbd><kbd>↓</kbd> <kbd>W</kbd><kbd>S</kbd><span>move the catch arms</span></div>
-        <div><kbd class="wide">Space</kbd><span>close the arms</span></div>
-      </div>
+      <button class="pick-arrow" type="button" data-step="1" aria-label="Next vehicle">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
+      </button>
+    </div>
+    <div class="home-dock">
       <div class="map-pick" role="group" aria-label="Launch site">
         <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
         <button type="button" data-map="mars" aria-pressed="false">Mars</button>
       </div>
-      <div class="actions title-actions">
-        <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
-        <button class="btn open-board" type="button">Leaderboard</button>
+      <button id="play" class="btn primary play" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg>
+        Play <kbd>↵</kbd>
+      </button>
+      <div class="home-links">
+        <button class="ext open-board" type="button">Leaderboard</button>
+        <button class="ext open-how" type="button" aria-expanded="false">How to play</button>
+        <a class="ext full" href="/" target="_blank" rel="noopener">Full screen ↗</a>
       </div>
     </div>
-  </section>
-
-  <section id="quick-start" class="overlay quick">
-    <div class="quick-card">
-      <h1>catch the booster</h1>
-      <div class="map-pick" role="group" aria-label="Launch site">
-        <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
-        <button type="button" data-map="mars" aria-pressed="false">Mars</button>
+    <div class="how hidden" role="dialog" aria-label="How to play">
+      <p class="lede">Steer the falling vehicle over the tower with its cold-gas thrusters, bring the arms to its catch pins, and close them gently.</p>
+      <div class="controls">
+        <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>side thrusters (use landing fuel)</span></div>
+        <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>move the catch arms</span></div>
+        <div><kbd class="wide">Space</kbd><span class="taps catch">CATCH</span><span>close the arms</span></div>
       </div>
-      <button id="quick-play" class="btn primary play-big" type="button">
-        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg>
-        Play
-      </button>
-      <p class="hint">◀ ▶ steer (uses fuel) · ▲ ▼ arms · <b>CATCH</b> on green</p>
-      <p class="hint keys">or keys: ← → · ↑ ↓ · Space</p>
-      <div class="quick-links">
-        <button class="ext open-board" type="button">leaderboard</button>
-        <a class="ext" href="/" target="_blank" rel="noopener">open full screen ↗</a>
-      </div>
+      <p class="rules">Catch window: pins within ±3 m of the arms, less than 3.75 m off center, descending under 3 m/s.</p>
+      <button class="btn close-how" type="button">Got it</button>
     </div>
   </section>
 
