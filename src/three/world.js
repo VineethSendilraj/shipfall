@@ -279,8 +279,10 @@ const beamMat = new THREE.ShaderMaterial({
   fragmentShader: /* glsl */ `
     uniform vec3 uColor; varying float vV; varying float vEdge; varying float vDepth;
     void main() {
+      // MSAA shades edge pixels outside thin triangles, extrapolating varyings far out of range.
+      float v = clamp(vV, 0.0, 1.0), e = clamp(vEdge, 0.0, 1.0);
       // Fade out close to the camera so standing inside a beam doesn't wash the frame.
-      float a = vV * vV * vEdge * vEdge * 0.04 * smoothstep(40.0, 160.0, vDepth);
+      float a = v * v * e * e * 0.04 * smoothstep(40.0, 160.0, vDepth);
       gl_FragColor = vec4(uColor * a, 0.0);
     }`,
   transparent: true,
@@ -420,7 +422,7 @@ export function buildWorld(scene, renderer, towerMats) {
       fragmentShader: /* glsl */ `
         varying float vY;
         void main() {
-          float a = exp(-vY / 16.0) * 0.32;
+          float a = exp(-clamp(vY, 0.0, 90.0) / 16.0) * 0.32;
           gl_FragColor = vec4(vec3(0.42, 0.29, 0.19) * a, a * 0.55);
         }`,
       transparent: true,

@@ -4,7 +4,7 @@ import { loadModels } from './three/models.js';
 import { createDemoRunner, DEMO } from './demo.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
-import { loadBoard, qualifies, addEntry, renderBoard } from './leaderboard.js';
+import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
 
 const params = new URLSearchParams(location.search);
@@ -104,8 +104,16 @@ async function runDemo() {
     window.__demoReady = true;
     return;
   }
-  const tick = () => {
-    advance();
+  // Fixed step, so the showcase plays at the same speed at any refresh rate.
+  let last = performance.now();
+  let acc = 0;
+  const tick = (now) => {
+    acc += Math.min(0.1, (now - last) / 1000);
+    last = now;
+    for (let n = 0; acc >= DT && n < 6; n++) {
+      advance();
+      acc -= DT;
+    }
     draw();
     if (!runner.done) requestAnimationFrame(tick);
   };
@@ -139,8 +147,25 @@ function runGame() {
   const soundBtn = $('sound');
   const shareLink = $('share');
   const form = $('initials-form');
-  const initialsInput = $('initials');
-  renderBoard($('board-title'));
+  const handleInput = $('initials');
+  const formNote = $('initials-note');
+
+  // Small embeds show fewer rows so the game over actions stay on screen.
+  const overRows = () => (document.body.classList.contains('compact') ? 6 : 10);
+
+  /** Shows the worldwide board (with the player's place if they're on it), otherwise this device's best runs. */
+  async function showBoard(ol, heading, size, data = null) {
+    if (!data) {
+      renderBoard(ol, localRows());
+      heading.textContent = 'Your best catches';
+      data = await fetchGlobal(savedHandle());
+    }
+    if (data) {
+      renderBoard(ol, boardRows(data, size));
+      heading.textContent = data.total ? `Worldwide · ${data.total.toLocaleString('en-US')} player${data.total === 1 ? '' : 's'}` : 'Worldwide';
+    }
+  }
+  showBoard($('board-title'), $('board-title-h'), 5);
 
   const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   // The embed always shows on-screen buttons: they are the mouse controls inside an X post.
@@ -171,7 +196,7 @@ function runGame() {
     state = 'title';
     game = new Game({ width: WORLD_W, seed: 1 });
     view.director.reset();
-    renderBoard($('board-title'));
+    showBoard($('board-title'), $('board-title-h'), 5);
     overEl.classList.add('hidden');
     touchEl.classList.add('hidden');
     document.body.classList.remove('touch-ui', 'playing');
@@ -188,27 +213,59 @@ function runGame() {
     if (game.score > best && s.catches > 0) $('go-kicker').textContent = 'new personal best';
     $('go-score').textContent = game.score.toLocaleString('en-US');
     $('go-stats').textContent = `${game.round} round${game.round === 1 ? '' : 's'} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${s.perfects} perfect · ${s.doubles} double`;
+    setShareText();
+    const canSubmit = s.catches > 0;
+    form.classList.toggle('hidden', !canSubmit);
+    handleInput.value = savedHandle();
+    formNote.textContent = '';
+    formNote.classList.remove('placed');
+    form.querySelector('.initials-row').classList.remove('hidden');
+    form.querySelector('label').classList.remove('hidden');
+    showBoard($('board-over'), $('board-over-h'), overRows());
+    overEl.classList.remove('hidden');
+    // Focusing the input on a phone pops the keyboard over the card, so only desktop gets autofocus.
+    if (canSubmit && !isTouch) setTimeout(() => handleInput.focus(), 50);
+    else if (!canSubmit) $('again').focus({ preventScroll: true });
+  }
+
+  function setShareText(rank = 0) {
+    const s = game.stats;
     const pts = game.score.toLocaleString('en-US');
     const text =
       s.catches === 0
         ? 'I tried to catch a falling rocket booster with a launch tower and it did not go well. Your turn:'
-        : `I caught ${s.catches} rocket booster${s.catches === 1 ? '' : 's'} with a launch tower${s.perfects ? ` (${s.perfects} perfect)` : ''} for ${pts} pts. Beat that:`;
+        : `I caught ${s.catches} rocket booster${s.catches === 1 ? '' : 's'} with a launch tower${s.perfects ? ` (${s.perfects} perfect)` : ''} for ${pts} pts${rank ? `, #${rank} worldwide` : ''}. Beat that:`;
     shareLink.href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
-    const q = qualifies(game.score);
-    form.classList.toggle('hidden', !q);
-    renderBoard($('board-over'), loadBoard());
-    overEl.classList.remove('hidden');
-    // Focusing the input on a phone pops the keyboard over the card, so only desktop gets autofocus.
-    if (q && !isTouch) setTimeout(() => initialsInput.focus(), 50);
-    else if (!q) $('again').focus({ preventScroll: true });
   }
 
-  form.addEventListener('submit', (ev) => {
+  form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const { list, index } = addEntry(initialsInput.value, game.score, game.round);
-    renderBoard($('board-over'), list, index);
-    form.classList.add('hidden');
-    initialsInput.blur();
+    const handle = normalizeHandle(handleInput.value);
+    if (!handle) {
+      formNote.textContent = 'X handles are 1 to 15 letters, numbers or _';
+      return;
+    }
+    const s = game.stats;
+    formNote.textContent = 'Submitting…';
+    const res = await submitGlobal({ handle, score: game.score, catches: s.catches, perfects: s.perfects, rounds: game.round });
+    const { list, index } = addEntry(handle, game.score, game.round);
+    if (res?.rank) {
+      await showBoard($('board-over'), $('board-over-h'), overRows(), res);
+      const place = `#${res.rank.toLocaleString('en-US')} of ${res.total.toLocaleString('en-US')}`;
+      formNote.textContent = res.best > game.score ? `Your best is still ${res.best.toLocaleString('en-US')} (${place})` : `You're ${place}`;
+      formNote.classList.add('placed');
+      setShareText(res.best > game.score ? 0 : res.rank);
+    } else if (res?.error) {
+      formNote.textContent = res.error;
+      return;
+    } else {
+      renderBoard($('board-over'), localRows(list, index));
+      $('board-over-h').textContent = 'Your best catches';
+      formNote.textContent = 'Saved on this device';
+    }
+    form.querySelector('.initials-row').classList.add('hidden');
+    form.querySelector('label').classList.add('hidden');
+    handleInput.blur();
     $('again').focus({ preventScroll: true });
   });
 

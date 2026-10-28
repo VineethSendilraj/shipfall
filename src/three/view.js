@@ -150,7 +150,7 @@ export class View {
     this.world.sky.visible = !q.bakedSky;
     this.scene.background = q.bakedSky ? this.skyCube.texture : null;
     this.bloom.enabled = q.bloom > 0;
-    this.fxaa.enabled = q.msaa === 0;
+    this.aa.enabled = q.msaa === 0;
     this.bloomScale = q.bloom || 1;
     for (const rt of [this.composer.renderTarget1, this.composer.renderTarget2]) {
       if (rt.samples !== q.msaa) {
