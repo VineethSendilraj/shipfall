@@ -38,7 +38,7 @@ const FILL_CD = 800;
 
 /**
  * Focus presets in chip and key (1-9) order. Positions are relative to the foot of the stack unless `world`. A `wide`
- * subject keeps its whole width on narrow screens.
+ * subject keeps its whole width on narrow screens. `labels` names the chip differently on a map.
  */
 const PRESETS = [
   { id: 'stack', label: 'Stack', target: [0, 76, 0], camera: [62, 10, 200], fov: 44 },
@@ -50,7 +50,7 @@ const PRESETS = [
   { id: 'flaps', label: 'Flaps', target: [0, SHIP_PINS - 25, 0], camera: [9, SHIP_PINS - 21, 30], fov: 44, wide: true },
   { id: 'chopsticks', label: 'Chopsticks', target: [10, SHIP_PINS - 1, 0], camera: [-6, SHIP_PINS + 8, 40], fov: 46 },
   { id: 'tower', label: 'Tower top', target: [TOWER_DX, 148, 0], camera: [TOWER_DX + 34, 160, 30], fov: 42 },
-  { id: 'farm', label: 'Tank farm', world: true, target: [-170, 14, -268], camera: [-122, 30, -190], fov: 40 },
+  { id: 'farm', label: 'Tank farm', labels: { mars: 'Habitat' }, world: true, target: [-170, 14, -268], camera: [-122, 30, -190], fov: 40 },
 ];
 
 // The stack's outline, measured from its models in meters from the foot. The hull is upright cylinders
@@ -208,6 +208,7 @@ export class Explore {
     // The glide starts from the title camera, which hasn't been placed yet when the page opens on ?explore=1.
     this.view.director.apply(this.view.camera, this.game);
     this.controls.target.copy(this.view.director.tgt);
+    for (const [i, p] of PRESETS.entries()) this.chips[i].lastChild.textContent = p.labels?.[this.view.world.map] ?? p.label;
     $('explore').classList.remove('hidden');
     document.body.classList.add('exploring');
     const start = PRESETS.find((p) => p.id === focus);
