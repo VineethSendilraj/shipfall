@@ -9,7 +9,7 @@ export const PLACEHOLDER_SITE_URL = 'https://catch-the-booster.example';
 export const CARD = {
   title: 'Catch the Booster',
   description: "Line up a falling rocket booster with the tower's arms and close them gently. Not affiliated with SpaceX.",
-  imageAlt: "A stainless rocket booster held in a launch tower's catch arms at night",
+  imageAlt: "A stainless rocket booster on its landing burn beside a launch tower's open catch arms",
   site: '@VineethSendil',
   // X shows this image in place of the frame until the game loads, so it has the frame's square shape.
   playerImage: '/player.jpg',
