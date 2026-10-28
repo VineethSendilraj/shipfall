@@ -20,14 +20,12 @@ const plumeFrag = /* glsl */ `
     return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
   void main() {
     float v = 1.0 - vUv.y;
-    float edge = pow(clamp(vFres, 1e-4, 1.0), uPow);
+    float edge = pow(max(vFres, 1e-4), uPow);
     float flick = 0.65 + 0.35 * n2(vec2(vUv.x * 10.0, v * 7.0 - uTime * 16.0));
-    // Many engines merging into one column: fine vertical streaks that drift with the flow.
-    float streak = 0.55 + 0.45 * n2(vec2(vUv.x * 46.0, v * 2.5 - uTime * 9.0));
-    float dia = 1.0 - uDiamonds + uDiamonds * pow(0.5 + 0.5 * cos(v * 38.0 - uTime * 1.5), 3.0) * 1.6;
+    float dia = 1.0 - uDiamonds + uDiamonds * (0.55 + 0.45 * cos(v * 34.0 - uTime * 2.0));
     float fade = smoothstep(1.0, 0.18, v) * smoothstep(0.0, 0.03, v);
     vec3 col = mix(uColA, uColB, smoothstep(0.0, 0.75, v));
-    float a = edge * fade * flick * streak * dia * uAmp;
+    float a = edge * fade * flick * dia * uAmp;
     gl_FragColor = vec4(col * a, 0.0);
   }`;
 
@@ -61,9 +59,9 @@ function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
 export function createPlume() {
   const group = new THREE.Group();
   group.position.y = ENGINE_Y;
-  const outer = plumeLayer(5.2, 7.5, [0.5, 0.2, 0.07], [0.22, 0.06, 0.015], { pow: 1.2 });
-  const mid = plumeLayer(4.1, 2.6, [1.5, 0.9, 0.42], [0.85, 0.3, 0.07], { diamonds: 0.45, pow: 1.5 });
-  const core = plumeLayer(2.9, 0.5, [2.0, 2.2, 2.9], [1.6, 0.85, 0.32], { diamonds: 0.8, pow: 2.2 });
+  const outer = plumeLayer(5.2, 7.5, [0.7, 0.26, 0.08], [0.3, 0.07, 0.015], { pow: 1.2 });
+  const mid = plumeLayer(4.1, 2.6, [2.2, 1.25, 0.5], [1.1, 0.36, 0.08], { diamonds: 0.35, pow: 1.5 });
+  const core = plumeLayer(2.9, 0.5, [4.2, 3.9, 3.5], [2.2, 1.1, 0.35], { diamonds: 0.6, pow: 2.2 });
   group.add(outer, mid, core);
   const layers = [
     { mesh: outer, len: 1.25, amp: 0.55 },

@@ -38,30 +38,16 @@ export function addEntry(handle, score, round) {
   return { list, index: list.indexOf(entry) };
 }
 
-/** Worldwide board ({ entries, total, me, around }), or null when the backend isn't reachable (local dev, not configured). */
-export async function fetchGlobal(handle = '') {
+/** Worldwide top 10, or null when the leaderboard backend isn't reachable (local dev, not configured). */
+export async function fetchGlobal() {
   try {
-    const q = normalizeHandle(handle) ? `?handle=${encodeURIComponent(handle)}` : '';
-    const res = await fetch(`${API}${q}`, { headers: { Accept: 'application/json' } });
+    const res = await fetch(API, { headers: { Accept: 'application/json' } });
     if (!res.ok) return null;
     const data = await res.json();
-    return Array.isArray(data.entries) ? data : null;
+    return Array.isArray(data.entries) ? data.entries : null;
   } catch {
     return null;
   }
-}
-
-/** Rows to show: the top `size`, or when the player ranks below that, the top few, a gap, and their neighborhood. */
-export function boardRows({ entries = [], me = null, around = [] }, size) {
-  const mark = (e) => ({ ...e, me: !!me && e.rank === me.rank });
-  if (!me || me.rank <= size) return entries.slice(0, size).map(mark);
-  const head = entries.slice(0, Math.max(2, size - 4)).filter((e) => e.rank < around[0].rank - 1);
-  return [...head.map(mark), { gap: true }, ...around.map(mark)];
-}
-
-/** The on-device board as rows, optionally marking one entry as the player's. */
-export function localRows(list = loadBoard(), mine = -1) {
-  return list.map((e, i) => ({ ...e, rank: i + 1, me: i === mine }));
 }
 
 /** Submits a run. Resolves to { rank, best, entries } on success, { error } on a rejected run, or null if offline. */
@@ -77,28 +63,19 @@ export async function submitGlobal(run) {
   }
 }
 
-/** Renders board rows ({ rank, handle | initials, score, me } or { gap }). Handles link to the X profile. */
-export function renderBoard(ol, rows = localRows(), emptyText = 'No catches yet. Be the first.') {
+/** Renders a board. Entries carry a handle (linked to the X profile) or legacy initials. */
+export function renderBoard(ol, list = loadBoard(), highlight = -1, emptyText = 'No catches yet. Be the first.') {
   ol.replaceChildren();
-  if (!rows.length) {
+  if (!list.length) {
     const li = document.createElement('li');
     li.className = 'empty';
     li.textContent = emptyText;
     ol.append(li);
     return;
   }
-  for (const e of rows) {
+  list.forEach((e, i) => {
     const li = document.createElement('li');
-    if (e.gap) {
-      li.className = 'gap';
-      li.textContent = '⋯';
-      ol.append(li);
-      continue;
-    }
-    if (e.me) li.className = 'me';
-    const rank = document.createElement('span');
-    rank.className = 'rk';
-    rank.textContent = e.rank.toLocaleString('en-US');
+    if (i === highlight) li.className = 'me';
     let name;
     const handle = normalizeHandle(e.handle);
     if (handle) {
@@ -113,7 +90,7 @@ export function renderBoard(ol, rows = localRows(), emptyText = 'No catches yet.
     }
     const pts = document.createElement('span');
     pts.textContent = e.score.toLocaleString('en-US');
-    li.append(rank, name, pts);
+    li.append(name, pts);
     ol.append(li);
-  }
+  });
 }
