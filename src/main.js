@@ -12,6 +12,7 @@ import { FlightView } from './three/flight-view.js';
 import { FlightHud, report } from './flight-hud.js';
 import { initialMap, bindMapPicker } from './maps.js';
 import { bindHome } from './home.js';
+import { Explore } from './explore.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
@@ -302,10 +303,22 @@ function runGame() {
     home.show();
   }
 
+  const explore = new Explore({ view, models, game: new Game({ width: WORLD_W, seed: 1 }), onExit: showTitle });
+  window.__explore = explore;
+
+  function startExplore(focus = null) {
+    state = 'explore';
+    titleEl.classList.add('hidden');
+    // Explore draws its own stack through View, which would also hold the hero vehicle in the arms.
+    view.setShowcase(null);
+    explore.enter(focus);
+  }
+
   // Home screen modes, in picker order. `targets`: the player picks what to catch.
   const MODES = [
     { id: 'catch', label: 'Catch', blurb: 'Bring it home in the tower arms', targets: true, start: startGame },
     { id: 'flight', label: 'Free flight', blurb: 'Fly the stack to orbit and land the ship', start: startFlight },
+    { id: 'explore', label: 'Explore', blurb: 'Look round the full stack up close', start: () => startExplore() },
   ];
   const home = bindHome({ root: titleEl, modes: MODES, view });
 
@@ -427,6 +440,7 @@ function runGame() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && state === 'playing' && !flight) setPaused(true);
   });
+  if (params.get('explore') === '1') startExplore(params.get('focus'));
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);
@@ -453,7 +467,7 @@ function runGame() {
     }
     // Outside a flight, Space and Enter press a focused menu button instead of acting as shortcuts.
     const focused = document.activeElement;
-    const onMenuButton = state !== 'playing' && (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement) && !!focused.closest('.overlay');
+    const onMenuButton = state !== 'playing' && (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement) && !!focused.closest('.overlay, #explore');
     if (ev.code === 'Space' && !onMenuButton) {
       ev.preventDefault();
       if (state === 'playing' && !ev.repeat) closeLatch = true;
@@ -564,11 +578,19 @@ function runGame() {
   let last = performance.now();
   let acc = 0;
   const frame = (now) => {
-    acc += Math.min(0.1, (now - last) / 1000);
+    const dt = Math.min(0.1, (now - last) / 1000);
+    acc += dt;
     last = now;
     const idle = paused || document.hidden;
     if (idle) acc = 0;
     quality.frame(now, !idle);
+    if (state === 'explore') {
+      // The sim stays stopped, so it doesn't fast-forward through the time spent exploring.
+      acc = 0;
+      explore.frame(dt);
+      requestAnimationFrame(frame);
+      return;
+    }
     let n = 0;
     while (acc >= DT && n < 6) {
       step();

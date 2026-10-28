@@ -6,6 +6,7 @@ import { buildWorld, bakeSky } from './world.js';
 import { createPlume, createParticles } from './effects.js';
 import { createExplosions } from './explosion.js';
 import { createComposer } from './post.js';
+import { SHIP_Y } from './stack.js';
 import { Director, toX, toY } from './director.js';
 import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
 
@@ -31,13 +32,12 @@ const TALL_LIFT = 0.35;
 
 // The ship's catch pins above the booster's when stacked on its hot-stage ring (blender/build_models.py:
 // the ring's top flange, BODY_TOP + 4 = 12 m, minus the ship's aft end, SHIP_SKIRT = -32.9 m).
-const STACK_SHIP_Y = 44.9;
 // Home screen hero shot, per screen shape: the share of the screen height the vehicle fills and where its
 // middle sits from the top. The home screen's arrows follow `y` (--hero-y in styles.css).
 const HERO_LAYOUT = { wide: { fill: 0.5, y: 0.43 }, square: { fill: 0.4, y: 0.36 }, tall: { fill: 0.34, y: 0.26 } };
 // Seconds a new pick takes to drop into the arms.
 const HERO_SETTLE = 0.55;
-const heroParts = (kind) => (kind === 'random' ? [['booster', 0], ['ship', STACK_SHIP_Y]] : [[kind, 0]]);
+const heroParts = (kind) => (kind === 'random' ? [['booster', 0], ['ship', SHIP_Y]] : [[kind, 0]]);
 
 export class View {
   constructor(canvas, { pixelRatio = 1, cinematic = false, titleTime = 0, samples = 4, preserve = false, map = 'starbase' } = {}) {
@@ -92,6 +92,8 @@ export class View {
     scene.add(this.guide, this.lane);
 
     this.director = new Director({ cinematic, titleTime });
+    /** While true, render() leaves the camera to its caller (Explore's orbit controls) instead of the director. */
+    this.free = false;
     this.size = { w: 1280, h: 720 };
     const post = createComposer(renderer, scene, this.camera, 1280 * pixelRatio, 720 * pixelRatio, samples);
     Object.assign(this, post);
@@ -458,8 +460,10 @@ export class View {
       }
     }
 
-    const shot = this.showcase && this.heroSpan ? { hero: this.heroPose(game, this.director.clock - (1 - alpha) * DT) } : { establish: this.world.establish };
-    this.director.apply(this.camera, game, { ...shot, alpha });
+    if (!this.free) {
+      const shot = this.showcase && this.heroSpan ? { hero: this.heroPose(game, this.director.clock - (1 - alpha) * DT) } : { establish: this.world.establish };
+      this.director.apply(this.camera, game, { ...shot, alpha });
+    }
     // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
     this.explosions.update(t - (1 - alpha) * DT, this.camera);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
