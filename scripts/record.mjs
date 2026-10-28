@@ -5,7 +5,7 @@
 // the fixed-step simulation by exactly two 1/60 s steps, renders, and is screenshotted. The result plays
 // back at real speed at 30 fps with no dropped or duplicated frames, identically on every run.
 //
-// Usage: npm run record [-- --out /opt/cursor/artifacts --qa 14]
+// Usage: npm run record [-- --out artifacts --qa 14]
 import { chromium } from 'playwright';
 import ffmpegPath from 'ffmpeg-static';
 import { spawn, spawnSync } from 'node:child_process';
@@ -18,7 +18,7 @@ const arg = (name, def) => {
   const i = argv.indexOf(`--${name}`);
   return i >= 0 ? argv[i + 1] : def;
 };
-const OUT = arg('out', '/opt/cursor/artifacts');
+const OUT = arg('out', 'artifacts');
 const QA = Number(arg('qa', 14));
 const FPS = 30;
 const STEPS_PER_FRAME = 60 / FPS;

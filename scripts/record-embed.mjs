@@ -1,7 +1,7 @@
 // Records /embed/ being played inside a parent page that iframes it at 480x480 (like an X player card),
 // in real time with Playwright's video recorder, then saves an MP4 plus standalone embed screenshots at
 // 480x480 and at a 390x844 phone viewport. An in-page autopilot presses the on-screen buttons.
-// Usage: npm run record:embed [-- --out /opt/cursor/artifacts --seconds 26]
+// Usage: npm run record:embed [-- --out artifacts --seconds 26]
 import { chromium } from 'playwright';
 import ffmpegPath from 'ffmpeg-static';
 import { spawnSync } from 'node:child_process';
@@ -15,7 +15,7 @@ import { ARM_MIN, ARM_MAX } from '../src/sim.js';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const arg = (name, def) => (argv.includes(`--${name}`) ? argv[argv.indexOf(`--${name}`) + 1] : def);
-const OUT = arg('out', '/opt/cursor/artifacts');
+const OUT = arg('out', 'artifacts');
 const SECONDS = Number(arg('seconds', 26));
 const VIEW = { width: 600, height: 640 };
 const GL_ARGS = (process.env.CHROMIUM_ARGS || '--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist').split(' ').filter(Boolean);

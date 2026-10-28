@@ -65,7 +65,7 @@ npm run record
 
 `npm run record` builds the site, then `scripts/record.mjs` serves `dist/` and opens `/?demo=1&capture=1` in headless Chromium (1280×720, WebGL through ANGLE/SwiftShader, so no GPU is required). Real-time screen capture would drop frames on a software GPU, so it drives the demo frame by frame instead. Each video frame advances the fixed-step simulation by two 1/60 s steps, renders, and is screenshotted, then the frames are piped into `ffmpeg-static`. The result plays at real speed with no dropped or duplicated frames, and it is identical on every run. A full capture takes several minutes on a CPU.
 
-Outputs (default directory `/opt/cursor/artifacts`, override with `-- --out <dir>`):
+Outputs (default directory `artifacts/`, git-ignored; override with `-- --out <dir>`):
 
 - `booster-demo.mp4`: 1280×720, H.264, yuv420p, 30 fps
 - `booster-demo.gif`: 640 px wide, 12 fps, palettegen/paletteuse, under 15 MB
