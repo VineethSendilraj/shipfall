@@ -61,6 +61,11 @@ export class View {
 
     this.particles = createParticles(toX, toY);
     scene.add(this.particles.group);
+    // Fireball light for crashes; the wreck itself vanishes almost instantly.
+    this.crashLight = new THREE.PointLight(0xff8a3c, 0, 0, 2);
+    scene.add(this.crashLight);
+    this.crashFx = null;
+    this.crashSeen = new Set();
 
     const guideMat = new THREE.MeshBasicMaterial({ color: COL_IDLE.clone(), toneMapped: false, transparent: true, opacity: 0.55, depthWrite: false });
     this.guide = new THREE.Mesh(new THREE.TorusGeometry(GUIDE_R, 0.06, 6, 128), guideMat);
@@ -92,7 +97,7 @@ export class View {
     this.world.sky.visible = !q.bakedSky;
     this.scene.background = q.bakedSky ? this.skyCube.texture : null;
     this.bloom.enabled = q.bloom > 0;
-    this.fxaa.enabled = q.msaa === 0;
+    this.aa.enabled = q.msaa === 0;
     this.bloomScale = q.bloom || 1;
     for (const rt of [this.composer.renderTarget1, this.composer.renderTarget2]) {
       if (rt.samples !== q.msaa) {
@@ -183,6 +188,10 @@ export class View {
       }
       const root = slot.root;
       root.visible = !(b.state === 'crashed' && b.alpha < 0.88);
+      if (b.state === 'crashed' && !this.crashSeen.has(b.id)) {
+        this.crashSeen.add(b.id);
+        this.crashFx = { x: toX(b.x), t: t };
+      }
       const X = toX(b.x);
       const Y = toY(b.y);
       if (b.state === 'tumbling' || b.state === 'crashed') {
@@ -211,6 +220,11 @@ export class View {
         slot.light.intensity = 0;
       }
     }
+
+    if (this.crashFx && t < this.crashFx.t) this.crashFx = null;
+    const ct = this.crashFx ? t - this.crashFx.t : 9;
+    this.crashLight.intensity = ct < 4 ? 14000 * Math.exp(-ct * 1.4) * (0.85 + 0.15 * Math.sin(t * 31)) : 0;
+    if (this.crashFx) this.crashLight.position.set(this.crashFx.x, 9, 8);
 
     this.director.apply(this.camera, game);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));

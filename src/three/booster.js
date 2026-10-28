@@ -77,7 +77,16 @@ function sharedGeometry() {
   const pin = mergeGeometries([box(1.5, 0.9, 1.3, 0, 0.45, 0), box(0.5, 1.6, 1.0, -0.5, 1.0, 0)]);
   const raceway = box(0.8, 66, 0.6, 0, -27, 0);
   const conduit = box(0.35, 60, 0.35, 0, -30, 0);
-  shared = { body, skirt, shield, bands, inner, dome, strut, bell, throat, fin: gridFinGeometry(), pin, raceway, conduit };
+  // Ribbed aft section above the skirt, a girth band at the tank dome, and a rim on the vented ring.
+  const rib = box(0.26, 7.4, 0.2, 0, BODY_BOTTOM + 3.7, 0);
+  const girth = new THREE.CylinderGeometry(R * 1.012, R * 1.012, 0.55, 112, 1, true);
+  const girths = mergeGeometries([girth.clone().translate(0, BODY_BOTTOM + 7.6, 0), girth.clone().translate(0, -24, 0)]);
+  const rim = new THREE.TorusGeometry(R * 1.0, 0.18, 6, 112);
+  rim.rotateX(Math.PI / 2);
+  rim.translate(0, BODY_TOP + 3.45, 0);
+  const bracket = box(1.15, 0.35, 0.85);
+  const plate = box(0.25, 3.6, 2.6);
+  shared = { body, skirt, shield, bands, inner, dome, strut, bell, throat, fin: gridFinGeometry(), pin, raceway, conduit, rib, girths, rim, bracket, plate };
   return shared;
 }
 
@@ -119,6 +128,20 @@ export function createBooster(mats) {
   add(geo.bands, mats.dome);
   add(geo.inner, mats.inner, false);
   add(geo.dome, mats.dome);
+  add(geo.girths, mats.dome, false);
+  add(geo.rim, mats.pin, false);
+
+  const RIBS = 64;
+  const ribs = new THREE.InstancedMesh(geo.rib, mats.darkSteel, RIBS);
+  const rm = new THREE.Matrix4();
+  const rq = new THREE.Quaternion();
+  for (let i = 0; i < RIBS; i++) {
+    const a = (i / RIBS) * Math.PI * 2;
+    rq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -a);
+    rm.compose(new THREE.Vector3(Math.cos(a) * R * 1.01, 0, Math.sin(a) * R * 1.01), rq, new THREE.Vector3(1, 1, 1));
+    ribs.setMatrixAt(i, rm);
+  }
+  root.add(ribs);
 
   const struts = new THREE.InstancedMesh(geo.strut, mats.darkSteel, 40);
   const m = new THREE.Matrix4();
@@ -148,6 +171,10 @@ export function createBooster(mats) {
     pin.rotation.y = a;
     pin.castShadow = true;
     root.add(pin);
+    const plate = new THREE.Mesh(geo.plate, mats.darkSteel);
+    plate.position.set(Math.cos(a) * (R + 0.08), 0.6, -Math.sin(a) * (R + 0.08));
+    plate.rotation.y = a;
+    root.add(plate);
   }
   const race = new THREE.Mesh(geo.raceway, mats.darkSteel);
   const ra = THREE.MathUtils.degToRad(200);
@@ -155,6 +182,13 @@ export function createBooster(mats) {
   race.rotation.y = ra;
   race.castShadow = true;
   root.add(race);
+  const brackets = new THREE.InstancedMesh(geo.bracket, mats.darkSteel, 22);
+  const bq = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ra);
+  for (let i = 0; i < 22; i++) {
+    m.compose(new THREE.Vector3(Math.cos(ra) * (R + 0.25), -58 + i * 3, -Math.sin(ra) * (R + 0.25)), bq, new THREE.Vector3(1, 1, 1));
+    brackets.setMatrixAt(i, m);
+  }
+  root.add(brackets);
   for (const deg of [20, 330]) {
     const ca = THREE.MathUtils.degToRad(deg);
     const c = new THREE.Mesh(geo.conduit, mats.darkSteel);

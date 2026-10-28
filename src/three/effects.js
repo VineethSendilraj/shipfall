@@ -22,10 +22,12 @@ const plumeFrag = /* glsl */ `
     float v = 1.0 - vUv.y;
     float edge = pow(max(vFres, 1e-4), uPow);
     float flick = 0.65 + 0.35 * n2(vec2(vUv.x * 10.0, v * 7.0 - uTime * 16.0));
-    float dia = 1.0 - uDiamonds + uDiamonds * (0.55 + 0.45 * cos(v * 34.0 - uTime * 2.0));
+    // Many engines merging into one column: fine vertical streaks that drift with the flow.
+    float streak = 0.55 + 0.45 * n2(vec2(vUv.x * 46.0, v * 2.5 - uTime * 9.0));
+    float dia = 1.0 - uDiamonds + uDiamonds * pow(0.5 + 0.5 * cos(v * 38.0 - uTime * 1.5), 3.0) * 1.6;
     float fade = smoothstep(1.0, 0.18, v) * smoothstep(0.0, 0.03, v);
     vec3 col = mix(uColA, uColB, smoothstep(0.0, 0.75, v));
-    float a = edge * fade * flick * dia * uAmp;
+    float a = edge * fade * flick * streak * dia * uAmp;
     gl_FragColor = vec4(col * a, 0.0);
   }`;
 
@@ -59,9 +61,9 @@ function plumeLayer(rTop, rBot, colA, colB, { diamonds = 0, pow = 1.6 } = {}) {
 export function createPlume() {
   const group = new THREE.Group();
   group.position.y = ENGINE_Y;
-  const outer = plumeLayer(5.2, 7.5, [0.7, 0.26, 0.08], [0.3, 0.07, 0.015], { pow: 1.2 });
-  const mid = plumeLayer(4.1, 2.6, [2.2, 1.25, 0.5], [1.1, 0.36, 0.08], { diamonds: 0.35, pow: 1.5 });
-  const core = plumeLayer(2.9, 0.5, [4.2, 3.9, 3.5], [2.2, 1.1, 0.35], { diamonds: 0.6, pow: 2.2 });
+  const outer = plumeLayer(5.2, 7.5, [0.5, 0.2, 0.07], [0.22, 0.06, 0.015], { pow: 1.2 });
+  const mid = plumeLayer(4.1, 2.6, [1.5, 0.9, 0.42], [0.85, 0.3, 0.07], { diamonds: 0.45, pow: 1.5 });
+  const core = plumeLayer(2.9, 0.5, [2.0, 2.2, 2.9], [1.6, 0.85, 0.32], { diamonds: 0.8, pow: 2.2 });
   group.add(outer, mid, core);
   const layers = [
     { mesh: outer, len: 1.25, amp: 0.55 },
@@ -198,6 +200,17 @@ export function createParticles(toX, toY) {
           nl++;
           continue;
         }
+        if ((p.k === 2 || p.k === 6) && nl < 400) {
+          // Sparks read as short hot streaks along their velocity, not as round dots.
+          const fade = (1 - u) * (1 - u);
+          const hot = p.k === 2 ? [3.2, 1.7, 0.55] : [1.6, 2.4, 3.0];
+          const tz = (h - 0.5) * 10;
+          lp.position.setXYZ(nl * 2, X, Y, tz);
+          lp.position.setXYZ(nl * 2 + 1, toX(p.x - p.vx * 0.045), toY(p.y - p.vy * 0.045), tz);
+          lp.color.setXYZ(nl * 2, hot[0] * fade, hot[1] * fade, hot[2] * fade);
+          lp.color.setXYZ(nl * 2 + 1, 0, 0, 0);
+          nl++;
+        }
         if (p.k === 0 || p.k === 2 || p.k === 6) {
           if (ng >= MAX) continue;
           let c;
@@ -211,7 +224,7 @@ export function createParticles(toX, toY) {
             z = (h - 0.5) * (5 + u * 14);
           } else {
             c = p.k === 6 ? [2.2, 3.4, 4] : [6, 3.6, 1.2];
-            size = p.k === 6 ? 0.45 : 0.6;
+            size = p.k === 6 ? 0.3 : 0.32;
             a = 1 - u * u;
             z = (h - 0.5) * 10;
           }

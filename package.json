@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "node scripts/serve.mjs",
-    "test": "node scripts/test-sim.mjs",
+    "test": "node scripts/test-sim.mjs && node scripts/test-api.mjs",
     "check:card": "node scripts/check-card.mjs",
     "card": "vite build && node scripts/make-card.mjs",
     "record": "vite build && node scripts/record.mjs",
