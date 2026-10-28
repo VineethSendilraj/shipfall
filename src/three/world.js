@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { concrete } from './textures.js';
 import { createRng } from '../rng.js';
+import { instantiate } from './models.js';
+import { buildMars } from './mars.js';
 
 export const MOON_DIR = new THREE.Vector3(-0.42, 0.36, -0.83).normalize();
 const GLOW_DIR = new THREE.Vector3(0.55, 0, -0.84).normalize();
@@ -130,21 +132,45 @@ function buildEnvironment(renderer) {
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -3;
   envScene.add(ground);
+  return bakeEnvironment(renderer, envScene);
+}
+
+/** Prefilters a small scene into a PMREM environment, then frees the scene. Returns the render target. */
+export function bakeEnvironment(renderer, envScene) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   const rt = pmrem.fromScene(envScene, 0.02);
   pmrem.dispose();
-  return rt.texture;
+  disposeTree(envScene);
+  return rt;
 }
 
-function setDressing(scene, rng, towerMats) {
-  const steel = new THREE.MeshStandardMaterial({ color: 0x8f949b, metalness: 0.6, roughness: 0.5 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 0.2, roughness: 0.55 });
+/** Frees the GPU side of everything under `root` (geometries, materials, their textures, light shadow maps). */
+export function disposeTree(root, keep = new Set()) {
+  const done = new Set();
+  const free = (x) => {
+    if (!x || keep.has(x) || done.has(x)) return;
+    done.add(x);
+    x.dispose();
+  };
+  root.traverse((o) => {
+    if (o.isLight) o.dispose();
+    if (o.isInstancedMesh) o.dispose();
+    free(o.geometry);
+    for (const m of [o.material].flat()) {
+      if (!m || keep.has(m)) continue;
+      for (const v of Object.values(m)) if (v?.isTexture) free(v);
+      for (const u of Object.values(m.uniforms ?? {})) if (u.value?.isTexture) free(u.value);
+      free(m);
+    }
+  });
+}
 
-  // Launch mount (behind the right-hand lane): six legs, a ring table and a flame deflector.
+/** Procedural launch mount (behind the right-hand lane): six legs, a ring table and a flame deflector. */
+export function launchMount(steel, concrete) {
   const olm = new THREE.Group();
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2;
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(2.6, 18, 2.6), towerMats.concrete);
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(2.6, 18, 2.6), concrete);
     leg.position.set(Math.cos(a) * 11, 9, Math.sin(a) * 11);
     leg.castShadow = leg.receiveShadow = true;
     olm.add(leg);
@@ -165,7 +191,16 @@ function setDressing(scene, rng, towerMats) {
   }
   olm.add(clamps);
   olm.position.set(-30, 0, -70);
+  return { olm, dark: hole.material };
+}
+
+function setDressing(scene, rng, towerMats) {
+  const steel = new THREE.MeshStandardMaterial({ color: 0x8f949b, metalness: 0.6, roughness: 0.5 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 0.2, roughness: 0.55 });
+
+  const { olm, dark } = launchMount(steel, towerMats.concrete);
   scene.add(olm);
+  const m = new THREE.Matrix4();
 
   // Tank farm and outbuildings on the horizon. The props model replaces the `tanks` group; its rng draws
   // still run so the buildings keep their places.
@@ -260,7 +295,7 @@ function setDressing(scene, rng, towerMats) {
   return {
     mount: olm,
     tanks,
-    mats: { tankSteel, band: bandMat, insulated, concrete: towerMats.concrete, mountSteel: steel, dark: hole.material },
+    mats: { tankSteel, band: bandMat, insulated, concrete: towerMats.concrete, mountSteel: steel, dark },
   };
 }
 
@@ -331,17 +366,68 @@ export function bakeSky(renderer, sky, size = 1024) {
   return rt;
 }
 
-export function buildWorld(scene, renderer, towerMats) {
+/** Particle and explosion colors for the night site (also the defaults in effects.js and explosion.js). */
+export const STARBASE_FX = {
+  dust: [0.34, 0.3, 0.26],
+  smoke: [0.085, 0.085, 0.09],
+  vapor: [0.55, 0.58, 0.62],
+  boomSmoke: [0.075, 0.07, 0.068],
+  boomDust: [0.42, 0.37, 0.31],
+  ambient: [0.2, 0.16, 0.13],
+  key: [0.25, 0.27, 0.33],
+  keyDir: MOON_DIR,
+  ring: [1.0, 0.72, 0.45],
+  gravity: 9.81,
+};
+
+/**
+ * Builds the launch site for `map` ('starbase' or 'mars') under one group that sits first in the scene,
+ * and sets the scene's fog and environment. Returns the parts the view drives, plus:
+ *   useProps(model)  swaps the props.glb model in for the procedural dressing it replaces (throws if unusable)
+ *   dispose()        removes the world and frees its GPU memory (shared tower materials are kept)
+ */
+export function buildWorld(scene, renderer, towerMats, map = 'starbase') {
+  const root = new THREE.Group();
+  root.name = `world-${map}`;
+  const world =
+    map === 'mars' ? buildMars(root, scene, renderer, towerMats, { bakeEnvironment, launchMount }) : buildStarbase(root, scene, renderer, towerMats);
+  // First in the scene, so lights keep the order they had before maps existed.
+  scene.add(root);
+  scene.children.unshift(scene.children.pop());
+  // props.glb geometry is shared with the loaded model, which outlives any one world. So are the
+  // vertex-colored twins instantiate() makes of the tower's materials (one per material, shared with the tower).
+  const shared = new Set();
+  const towerSet = new Set(Object.values(towerMats));
+  return {
+    ...world,
+    map,
+    useProps(model) {
+      const props = world.makeProps(model);
+      model.traverse((o) => o.geometry && shared.add(o.geometry));
+      props.traverse((o) => o.isMesh && towerSet.has(world.dressing.mats[o.userData.role]) && shared.add(o.material));
+      root.add(props);
+      return props;
+    },
+    dispose() {
+      scene.remove(root);
+      disposeTree(root, new Set([...towerSet, ...shared, ...(world.keep ?? [])]));
+      world.envTarget.dispose();
+    },
+  };
+}
+
+function buildStarbase(root, scene, renderer, towerMats) {
   const rng = createRng(4242);
   scene.fog = new THREE.FogExp2(0x0a0d18, 0.0011);
-  scene.environment = buildEnvironment(renderer);
+  const envTarget = buildEnvironment(renderer);
+  scene.environment = envTarget.texture;
   scene.environmentIntensity = 0.8;
 
   const skyMat = skyMaterial({ withStars: true });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(4000, 64, 32), skyMat);
   sky.frustumCulled = false;
   sky.renderOrder = -10;
-  scene.add(sky);
+  root.add(sky);
 
   const tex = concrete();
   tex.map.repeat.set(36, 36);
@@ -350,14 +436,14 @@ export function buildWorld(scene, renderer, towerMats) {
   const pad = new THREE.Mesh(new THREE.PlaneGeometry(720, 720), padMat);
   pad.rotation.x = -Math.PI / 2;
   pad.receiveShadow = true;
-  scene.add(pad);
+  root.add(pad);
   const outer = new THREE.Mesh(new THREE.CircleGeometry(4000, 64), new THREE.MeshStandardMaterial({ color: 0x23211d, roughness: 0.95 }));
   outer.rotation.x = -Math.PI / 2;
   outer.position.y = -0.05;
-  scene.add(outer);
+  root.add(outer);
 
   const hemi = new THREE.HemisphereLight(0x4a5f9a, 0x1a1512, 0.8);
-  scene.add(hemi);
+  root.add(hemi);
 
   const moon = new THREE.DirectionalLight(0xccd5ea, 1.25);
   moon.position.copy(MOON_DIR).multiplyScalar(420);
@@ -374,17 +460,17 @@ export function buildWorld(scene, renderer, towerMats) {
   sc.far = 900;
   moon.shadow.bias = -0.0004;
   moon.shadow.normalBias = 0.6;
-  scene.add(moon, moon.target);
+  root.add(moon, moon.target);
 
   const fill = new THREE.DirectionalLight(0xaab4c8, 0.25);
   fill.position.set(60, 40, 300);
   fill.target.position.set(0, 60, 0);
-  scene.add(fill, fill.target);
+  root.add(fill, fill.target);
 
   const floods = [
-    lightMast(scene, 130, 55, new THREE.Vector3(40, 50, 0), 15000),
-    lightMast(scene, -215, 50, new THREE.Vector3(-100, 50, 0), 12000),
-    lightMast(scene, -40, -95, new THREE.Vector3(10, 50, 0), 9000),
+    lightMast(root, 130, 55, new THREE.Vector3(40, 50, 0), 15000),
+    lightMast(root, -215, 50, new THREE.Vector3(-100, 50, 0), 12000),
+    lightMast(root, -40, -95, new THREE.Vector3(10, 50, 0), 9000),
   ];
 
   // Pools of sodium light on the pad, and a perimeter of small runway-style lights.
@@ -395,7 +481,7 @@ export function buildWorld(scene, renderer, towerMats) {
   ]) {
     const pool = new THREE.PointLight(c, 260, 0, 2);
     pool.position.set(x, 12, z);
-    scene.add(pool);
+    root.add(pool);
   }
   const lampGeo = new THREE.BoxGeometry(0.6, 0.35, 0.6);
   const lamps = new THREE.InstancedMesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), 64);
@@ -411,9 +497,9 @@ export function buildWorld(scene, renderer, towerMats) {
     lc.setRGB(i % 3 ? 3.2 : 1.6, i % 3 ? 1.6 : 2.4, i % 3 ? 0.5 : 3.2);
     lamps.setColorAt(i, lc);
   }
-  scene.add(lamps);
+  root.add(lamps);
 
-  const dressing = setDressing(scene, rng, towerMats);
+  const dressing = setDressing(root, rng, towerMats);
 
   const haze = new THREE.Mesh(
     new THREE.CylinderGeometry(250, 250, 90, 96, 1, true),
@@ -436,6 +522,21 @@ export function buildWorld(scene, renderer, towerMats) {
   );
   haze.position.y = 45;
   haze.renderOrder = 2;
-  scene.add(haze);
-  return { sky, skyMat, floods, moon, dressing };
+  root.add(haze);
+  return {
+    sky,
+    skyMat,
+    floods,
+    keyLight: moon,
+    dressing,
+    envTarget,
+    fx: STARBASE_FX,
+    keep: [beamMat],
+    makeProps(model) {
+      const props = instantiate(model, dressing.mats);
+      dressing.mount.visible = false;
+      dressing.tanks.visible = false;
+      return props;
+    },
+  };
 }
