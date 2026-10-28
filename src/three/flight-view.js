@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ENGINE_Y } from './booster.js';
 import { SHIP_ENGINE_Y, SKIRT, WIND } from './ship.js';
 import { COL_IDLE, COL_READY, COL_OFF } from './view.js';
-import { createPlanet, createAir, createSpaceSky, buildSpaceEnv, setAirCamera, sunlight, SUN_DIR, CENTER, AIR_TOP } from './flight-world.js';
+import { createLook, setAirCamera, CENTER, AIR_TOP } from './flight-world.js';
 import { Craft } from './flight-craft.js';
 import { FlightDirector, alongAxis, shipMid } from './flight-camera.js';
 import { toX } from './director.js';
@@ -12,9 +12,6 @@ import { SITE_X, TOWER_X, R, ARM_Y, BOOSTER_TOP, local, wrap } from '../flight.j
 const SITE = new THREE.Vector3(SITE_X, 0, 0);
 // Farther than this the flat launch site would z-fight the planet under it, and it is a few pixels anyway.
 const SITE_FAR = 20000;
-// Light bounced off the sunlit planet onto the vehicles' undersides.
-const BOUNCE = new THREE.Color(0.25, 0.32, 0.45);
-const SUN_I = 9;
 const SPACE_ENV = 1;
 // Roll that turns the ship's tiles to the right of its axis: into the airflow when it flies belly first eastbound.
 const ROLL = Math.PI / 2 - WIND;
@@ -39,15 +36,14 @@ function onGround(group, phi, lift) {
 export class FlightView {
   constructor(view) {
     this.view = view;
-    this.planet = createPlanet();
-    this.air = createAir();
-    this.space = createSpaceSky();
-    this.spaceEnv = buildSpaceEnv(view.renderer);
+    // The planet, air and space sky of each map flown so far.
+    this.look = createLook(view.world.map, view.renderer);
+    this.looks = { [view.world.map]: this.look };
     this.craft = new Craft(view.shipMats);
     // Holds a copy of the current map's launch mount, on the flight's pad.
     this.mount = new THREE.Group();
     this.mount.position.copy(SITE);
-    this.objects = [this.planet, this.air, this.space, this.mount, ...this.craft.objects];
+    this.objects = [this.mount, ...this.craft.objects];
     this.world = null;
     this.site = [];
     this.kids = [];
@@ -61,8 +57,8 @@ export class FlightView {
   enter(f) {
     const v = this.view;
     this.plumes = v.pool.map((s) => s.plume.group.scale.clone());
-    v.scene.add(...this.objects);
     this.bind();
+    v.scene.add(...this.objects);
     this.director = new FlightDirector();
     this.prev = null;
     this.roll = ROLL;
@@ -79,13 +75,20 @@ export class FlightView {
     this.craft.showAll(false);
   }
 
-  /** Takes over the current map's lights, fog, reflections and launch mount; again whenever the map changes. */
+  /** Draws the current map's planet and takes over its lights, fog, reflections and launch mount; again whenever the map changes. */
   bind() {
     const v = this.view;
     const { scene, world } = v;
     this.restoreSite();
     this.kids = [];
     this.world = world;
+    scene.remove(...this.look.objects);
+    this.look = this.looks[world.map] ??= createLook(world.map, v.renderer);
+    scene.add(...this.look.objects);
+    // The planet gives way to the map's own terrain, which dips below it in places, while that is drawn.
+    const box = new THREE.Box3().setFromObject(world.outer);
+    const c = box.getCenter(this._v);
+    this.look.planet.material.uniforms.uHole.value.set(c.x - CENTER.x, c.z - CENTER.z, (box.max.x - box.min.x) / 2, 0);
     const mount = world.dressing.mount.clone();
     mount.position.set(0, 0, 0);
     mount.visible = true;
@@ -115,7 +118,7 @@ export class FlightView {
   exit() {
     const v = this.view;
     const { scene, camera } = v;
-    scene.remove(...this.objects);
+    scene.remove(...this.objects, ...this.look.objects);
     this.craft.detach();
     this.restoreSite();
     this.kids = [];
@@ -249,6 +252,7 @@ export class FlightView {
     const v = this.view;
     if (v.world !== this.world) this.bind();
     const { scene, camera, world } = v;
+    const { planet, air, space } = this.look;
     const cam = this.placeCamera(f);
     // 1 at the launch site, 0 high up or far away: how much of the catch game's night scene to keep.
     const catchW = (1 - smooth(cam.alt, 1200, 4000)) * (1 - smooth(Math.abs(cam.phi) * R, 4000, 9000));
@@ -257,21 +261,22 @@ export class FlightView {
     this.skyOn(catchW > 0);
     world.sky.position.copy(camera.position);
     world.skyMat.uniforms.uTime.value = f.real;
-    this.space.visible = this.air.visible = catchW < 1;
-    this.space.position.copy(camera.position);
-    const sp = this.space.material.uniforms;
+    space.visible = air.visible = catchW < 1;
+    space.position.copy(camera.position);
+    const sp = space.material.uniforms;
     sp.uFade.value = 1 - catchW;
     sp.uUp.value.copy(camera.up);
     sp.uDip.value = Math.sqrt(Math.max(0, 1 - (R / cam.r) ** 2));
     sp.uTime.value = f.real;
-    this.air.material.uniforms.uFade.value = 1 - catchW;
-    this.planet.material.uniforms.uClouds.value = smooth(cam.alt, 2000, 6000);
+    air.material.uniforms.uFade.value = 1 - catchW;
+    planet.material.uniforms.uClouds.value = smooth(cam.alt, 2000, 6000);
     setAirCamera(camera.position);
     scene.fog.density = this.saved.fog * catchW;
 
     this.syncSite();
     const show = { site: nearSite, disc: nearSite && cam.alt < 1500, haze: nearSite && cam.alt < 400, off: false };
     for (const e of this.site) e.o.visible = e.vis && show[e.k];
+    planet.material.uniforms.uHole.value.w = show.disc ? 1 : 0;
 
     this.light(catchW);
     this.tower(f);
@@ -317,7 +322,7 @@ export class FlightView {
     if (a.length + b.length === k.length && a.every((o, i) => o === k[i]) && b.every((o, i) => o === k[a.length + i])) return;
     this.restoreSite();
     this.kids = [...a, ...b];
-    const skip = new Set([v.world.sky, v.particles.group, v.explosions.group, v.guide, v.lane, ...v.pool.map((s) => s.root), this.planet, this.air, this.space, ...this.craft.objects]);
+    const skip = new Set([v.world.sky, v.particles.group, v.explosions.group, v.guide, v.lane, ...v.pool.map((s) => s.root), ...this.look.objects, ...this.craft.objects]);
     const kinds = new Map([
       [v.world.outer, 'disc'],
       [v.world.haze, 'haze'],
@@ -341,32 +346,41 @@ export class FlightView {
   light(catchW) {
     const { scene } = this.view;
     const sv = this.saved;
+    const look = this.look;
     const focus = this.director.tgt;
     const L = local(focus.x, focus.y);
     const U = this._u.set(L.ux, L.uy, 0);
-    const sun = lum(sunlight(focus, this.sun));
+    const sun = lum(look.sunlight(focus, this.sun));
+    const top = Math.max(this.sun.r, this.sun.g, this.sun.b);
     const k = this.world.keyLight;
     k.target.position.lerpVectors(sv.keyTarget, focus, Math.max(smooth(L.alt, 100, 400), smooth(Math.abs(L.phi) * R, 300, 1000)));
-    // One light: it fades out before it swaps between the key light's direction and the sun's.
-    if (sun < 0.5) {
+    if (look.siteSun) {
+      // The site's key light is this low sun already: it turns into the sunlight as the site fades out.
+      const w = 1 - catchW;
+      k.color.copy(sv.key);
+      if (top > 0) k.color.lerp(this._c.copy(this.sun).multiplyScalar(1 / top), w);
+      k.intensity = sv.keyI * catchW + look.sunI * sun * w;
+      k.position.copy(sv.keyDir).lerp(look.sunDir, w).normalize();
+    } else if (sun < 0.5) {
+      // One light: it fades out before it swaps between the key light's direction and the sun's.
       k.color.copy(sv.key);
       k.intensity = sv.keyI * (1 - 2 * sun) * smooth(sv.keyDir.dot(U), -0.1, 0.1);
       k.position.copy(sv.keyDir);
     } else {
-      k.color.copy(this.sun).multiplyScalar(1 / Math.max(this.sun.r, this.sun.g, this.sun.b));
-      k.intensity = SUN_I * (2 * sun - 1);
-      k.position.copy(SUN_DIR);
+      k.color.copy(this.sun).multiplyScalar(1 / top);
+      k.intensity = look.sunI * (2 * sun - 1);
+      k.position.copy(look.sunDir);
     }
     k.position.multiplyScalar(sv.keyDist).add(k.target.position);
     // The night side keeps the launch site's night sky light; the day side gets the sun's bounce off the planet.
     const night = Math.max(catchW, 1 - sun);
     this.hemi.position.copy(U);
     this.hemi.color.copy(sv.sky).multiplyScalar(night);
-    this.hemi.groundColor.copy(sv.ground).multiplyScalar(night).add(this._c.copy(BOUNCE).multiplyScalar((1 - catchW) * sun));
+    this.hemi.groundColor.copy(sv.ground).multiplyScalar(night).add(this._c.copy(look.bounce).multiplyScalar((1 - catchW) * sun));
     this.fill.intensity = sv.fill * night;
     // Both maps are the same PMREM size, so swapping them recompiles nothing; the intensity is 0 at the swap.
     const site = night > 0.5;
-    scene.environment = site ? sv.env : this.spaceEnv;
+    scene.environment = site ? sv.env : look.env;
     scene.environmentIntensity = site ? sv.envI * (2 * night - 1) : SPACE_ENV * sun * (1 - 2 * night);
     scene.environmentRotation.z = -L.phi;
   }
