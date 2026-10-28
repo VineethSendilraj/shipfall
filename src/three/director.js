@@ -13,6 +13,7 @@ const DIP_IN = 0.36;
 const DIP_OUT = 0.34;
 // Seconds into a game for the establishing shot to give way to the play camera.
 const ESTABLISH_OUT = 1.2;
+const UP = new THREE.Vector3(0, 1, 0);
 
 /**
  * Cinematic camera. Advanced once per fixed sim step so the demo is frame-exact; the render
@@ -20,8 +21,9 @@ const ESTABLISH_OUT = 1.2;
  */
 export class Director {
   /** titleTime: seconds of showcase title before play starts; the establishing shot is gone by then. */
-  constructor({ cinematic = false, titleTime = 0 } = {}) {
+  constructor({ cinematic = false, titleTime = 0, orbit = null } = {}) {
     this.cinematic = cinematic;
+    this.orbit = orbit;
     this.titleTime = titleTime;
     this.clock = 0;
     this.pos = new THREE.Vector3(-60, 10, 200);
@@ -39,9 +41,11 @@ export class Director {
     this._t = new THREE.Vector3();
     this._ep = new THREE.Vector3();
     this._et = new THREE.Vector3();
+    this._op = new THREE.Vector3();
   }
 
   reset() {
+    this.orbit?.reset(true);
     this.seen.clear();
     this.closeT = -1;
     this.close = null;
@@ -222,6 +226,10 @@ export class Director {
       pos = this._ep.lerpVectors(pos, this._ep, w);
       tgt = this._et.lerpVectors(tgt, this._et, w);
       fov += (shotFov - fov) * w;
+    }
+    if (this.orbit) {
+      pos = this.orbit.apply(this._op.copy(pos), tgt, UP);
+      pos.y = Math.max(pos.y, 7);
     }
     camera.position.set(
       pos.x + Math.sin(t * 0.63) * 0.5 + Math.sin(t * 37.1) * sh,
