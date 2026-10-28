@@ -27,7 +27,8 @@ float airColumn(float r, float mu) {
   float c = sqrt(1.5707963 * r / AH);
   float rho = exp((PR - r) / AH);
   if (mu >= 0.0) return AH * rho * c / ((c - 1.0) * mu + 1.0);
-  float s = sqrt(1.0 - mu * mu);
+  // mu rounds past -1 near the shadow's axis; NaN from the root would blacken a square of the frame through the bloom.
+  float s = sqrt(max(1.0 - mu * mu, 0.0));
   return AH * (rho * c / ((c - 1.0) * mu - 1.0) + 2.0 * c * sqrt(s) * exp(min((PR - r * s) / AH, 40.0)));
 }
 vec3 airSun(vec3 p) {
@@ -82,7 +83,7 @@ function airColumn(r, mu) {
   const c = Math.sqrt((Math.PI / 2) * (r / AH));
   const rho = Math.exp((PR - r) / AH);
   if (mu >= 0) return (AH * rho * c) / ((c - 1) * mu + 1);
-  const s = Math.sqrt(1 - mu * mu);
+  const s = Math.sqrt(Math.max(0, 1 - mu * mu));
   return AH * ((rho * c) / ((c - 1) * mu - 1) + 2 * c * Math.sqrt(s) * Math.exp(Math.min((PR - r * s) / AH, 40)));
 }
 
