@@ -64,6 +64,13 @@ export function localRows(list = loadBoard(), mine = -1) {
   return list.map((e, i) => ({ ...e, rank: i + 1, me: i === mine }));
 }
 
+/** At most `size` rows, keeping the player's row. */
+export function clipRows(rows, size) {
+  if (rows.length <= size) return rows;
+  const me = rows.findIndex((e) => e.me);
+  return me < size ? rows.slice(0, size) : [...rows.slice(0, size - 1), rows[me]];
+}
+
 /** Submits a run. Resolves to { rank, best, entries } on success, { error } on a rejected run, or null if offline. */
 export async function submitGlobal(run) {
   try {

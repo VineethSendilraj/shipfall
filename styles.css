@@ -301,6 +301,8 @@ body.tall .overlay.quick { align-content: center; padding-bottom: 30%; }
 body.tall #gameover, body.tall #leaderboard { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 body.tall #gameover .card, body.tall #leaderboard .card { max-height: 100%; }
 body.tall #sound { bottom: auto; top: 104px; }
+/* These cards sit at the top, over the sound button's spot, and end above the bottom 30%. */
+body.tall:has(#gameover:not(.hidden), #leaderboard:not(.hidden)) #sound { top: auto; bottom: 10px; }
 
 .demo-card { padding-left: max(24px, 6%); padding-right: max(24px, 6%); }
 .demo-card .tag { max-width: 100%; text-wrap: balance; }
@@ -313,7 +315,7 @@ body.touch-ui #sound { bottom: auto; top: calc(18px * var(--ui) + 112px); right:
 
 /* ------------------------------------------------------------ free flight */
 body { --stick: clamp(92px, 25vmin, 136px); }
-.flight-note { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.flight-note { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); text-wrap: balance; }
 .quick-flight { min-width: 200px; padding: 10px 24px; font-size: 15px; background: rgba(10, 11, 13, 0.55); border-color: rgba(255, 255, 255, 0.3); }
 .nav { display: none; }
 body.flight-mode .nav { display: flex; align-items: baseline; justify-content: center; gap: calc(5px * var(--ui)); margin-bottom: calc(4px * var(--ui)); line-height: 1; white-space: nowrap; }
@@ -346,7 +348,7 @@ body.compact .nav.over .nav-l { display: inline; font-size: 9px; letter-spacing:
 .stick-cap { position: absolute; left: -20px; right: -20px; bottom: calc(100% + 6px); text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.62); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85); white-space: nowrap; }
 body.compact .stick { bottom: 24px; }
 body.tall .stick { bottom: calc(30% + 12px); }
-body.flight-mode:not(.compact) .coach { top: calc(82px * var(--ui)); bottom: auto; }
+body.flight-mode:not(.compact) .coach { top: calc(52px * var(--ui)); bottom: auto; left: calc(20px * var(--ui)); transform: none; }
 body.compact.flight-mode .coach { bottom: 30px; }
 body.compact.flight-mode.touch-ui .coach { bottom: calc(24px + var(--stick) + 30px); }
 body.compact.tall.flight-mode.touch-ui .coach { bottom: calc(30% + var(--stick) + 30px); }
@@ -372,5 +374,11 @@ body.compact .fo-stats dt { font-size: 8.5px; letter-spacing: 0.08em; }
 body.compact .fo-stats dd { font-size: 16px; margin-top: 3px; }
 body.tall #flight-over { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 body.tall #flight-over .card { max-height: 100%; }
+#flight { white-space: nowrap; }
 #flight span { opacity: 0.55; margin-left: 6px; }
 body.demo #sticks, body.demo #flight-over { display: none !important; }
+#flight-over .btn.share { white-space: nowrap; }
+@media (max-width: 420px) {
+  #flight-over .actions .btn.primary { flex-basis: 100%; }
+}
+body.tall.flight-over #sound { top: auto; bottom: calc(30% + 12px); }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { createBooster } from './booster.js';
+import { createBooster, ENGINE_Y } from './booster.js';
+import { createShip } from './ship.js';
 import { createPlume } from './effects.js';
 import { assembleStack, stackHeight } from './stack.js';
 import { createFlightFx } from './flight-fx.js';
@@ -10,6 +11,8 @@ import { towerPositions, ARM_DEFAULT } from '../sim.js';
 
 const WORLD_W = 1280;
 const ARM_Y = toY(ARM_DEFAULT);
+// Both catch towers where the catch game puts them (tower B is the one that rises for the double catch).
+const TOWER_XS = Object.values(towerPositions(WORLD_W)).map(toX);
 const MOUNT_TOP = 22.25;
 const MOUNT_R = 14.25;
 const BORE_R = 5.2;
@@ -65,6 +68,7 @@ export class FlightView {
   constructor(view, models = null) {
     this.view = view;
     this.group = new THREE.Group();
+    this.group.name = 'free-flight';
     this.group.visible = false;
     this.rig = new THREE.Group();
     this.group.add(this.rig);
@@ -122,14 +126,25 @@ export class FlightView {
     this.booster = booster;
     this.hasShip = !!ship;
     this.stack = assembleStack(booster, ship);
-    this.stack.position.y = -FLIGHT.comH - this.plume.group.position.y;
+    this.stack.position.y = -FLIGHT.comH - ENGINE_Y;
     this.rig.add(this.stack);
     this.stackH = stackHeight(this.hasShip);
+    // Debris in the stack's own steel (the baked-AO variants once the models load): no new shaders mid-crash.
+    const byRole = {};
+    booster.root.traverse((o) => {
+      if (o.isMesh && o.userData.role && !byRole[o.userData.role]) byRole[o.userData.role] = o.material;
+    });
+    this.fx.setDebrisMaterials(byRole.steel ?? this.view.boosterMats.steel, byRole.darkSteel ?? this.view.boosterMats.darkSteel);
   }
 
-  /** The upper stage, once its model code exists; until then the stack is the booster alone. */
-  makeShip() {
-    return null;
+  /** The upper stage (ship.glb, or the procedural ship without it). */
+  makeShip(models) {
+    try {
+      return createShip(this.view.shipMats, models?.ship ?? null);
+    } catch (err) {
+      console.error('ship model unusable in free flight; using the procedural one', err);
+      return createShip(this.view.shipMats);
+    }
   }
 
   useModels(models) {
@@ -144,8 +159,7 @@ export class FlightView {
   /** Obstacles for the flight model: both towers, the tank farm, outbuildings and floodlight masts. */
   colliders() {
     const v = this.view;
-    const { a, b } = towerPositions(WORLD_W);
-    const out = [...towerColliders(toX(a), -1, ARM_Y), ...towerColliders(toX(b), 1, ARM_Y)];
+    const out = [...towerColliders(TOWER_XS[0], -1, ARM_Y), ...towerColliders(TOWER_XS[1], 1, ARM_Y)];
     const { tanks, mats } = v.world.dressing;
     let rack = null;
     for (const o of tanks.children) {
@@ -192,7 +206,7 @@ export class FlightView {
     this.fx.reset();
     this.crashT = -1;
     this.prev.valid = false;
-    this.camera.reset(f);
+    this.camera.reset(f, this.view.lift);
   }
 
   exit() {
@@ -255,13 +269,12 @@ export class FlightView {
       if (u < 7) fx.smolder(f.impact.x, f.impact.z, 1 - u / 7);
     }
     fx.step();
-    this.camera.step(f);
+    this.camera.step(f, this.view.lift);
   }
 
   setTowers(t) {
     const v = this.view;
-    const { a, b } = towerPositions(WORLD_W);
-    const xs = [toX(a), toX(b)];
+    const xs = TOWER_XS;
     v.towers.forEach((tw, i) => {
       tw.root.visible = true;
       tw.root.position.set(xs[i], 0, 0);

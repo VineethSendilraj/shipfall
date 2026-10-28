@@ -129,7 +129,7 @@ export class HudBar {
     const e = this.el;
     const round = Math.max(1, h.round);
     const lives = '●'.repeat(h.lives) + '○'.repeat(Math.max(0, 3 - h.lives));
-    const tower = h.double && h.booster ? ` · TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : '';
+    const tower = h.double && h.booster ? ` · ${h.kind === 'ship' ? 'SHIP · ' : ''}TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : '';
     this.set('flight', compact ? `FLIGHT ${round}${tower} · ${lives}` : `CATCH THE BOOSTER · FLIGHT ${round}`, (v) => (e.flight.textContent = v));
     this.set('clock', clock(game.t), (v) => (e.clock.textContent = v));
     this.set('mscore', h.score.toLocaleString('en-US'), (v) => (e.mscore.textContent = v));
@@ -150,7 +150,7 @@ export class HudBar {
       const vs = Math.abs(b.vs);
       this.gauge('alt', this.altMax > 0 ? alt / this.altMax : 1, alt >= 100 ? alt.toFixed(0) : alt.toFixed(1));
       this.gauge('spd', vs / 80, b.waiting ? '—' : vs.toFixed(1), b.waiting ? '' : vs < 3 ? 'ok' : vs < 10 ? 'warn' : '');
-      this.gauge('fuel', b.fuel / 100, b.fuel.toFixed(0), b.fuel < 25 ? 'bad' : '');
+      this.gauge('fuel', b.fuel / 100, b.fuel.toFixed(0), b.fuel < 10 ? 'bad' : b.fuel < 25 ? 'warn' : '');
       const tilt = sim ? (sim.tilt * 180) / Math.PI : 0;
       const lx = clamp(b.lat * 2.4, -22, 22);
       const ly = clamp(-b.armDy * 1.2, -20, 20);
@@ -171,7 +171,7 @@ export class HudBar {
     const burnLabel = b?.cutoff ? 'ENGINE CUTOFF' : 'LANDING BURN';
     this.set('burnL', burnLabel, (v) => (this.marks.burn.label.textContent = v));
     this.set('burnC', b?.burning ? 'on' : this.burnF >= 0 ? 'past' : '', (v) => this.marks.burn.label.setAttribute('class', `l-burn ${v}`));
-    const catchState = lost ? ['BOOSTER LOST', 'bad'] : h.ready ? ['CATCH', 'ok'] : game.phase === 'outro' ? ['SECURED', 'ok'] : ['CATCH', ''];
+    const catchState = lost ? [lost, 'bad'] : h.ready ? ['CATCH', 'ok'] : game.phase === 'outro' ? ['SECURED', 'ok'] : ['CATCH', ''];
     this.set('catchL', catchState[0], (v) => (this.marks.catch.label.textContent = v));
     this.set('catchC', catchState[1], (v) => this.marks.catch.label.setAttribute('class', `l-catch ${v}`));
   }
@@ -184,7 +184,7 @@ export class HudBar {
   updateFlight(f, heading, { compact, ship, ready }) {
     const e = this.el;
     const t = clock(f.clock);
-    this.set('flight', compact ? `FREE FLIGHT · T+${t}` : 'CATCH THE BOOSTER · FREE FLIGHT', (v) => (e.flight.textContent = v));
+    this.set('flight', compact ? `T+${t}` : 'CATCH THE BOOSTER · FREE FLIGHT', (v) => (e.flight.textContent = v));
     this.set('clock', t, (v) => (e.clock.textContent = v));
 
     const thr = f.throttle;
@@ -218,7 +218,8 @@ export class HudBar {
     const d = f.mountDist;
     this.set('navD', over ? '0' : d >= 1000 ? (d / 1000).toFixed(2) : d.toFixed(0), (v) => (e.navD.textContent = v));
     this.set('navU', d >= 1000 && !over ? 'KM' : 'M', (v) => (e.nav.querySelector('.nav-u').textContent = v));
-    this.set('navL', over ? (f.airborne ? 'OVER THE LAUNCH MOUNT' : 'ON THE LAUNCH MOUNT') : 'TO LAUNCH MOUNT', (v) => (e.navL.textContent = v));
+    const where = compact ? 'MOUNT' : 'THE LAUNCH MOUNT';
+    this.set('navL', over ? `${f.airborne ? 'OVER' : 'ON'} ${where}` : 'TO LAUNCH MOUNT', (v) => (e.navL.textContent = v));
     this.set('navC', over ? 'nav over' : 'nav', (v) => (e.nav.className = v));
     this.set('navA', over ? '' : `rotate(${bearing.toFixed(0)} 12 12)`, (v) => e.navArrow.setAttribute('transform', v));
   }

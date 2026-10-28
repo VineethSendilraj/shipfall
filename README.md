@@ -2,20 +2,20 @@
 
 A 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
 
-**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: the booster, tower and site models are built from code in this repo (see [3D models](#3d-models)), and the textures, the sky and the effects are generated procedurally at runtime.
+**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: the booster, ship, tower and site models are built from code in this repo (see [3D models](#3d-models)), and the textures, the sky and the effects are generated procedurally at runtime.
 
-- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): a brushed-stainless booster with rolled rings and weld seams, a vented hot-stage ring, four lattice grid fins on actuator housings, catch hardpoints and 33 engine bells under the heat shield; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
+- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): a brushed-stainless booster with rolled rings and weld seams, a vented hot-stage ring, four lattice grid fins on actuator housings, catch hardpoints and 33 engine bells under the heat shield; a stainless upper stage (the ship) with an ogive nose, black hexagonal heat-shield tiles, two forward and two aft flaps and six engines; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
 - Moonlit night sky (procedural stars, milky way, textured moon), moon-cast shadows, inverse-square floodlights, warm engine light on the booster and tower.
 - HDR post-processing: bloom on the plume and lights, heat haze under the engines, vignette and a subtle lens fringe.
 - A cinematic camera: low-angle tracking during descent, a close-up on each catch, and a wide shot when the second tower comes online.
 - Static site only: no backend, no API keys, no analytics, no third-party network calls (no CDNs; the only runtime fetches are the game's own model files).
-- Playable inline in an X post through a player card: `/` is the share page, `/embed/` is the game-only page X iframes (see [X player card](#x-player-card)).
+- Shares on X as a large image card: `/` is the share page, `/embed/` is a compact game-only page for small frames (see [Share card](#share-card)).
 
 ## Controls
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
-| Lateral thrusters (limited fuel) | `←` `→` or `A` `D` | ◀ ▶ |
+| Lateral thrusters (use landing fuel) | `←` `→` or `A` `D` | ◀ ▶ |
 | Move catch arms | `↑` `↓` or `W` `S` | ▲ ▼ |
 | Close arms | `Space` | CATCH |
 | Start / restart | `Enter` | Start button |
@@ -24,15 +24,33 @@ A 3D browser game: a rocket booster is falling back to the launch site at night.
 
 ### Rules
 
-The landing burn ignites automatically below 112 m and slows the booster into a brief, slow descent before engine cutoff. A catch succeeds if, at the moment the arms finish closing:
+The landing burn ignites automatically below 112 m (143 m for the ship, which lights up with its pins at the same height) and slows the vehicle into a brief, slow descent before engine cutoff. The burn and the thrusters share one tank: steering shortens the hover, and an empty tank cuts the engine early. A catch succeeds if, at the moment the arms finish closing:
 
-- the catch pins (just below the grid fins) are within **±12 px (±3 m)** of the arms vertically,
+- the catch pins (just below the booster's grid fins, or the ship's forward flaps) are within **±12 px (±3 m)** of the arms vertically,
 - the lateral offset from the catch centerline is **under 15 px (3.75 m)**, and
 - the descent rate is **under 3 m/s** (4 px = 1 m).
 
 Otherwise it's a miss: the arms clang off the booster, or it slides past and hits the pad. You have 3 boosters.
 
-Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (3 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises and two boosters come in per round (+500 for catching both). Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
+### Free flight
+
+**Free flight** (title screen, `F`, or a `?mode=flight` link) is a sandbox: the full stack, booster with the ship on top (about 128 m), stands on the launch mount. Lift it off, fly it anywhere around the site, and land it back.
+
+| Action | Keyboard | Touch (and the embed) |
+| --- | --- | --- |
+| Light the engines and lift off | hold `W` | left stick up |
+| Climb / descend (no input holds altitude) | `W` `S` | left stick up / down |
+| Turn | `A` `D` | left stick left / right |
+| Fly forward, back, left, right (relative to the camera) | `↑` `↓` `←` `→` | right stick |
+| Look around | drag the scene | drag the scene |
+| Pause / back to the title | `P` / `Esc` | — |
+
+- An arcade flight computer flies it: thrust-to-weight 1.5, thrust along the stack's axis, tilt up to 20° toward the arrow keys, levels itself and brakes to a hover when you let go, quadratic drag, engines that spool up and down, and descent protection that slows the sink rate near whatever is below. The tank lasts about 3 minutes of hovering; an empty tank shuts the engines down.
+- A touchdown counts as a landing below 3 m/s down, 2 m/s sideways and 5° of tilt. Landing back on the launch mount (skirt fully on the ring, the HUD shows the distance and bearing, and the mount's ring turns green when you're lined up) is the best result. Anything harder, the edge of the mount, the towers, the tank farm, the outbuildings or a floodlight mast is a rapid unscheduled disassembly.
+- The result card shows time aloft, max altitude, distance flown, touchdown speed and fuel left, with Fly again, Home and Post on X.
+- `?mode=flight&capture=1` drives free flight only through `window.__flight` (`step(input, frames)`, `run(inputFn, frames, until)`) for deterministic scripted captures; `scripts/flight-pilot.mjs` is a small autopilot for them.
+
+Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (6.5 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises, and from then on each round brings a booster to tower A and a ship to tower B (+500 for catching both). The ship uses the same catch tolerances; it is 50 m tall against the booster's 80 m, so the arms clang on it over a shorter span. Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
 
 ## Run locally
 
@@ -41,14 +59,14 @@ npm install
 npm run dev               # Vite dev server → http://127.0.0.1:41730/  (embed: /embed/)
 npm run build             # static site → dist/
 npm start                 # serve dist/ with the _headers rules applied → http://127.0.0.1:41730/
-npm test                  # simulation tests
+npm test                  # catch, free flight and API tests
 ```
 
 Open `/?demo=1` for the scripted showcase (also works on `/embed/?demo=1`; it is off by default). Add `?quality=high|medium|low|minimal` to pin a render quality level.
 
 ## Deterministic demo (`?demo=1`)
 
-A roughly 28 s showcase: a title card, then round 1 with a visible arm adjustment and a clean catch, then round 2 with a wind gust, a near-miss lateral correction and a **PERFECT** catch, then **double catch unlocked**, with both boosters caught, and finally an end card with the score and the disclaimer.
+A roughly 28 s showcase: a title card, then round 1 with a visible arm adjustment and a clean catch, then round 2 with a wind gust, a near-miss lateral correction and a **PERFECT** catch, then **double catch unlocked**, with a booster caught at tower A and the ship at tower B, and finally an end card with the score and the disclaimer.
 
 - All randomness comes from a seeded `mulberry32` PRNG (`src/rng.js`); the demo never calls `Math.random()` or `Date.now()`.
 - The simulation (`src/sim.js`) advances by frame count with a fixed `dt = 1/60 s`. The camera director is stepped with it.
@@ -74,20 +92,20 @@ Outputs (default directory `artifacts/`, git-ignored; override with `-- --out <d
 
 With a real GPU you can pass different Chromium flags, e.g. `CHROMIUM_ARGS="--use-gl=egl" npm run record`.
 
-## X player card
+## Share card
 
-X renders a `twitter:card=player` post by iframing the `twitter:player` URL: desktop web plays it inline, the phone apps open it in a sheet that can cover the bottom ~30%.
+A link to `/` posts on X as a `summary_large_image` card. X no longer draws player cards (an inline iframe) for new domains: the card validator passes, but the post shows no card.
 
 - **`/`** (share page): the full game with title screen, rules and leaderboard, plus all card meta tags. Share this URL.
-- **`/embed/`** (player): the game only, full-bleed at any frame size (designed for 480×480), no scrollbars. One tap on **Play** starts it, and audio stays off until that first gesture. The big on-screen buttons work with mouse and touch, the keyboard works once the frame has focus, and on tall viewports the buttons, start card and game-over card stay above the bottom 30%. Links open in a new tab. It doesn't depend on the parent page and works standalone.
-- **Meta tags** (both pages): `twitter:card=player`, `twitter:player=<SITE_URL>/embed/` at 480×480, `twitter:image=<SITE_URL>/card.jpg`, `twitter:title`/`twitter:description`, and `og:title`/`og:description`/`og:image`/`og:url`. Set `VITE_TWITTER_SITE=@handle` to add `twitter:site` as well.
-- **Card image**: `public/card.jpg`, 1080×1080, a frame of the real 3D scene (round-1 chopstick catch) rendered by `npm run card`.
+- **`/embed/`** (compact page): the game only, full-bleed at any frame size (designed for 480×480), no scrollbars. One tap on **Play** starts it, and audio stays off until that first gesture. The big on-screen buttons work with mouse and touch, the keyboard works once the frame has focus, and on tall viewports the buttons, start card and game-over card stay above the bottom 30%. Links open in a new tab. It doesn't depend on the parent page and works standalone.
+- **Meta tags** (both pages): `twitter:card=summary_large_image`, `twitter:image=<SITE_URL>/share.jpg`, `twitter:title`/`twitter:description`, and `og:title`/`og:description`/`og:image`/`og:url`. Set `VITE_TWITTER_SITE=@handle` to add `twitter:site` as well.
+- **Card image**: `public/share.jpg`, 1200×630 (X shows it at about 2:1), a frame of the real 3D scene (round-1 chopstick catch) rendered by `npm run card`.
 - **Performance**: about 170 KB of gzipped JS. An auto-quality monitor measures real frame times and steps down from high to medium, low and then minimal (pixel ratio 1.5, 1, 0.75 then 0.5; MSAA replaced by FXAA; shadows and bloom off at the bottom levels; a baked sky cube map instead of the procedural sky shader) whenever it can't hold about 33 fps. Software renderers such as SwiftShader start at `low`.
 - **Headers**: `vercel.json` and `public/_headers` (Cloudflare Pages) send `Content-Security-Policy: frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com` on every route and no `X-Frame-Options`. `vercel.json` sets `trailingSlash: true`, so `/embed/` returns 200 directly (only `/embed` redirects).
 
 ```bash
-npm run check:card        # build, serve dist/, verify meta tags, card.jpg, HTML size, headers, JS budget
-npm run card              # re-render public/card.jpg from the demo scene
+npm run check:card        # build, serve dist/, verify meta tags, share.jpg, HTML size, headers, JS budget
+npm run card              # re-render public/share.jpg from the demo scene
 npm run record:embed      # Playwright video of /embed/ inside a 480×480 iframe host page + screenshots
 ```
 
@@ -109,18 +127,21 @@ Players type their handle; it isn't verified, and the API only rejects malformed
 
 ## 3D models
 
-The booster, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
+The booster, the ship, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
 
 | File | Triangles | Size |
 | --- | --- | --- |
-| `booster.glb` | 70,746 | 466 KB |
-| `tower.glb` (structure, carriage, one arm drawn twice) | 24,984 | 260 KB |
-| `props.glb` | 32,810 | 194 KB |
+| `booster.glb` | 77,188 | 637 KB |
+| `ship.glb` | 38,444 | 257 KB |
+| `tower.glb` (structure, carriage, one arm drawn twice) | 58,056 | 656 KB |
+| `props.glb` | 53,678 | 390 KB |
 
-- The game loads them at startup (`src/three/models.js`) and swaps them in when they arrive; until then, or if a file fails to load, it uses the procedural three.js models in `booster.js`, `tower.js` and `world.js`. `?demo=1` waits up to 6 s for them before the first step, so a demo run never changes models midway.
-- Units are meters with +Y up, in the same frame as the procedural models: catch hardpoints rest on the arms at y = 0, bell exits at y = -67.6, and the arm and carriage nodes keep the pivots `setArms()` rotates and raises. The tower is built for the right-hand tower and mirrored for the left one.
-- Each mesh is named after a game material (glTF extra `role`: `steel`, `darkSteel`, `fin`, `bell`, `throat`, `lattice`, `arm`, `tankSteel`, …). The GLBs carry no materials; the game assigns its own, and the booster body keeps the cylindrical UVs its skin texture expects.
-- Rebuild with Blender (tested with 5.2): `blender/build.sh` runs `blender/build_models.py` headless and compresses with `@gltf-transform/cli`. `blender/build.sh --render <dir>` also writes preview renders.
+- The game loads them at startup (`src/three/models.js`) and swaps them in when they arrive; until then, or if a file fails to load, it uses the procedural three.js models in `booster.js`, `ship.js`, `tower.js` and `world.js`. `?demo=1` waits up to 6 s for them before the first step, so a demo run never changes models midway.
+- Units are meters with +Y up, in the same frame as the procedural models: catch hardpoints rest on the arms at y = 0, the booster's bell exits are at y = -67.6 and the ship's at y = -35 (its nose tip at y = 15.5), and the arm and carriage nodes keep the pivots `setArms()` rotates and raises. The tower is built for the right-hand tower and mirrored for the left one.
+- Each mesh is named after a game material (glTF extra `role`: `steel`, `darkSteel`, `fin`, `bell`, `throat`, `tiles`, `lattice`, `arm`, `tankSteel`, …). The GLBs carry no materials; the game assigns its own. The booster body keeps the cylindrical UVs its skin texture expects; the ship's steel shares that texture (V in meters at the booster's scale), and its `tiles` carry UVs in meters / 64 for the hex tile texture `ship.js` draws.
+- Ambient occlusion is baked with Cycles into a vertex color (`COLOR_0`) on every mesh except the engine throats, which the game tints at runtime. Meshes with it get a vertex-colored copy of their role material (one per material); long members are cut along their length so the per-vertex bake can shade the joints.
+- The ship: tiles cover the windward half between the flap hinges, which sit off the camera axis so the flaps stand out on both sides; the catch pins stay on the ±Z sides where the arms close. Three sea-level engines at the center (they carry the throat discs and the plume) and three vacuum engines on the outer ring.
+- Rebuild with Blender (tested with 5.2): `blender/build.sh` runs `blender/build_models.py` headless (the AO bake is part of it) and compresses with `@gltf-transform/cli`. `blender/build.sh --render <dir>` also writes preview renders; `--no-bake` skips the bake for quick geometry iterations.
 
 No third-party models are used. Before modeling, downloadable CC0 / CC-BY candidates were checked and set aside: Sketchfab and BlendSwap require an account to download, Printables and Cults3D models are non-commercial or "no AI" licensed 3D-print files, and Poly Pizza has only stylized low-poly rockets and tanks.
 
@@ -128,19 +149,22 @@ No third-party models are used. Before modeling, downloadable CC0 / CC-BY candid
 
 ```
 index.html                 share page (meta tags + full game)
-embed/index.html           player page for the X card (game only)
+embed/index.html           compact game-only page
 src/game.html              shared game markup, injected into both pages at build time
 site.config.mjs            SITE_URL resolution + card meta tags (used by the build and check:card)
 vite.config.mjs            multi-page build, meta/markup injection
 styles.css                 HUD, overlays, embed + compact + tall layouts
 src/sim.js                 fixed-step physics, catch rules, scoring, rounds (DOM-free)
+src/flight.js              free flight: flight computer, landing and crash rules, fuel, stats (DOM-free)
+src/flight-input.js        free flight keys and touch sticks
+src/three/flight-*.js      free flight view, chase camera, steam/fire/debris effects; stack.js stacks the ship on the booster
 src/demo.js                demo config + runner; src/demo-script.js frame-keyed inputs
-src/three/                 3D view: booster, tower, world/sky, effects, camera director, post-processing, model loader
+src/three/                 3D view: booster, ship, tower, world/sky, effects, camera director, post-processing, model loader
 blender/                   Blender script that builds public/models/*.glb, and the build wrapper
 src/quality.js             automatic render-quality fallback
 src/ui.js                  DOM HUD, popups, banners, demo cards
 src/main.js                game loop, input (keyboard/mouse/touch), leaderboard, sound
-public/                    card.jpg, _headers, models/*.glb, font licenses (copied to dist/ as-is)
+public/                    share.jpg, _headers, models/*.glb, font licenses (copied to dist/ as-is)
 vercel.json                Vercel build + headers
 scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
 ```

@@ -2,7 +2,7 @@
   "name": "catch-the-booster",
   "version": "1.0.0",
   "private": true,
-  "description": "3D browser game: guide a falling rocket booster into the tower's catch arms. Playable inline in an X player card. Not affiliated with SpaceX.",
+  "description": "3D browser game: guide a falling rocket booster into the tower's catch arms. Not affiliated with SpaceX.",
   "type": "module",
   "engines": {
     "node": ">=20.11"

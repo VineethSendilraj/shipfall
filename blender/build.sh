@@ -8,7 +8,7 @@ BLENDER="${BLENDER:-/Applications/Blender.app/Contents/MacOS/Blender}"
 WORK="${WORK:-$(mktemp -d)}"
 "$BLENDER" -b --factory-startup --python blender/build_models.py -- --out "$WORK" "$@"
 mkdir -p public/models
-for m in booster tower props; do
+for m in booster ship tower props; do
   npx -y @gltf-transform/cli@4.5.1 meshopt "$WORK/$m.glb" "public/models/$m.glb" --level high
 done
 ls -l public/models

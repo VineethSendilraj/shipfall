@@ -40,8 +40,10 @@ export function createFlightFx(mats) {
   const group = new THREE.Group();
   group.add(smoke, glow, streaks);
 
-  // Debris: plain meshes sharing one box, in the booster's own materials (no new shader programs).
+  // Debris: plain meshes sharing one box, in the booster's own materials (no new shader programs). The box
+  // carries white vertex colors so it also works with the models' baked-AO material variants.
   const chunk = new THREE.BoxGeometry(1, 1, 1);
+  chunk.setAttribute('color', new THREE.BufferAttribute(new Float32Array(chunk.attributes.position.count * 3).fill(1), 3));
   const debris = [];
   for (let i = 0; i < DEBRIS; i++) {
     const m = new THREE.Mesh(chunk, i % 3 === 0 ? mats.darkSteel : mats.steel);
@@ -110,7 +112,9 @@ export function createFlightFx(mats) {
       rng = createRng(9071);
       for (const d of debris) d.mesh.visible = false;
     },
-    rand: (lo, hi) => rng.range(lo, hi),
+    setDebrisMaterials(steel, dark) {
+      debris.forEach((d, i) => (d.mesh.material = i % 3 === 0 ? dark : steel));
+    },
 
     /**
      * Exhaust meeting a surface at (x, y, z): steam and dust thrown out radially along it. k: 0..1 strength.
@@ -338,10 +342,10 @@ export function createFlightFx(mats) {
           let g;
           let b;
           if (k === STEAM) {
-            a = Math.sin(Math.PI * Math.min(1, u * 1.25)) * 0.27;
-            r = 0.44;
-            g = 0.45;
-            b = 0.48;
+            a = Math.sin(Math.PI * Math.min(1, u * 1.25)) * 0.24;
+            r = 0.4;
+            g = 0.41;
+            b = 0.44;
           } else if (k === DUST) {
             a = Math.sin(Math.PI * Math.min(1, u * 1.2)) * 0.4;
             r = 0.34;
@@ -359,7 +363,7 @@ export function createFlightFx(mats) {
             const dx = x - glowAt.x;
             const dy = y - glowAt.y;
             const dz = z - glowAt.z;
-            const lit = Math.min(0.8, (glowAt.power * 1800) / (dx * dx + dy * dy + dz * dz + 900));
+            const lit = Math.min(0.65, (glowAt.power * 1500) / (dx * dx + dy * dy + dz * dz + 900));
             r += lit * 0.42;
             g += lit * 0.2;
             b += lit * 0.05;
