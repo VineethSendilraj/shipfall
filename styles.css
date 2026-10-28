@@ -138,17 +138,20 @@ kbd.wide { min-width: 64px; }
 #leaderboard .board { margin-top: 0; }
 #leaderboard .actions { margin-top: 16px; }
 .go-score { display: flex; align-items: baseline; gap: 10px; }
+body.paused #touch { display: none; }
+.pause-actions .btn:first-child { flex-basis: 100%; }
 .go-score small { font-size: 0.36em; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); }
 
-.icon-btn { position: absolute; right: 18px; bottom: 18px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line); background: rgba(10, 11, 13, 0.62); color: var(--ink); cursor: pointer; z-index: 5; }
+.corner { position: absolute; right: 18px; bottom: 18px; display: flex; gap: 8px; z-index: 5; }
+.icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line); background: rgba(10, 11, 13, 0.62); color: var(--ink); cursor: pointer; }
+#pause-btn { display: none; }
+body.playing:not(.paused) #pause-btn { display: grid; }
 .icon-btn .wave { display: none; }
 .icon-btn[aria-pressed='true'] .wave { display: inline; }
 .icon-btn[aria-pressed='true'] .mute { display: none; }
 
 .disclaimer { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; color: rgba(230, 237, 255, 0.85); pointer-events: none; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); padding: 4px 12px; border-radius: 99px; background: rgba(4, 7, 16, 0.45); }
 
-.toast { position: absolute; left: 50%; bottom: 48px; transform: translate(-50%, 20px); padding: 10px 16px; border-radius: 6px; background: rgba(10, 11, 13, 0.92); border: 1px solid var(--line); font-size: 14px; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 20; }
-.toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------------------------------------------------------------- touch */
 .touch { position: absolute; left: 0; right: 0; bottom: 30px; display: flex; justify-content: space-between; padding: 0 16px; pointer-events: none; z-index: 4; }
@@ -161,7 +164,7 @@ kbd.wide { min-width: 64px; }
 /* ----------------------------------------------------------------- demo */
 body.demo, body.demo * { cursor: none !important; }
 body.demo-end .disclaimer { display: none; }
-body.demo #sound, body.demo #touch, body.demo #title-screen, body.demo #gameover, body.demo #toast { display: none !important; }
+body.demo #corner, body.demo #touch, body.demo #title-screen, body.demo #gameover { display: none !important; }
 .demo-card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%, rgba(3, 6, 16, 0.25), rgba(2, 4, 10, 0.7)); }
 .demo-card h1 { margin: 0; font-size: min(96px, 9.6vw); white-space: nowrap; letter-spacing: -0.01em; line-height: 1; font-weight: 600; color: var(--ink);
@@ -231,7 +234,7 @@ body.embed #title-screen, body:not(.embed) #quick-start, body.demo #quick-start 
 .flight { margin-top: calc(4px * var(--ui)); font-size: calc(10.5px * var(--ui)); letter-spacing: 0.2em; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .mscore { display: none; }
 body:not(.compact).playing .disclaimer, body:not(.compact).demo .disclaimer { top: calc(16px * var(--ui)); bottom: auto; left: calc(20px * var(--ui)); transform: none; }
-body.playing:not(.compact):not(.touch-ui) #sound { bottom: calc(144px * var(--ui)); }
+body.playing:not(.compact):not(.touch-ui) #corner { bottom: calc(144px * var(--ui)); }
 
 /* ------------------------------------------------------- embed: quick start */
 .overlay.quick { background: linear-gradient(180deg, rgba(2, 4, 10, 0.05) 30%, rgba(2, 4, 10, 0.6)); align-content: end; padding-bottom: 12%; }
@@ -276,8 +279,9 @@ body.compact .flight { margin-top: 4px; font-size: 8.5px; letter-spacing: 0.14em
 body.compact .status, body.compact .gust { font-size: 11px; padding: 4px 2px; letter-spacing: 0.14em; }
 body.compact .banner-title { font-size: 30px; }
 body.compact .banner-sub { font-size: 10.5px; }
-body.compact.touch-ui #sound { top: 104px; right: 10px; width: 36px; height: 36px; }
-body.compact #sound { right: 10px; bottom: 10px; width: 36px; height: 36px; }
+body.compact.touch-ui #corner { top: 104px; right: 10px; }
+body.compact #corner { right: 10px; bottom: 10px; }
+body.compact .icon-btn { width: 36px; height: 36px; }
 body.compact .overlay { padding: 12px; }
 body.compact .overlay.quick { padding-bottom: 28px; }
 body.compact #gameover .card, body.compact #leaderboard .card { padding: 16px 18px 14px; border-radius: 16px; max-height: calc(100% - 16px); }
@@ -300,9 +304,10 @@ body.tall .touch { bottom: calc(30% + 12px); }
 body.tall .overlay.quick { align-content: center; padding-bottom: 30%; }
 body.tall #gameover, body.tall #leaderboard { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 body.tall #gameover .card, body.tall #leaderboard .card { max-height: 100%; }
-body.tall #sound { bottom: auto; top: 104px; }
+body.tall #corner { bottom: auto; top: 104px; }
 /* These cards sit at the top, over the sound button's spot, and end above the bottom 30%. */
-body.tall:has(#gameover:not(.hidden), #leaderboard:not(.hidden)) #sound { top: auto; bottom: 10px; }
+body.tall:has(#gameover:not(.hidden), #leaderboard:not(.hidden)) #corner { top: auto; bottom: 10px; }
+body.tall #pause { padding-bottom: 30%; }
 
 .demo-card { padding-left: max(24px, 6%); padding-right: max(24px, 6%); }
 .demo-card .tag { max-width: 100%; text-wrap: balance; }
@@ -311,7 +316,9 @@ body.compact .demo-card .tag { font-size: 11.5px; letter-spacing: 0.12em; margin
 body.compact .demo-card .tag.cta { font-size: 10.5px; margin-top: 8px; }
 body.compact .demo-card .disclaim { font-size: 10.5px; bottom: 22px; letter-spacing: 0.12em; }
 #demo-title { justify-content: flex-end; padding-bottom: 15vh; background: linear-gradient(180deg, rgba(2, 4, 10, 0) 35%, rgba(2, 4, 10, 0.55)); }
-body.touch-ui #sound { bottom: auto; top: calc(18px * var(--ui) + 112px); right: calc(18px * var(--ui)); }
+body.touch-ui #corner { bottom: auto; top: calc(18px * var(--ui) + 112px); right: calc(18px * var(--ui)); }
+/* The pause card covers the corner's in-flight spot in embeds and on phones. */
+body.paused.touch-ui #corner, body.paused.compact #corner { top: auto; bottom: 10px; }
 
 /* ------------------------------------------------- map picker (src/maps.js) */
 .map-pick { display: flex; gap: 2px; padding: 3px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(6, 7, 9, 0.5); }
