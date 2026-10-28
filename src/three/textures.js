@@ -64,6 +64,113 @@ export function concrete() {
   return { map: toTexture(c, { repeat: [1, 1] }), roughnessMap: toTexture(rc, { srgb: false, repeat: [1, 1] }) };
 }
 
+/** Width of the outbuilding atlas in meters of wall: u wraps every ATLAS_M meters. */
+export const ATLAS_M = 8;
+const ATLAS_W = 512;
+const ATLAS_H = 1024;
+// Horizontal bands of the atlas, as [first, last) canvas rows. Neighbours are chosen so the colours that bleed
+// together in the small mip levels are alike.
+const ATLAS_ROWS = {
+  roof: [0, 64],
+  wallA: [64, 352],
+  concrete: [352, 400],
+  trim: [400, 448],
+  wallB: [448, 736],
+  dark: [736, 784],
+  doorTall: [784, 896],
+  doorShort: [896, 960],
+  window: [960, 1024],
+};
+/** Each band's texture v range [bottom, top], inset half a texel. */
+export const ATLAS_BANDS = Object.fromEntries(Object.entries(ATLAS_ROWS).map(([k, [r0, r1]]) => [k, [1 - (r1 - 0.5) / ATLAS_H, 1 - (r0 + 0.5) / ATLAS_H]]));
+
+/**
+ * Outbuilding atlas: ribbed wall cladding (two tints) streaked with grime toward the foot, roll-up doors
+ * (tall Mega Bay slats and short shop doors), a window band, roof, trim, concrete and dark steel. Every band
+ * tiles along u; walls and doors stretch over v. Colour at 512 x 1024, roughness at half that.
+ */
+export function outbuildingAtlas() {
+  const rng = createRng(1213);
+  const [c, g] = makeCanvas(ATLAS_W, ATLAS_H);
+  const [rc, rg] = makeCanvas(ATLAS_W / 2, ATLAS_H / 2);
+  rg.scale(0.5, 0.5);
+  const band = (k, color, rough) => {
+    const [r0, r1] = ATLAS_ROWS[k];
+    g.fillStyle = color;
+    g.fillRect(0, r0, ATLAS_W, r1 - r0);
+    rg.fillStyle = `rgb(${rough},${rough},${rough})`;
+    rg.fillRect(0, r0, ATLAS_W, r1 - r0);
+    return [r0, r1];
+  };
+  const lines = (ctx, style, r0, r1, every, width, vertical) => {
+    ctx.fillStyle = style;
+    if (vertical) for (let x = 0; x < ATLAS_W; x += every) ctx.fillRect(x, r0, width, r1 - r0);
+    else for (let y = r0; y < r1; y += every) ctx.fillRect(0, y, ATLAS_W, width);
+  };
+
+  for (const [k, base] of [
+    ['wallA', [184, 183, 178]],
+    ['wallB', [168, 172, 174]],
+  ]) {
+    const [r0, r1] = band(k, `rgb(${base})`, 150);
+    const h = r1 - r0;
+    // Trapezoidal ribs every 0.5 m: a lit crest, a shaded web, a flat pan.
+    for (let x = 0; x < ATLAS_W; x += 32) {
+      g.fillStyle = 'rgba(255,255,255,0.09)';
+      g.fillRect(x, r0, 10, h);
+      g.fillStyle = 'rgba(20,22,26,0.2)';
+      g.fillRect(x + 10, r0, 4, h);
+      g.fillStyle = 'rgba(255,255,255,0.05)';
+      g.fillRect(x + 28, r0, 4, h);
+    }
+    lines(g, 'rgba(30,30,32,0.35)', r0, r1, ATLAS_W, 2, true);
+    // Grime streaks running down from the roof line and from midway, and a dirty foot.
+    for (let i = 0; i < 70; i++) {
+      const x = rng.range(0, ATLAS_W);
+      const w = rng.range(2, 14);
+      const y0 = r0 + (rng.chance(0.5) ? 0 : rng.range(0.2, 0.6) * h);
+      const gr = g.createLinearGradient(0, y0, 0, r1);
+      gr.addColorStop(0, `rgba(78,72,62,${rng.range(0.06, 0.16)})`);
+      gr.addColorStop(1, 'rgba(78,72,62,0)');
+      g.fillStyle = gr;
+      g.fillRect(x, y0, w, r1 - y0);
+      rg.fillStyle = 'rgba(230,230,230,0.25)';
+      rg.fillRect(x, y0, w, (r1 - y0) * 0.6);
+    }
+    const foot = g.createLinearGradient(0, r0 + h * 0.6, 0, r1);
+    foot.addColorStop(0, 'rgba(92,80,62,0)');
+    foot.addColorStop(1, 'rgba(92,80,62,0.45)');
+    g.fillStyle = foot;
+    g.fillRect(0, r0 + h * 0.6, ATLAS_W, h * 0.4);
+    g.fillStyle = 'rgba(60,58,54,0.25)';
+    g.fillRect(0, r0, ATLAS_W, 4);
+  }
+
+  // Roll-up doors: horizontal slats, a little lighter than the cladding so the slot reads from afar.
+  for (const k of ['doorTall', 'doorShort']) {
+    const [r0, r1] = band(k, 'rgb(150,154,157)', 110);
+    lines(g, 'rgba(40,42,46,0.4)', r0, r1, 4, 1, false);
+    const gr = g.createLinearGradient(0, r0, 0, r1);
+    gr.addColorStop(0, 'rgba(255,255,255,0.06)');
+    gr.addColorStop(1, 'rgba(70,62,50,0.25)');
+    g.fillStyle = gr;
+    g.fillRect(0, r0, ATLAS_W, r1 - r0);
+  }
+
+  // Dark glazing with a mullion every 2 m.
+  const [w0, w1] = band('window', 'rgb(34,42,54)', 40);
+  lines(g, 'rgb(150,154,158)', w0, w1, 128, 6, true);
+  lines(rg, 'rgb(150,150,150)', w0, w1, 128, 6, true);
+
+  const [f0, f1] = band('roof', 'rgb(146,146,143)', 200);
+  lines(g, 'rgba(255,255,255,0.12)', f0, f1, 32, 3, true);
+  band('trim', 'rgb(206,206,202)', 140);
+  band('concrete', 'rgb(124,121,114)', 240);
+  band('dark', 'rgb(60,63,68)', 150);
+
+  return { map: toTexture(c), roughnessMap: toTexture(rc, { srgb: false }) };
+}
+
 /** Tileable value noise on a period x period lattice; sample with lattice coordinates (wraps). */
 function periodicNoise(rng, period) {
   const g = new Float32Array(period * period);
