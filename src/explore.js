@@ -4,6 +4,7 @@ import { ARM_REACH, GROUND_Y, PX_PER_M } from './sim.js';
 import { toX } from './three/director.js';
 import { ENGINE_Y } from './three/booster.js';
 import { createStack, SHIELD_Y, SHIP_Y } from './three/stack.js';
+import { SPIN } from './three/ship.js';
 
 const $ = (id) => document.getElementById(id);
 const { lerp } = THREE.MathUtils;
@@ -47,7 +48,7 @@ const PRESETS = [
   { id: 'fins', label: 'Grid fins', target: [0, BOOSTER_Y + 4.5, 0], camera: [11, BOOSTER_Y + 12, 14], fov: 40 },
   { id: 'ring', label: 'Hot-stage ring', target: [0, BOOSTER_Y + 10, 0], camera: [10, BOOSTER_Y + 12.5, 14], fov: 36 },
   { id: 'nose', label: 'Nose and tiles', target: [0, SHIP_PINS + 8, 0], camera: [8, SHIP_PINS + 11, 25.5], fov: 40 },
-  { id: 'flaps', label: 'Flaps', target: [0, SHIP_PINS - 25, 0], camera: [9, SHIP_PINS - 21, 30], fov: 44, wide: true },
+  { id: 'flaps', label: 'Flaps', target: [0, SHIP_PINS - 25, 0], camera: [-30, SHIP_PINS - 21, 9], fov: 44, wide: true },
   { id: 'chopsticks', label: 'Chopsticks', target: [10, SHIP_PINS - 1, 0], camera: [-6, SHIP_PINS + 8, 40], fov: 46 },
   { id: 'tower', label: 'Tower top', target: [TOWER_DX, 148, 0], camera: [TOWER_DX + 34, 160, 30], fov: 42 },
   { id: 'farm', label: 'Tank farm', labels: { mars: 'Habitat' }, world: true, target: [-170, 14, -268], camera: [-122, 30, -190], fov: 40 },
@@ -55,15 +56,16 @@ const PRESETS = [
 
 // The stack's outline, measured from its models in meters from the foot. The hull is upright cylinders
 // [radius, bottom, top]. The parts that stick out are boxes [angle from +x toward +z, [out from, to],
-// [sideways from, to], [bottom, top]]: the catch pins, the grid fins, then the aft and forward flaps.
+// [sideways from, to], [bottom, top]]: the catch pins, the grid fins, then the aft and forward flaps, which turn with
+// the ship's hull (SPIN) while its pins stay put.
 const HULL = [[5.17, 19.2, 142], [3.55, 142, 143], [2.7, 143, 145], [1.8, 145, 147.35]];
 const PARTS = [
   ...[0.5, 1.5].flatMap((k) => [86.8, 131.3].map((y) => [k * Math.PI, [4.8, 5.85], [-0.7, 0.7], [y, y + 1.4]])),
   ...[0.25, 0.75, 1.25, 1.75].map((k) => [k * Math.PI, [4.8, 8.95], [-1.85, 1.85], [89.6, 91.3]]),
-  [0, [5.3, 8.6], [-3.2, -1.6], [100.4, 111]],
-  [Math.PI, [5.4, 8.85], [-2.5, -1.4], [100.4, 111]],
-  [0, [4.8, 7.1], [-2.6, -1.5], [134.9, 140.8]],
-  [Math.PI, [4.9, 7.25], [-2.1, -1.3], [134.9, 140.8]],
+  [-SPIN, [5.3, 8.6], [-3.2, -1.6], [100.4, 111]],
+  [Math.PI - SPIN, [5.4, 8.85], [-2.5, -1.4], [100.4, 111]],
+  [-SPIN, [4.8, 7.1], [-2.6, -1.5], [134.9, 140.8]],
+  [Math.PI - SPIN, [4.9, 7.25], [-2.1, -1.3], [134.9, 140.8]],
 ];
 const AXES = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]].map((a) => new THREE.Vector3(...a));
 const probe = new THREE.Vector3();

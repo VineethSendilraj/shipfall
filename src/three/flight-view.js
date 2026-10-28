@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ENGINE_Y } from './booster.js';
-import { SHIP_ENGINE_Y, SKIRT, WIND } from './ship.js';
+import { SHIP_ENGINE_Y, SKIRT, faceTower } from './ship.js';
 import { COL_IDLE, COL_READY, COL_OFF } from './view.js';
 import { createLook, setAirCamera, CENTER, AIR_TOP, AH } from './flight-world.js';
 import { Craft } from './flight-craft.js';
@@ -13,8 +13,9 @@ const SITE = new THREE.Vector3(SITE_X, 0, 0);
 // Farther than this the flat launch site would z-fight the planet under it, and it is a few pixels anyway.
 const SITE_FAR = 20000;
 const SPACE_ENV = 1;
-// Roll that turns the ship's tiles to the right of its axis: into the airflow when it flies belly first eastbound.
-const ROLL = Math.PI / 2 - WIND;
+// Roll that keeps the ship's tiles on the right of its axis (toward the tower on the pad): into the airflow when it
+// flies belly first eastbound.
+const ROLL = 0;
 const ROLL_RATE = 0.8;
 const clamp = (x, lo, hi) => (x < lo ? lo : x > hi ? hi : x);
 const smooth = THREE.MathUtils.smoothstep;
@@ -436,6 +437,7 @@ export class FlightView {
     const oy = s.y - Math.sin(s.ang) * SKIRT;
     ss.root.visible = s.mode !== 'crashed' || (held && h.ship);
     ss.root.position.set(ox, oy, 0);
+    faceTower(ss, 1);
     ss.root.rotation.set(0, this.roll, s.ang - Math.PI / 2, 'ZYX');
     // Hot staging: the ship's exhaust stops at the booster's dome and vents out of the ring until the booster falls clear.
     const reach = b.state === 'sep' ? alongAxis(this._u, b, BOOSTER_TOP).distanceTo(this._v.set(s.x, s.y, 0)) : Infinity;
