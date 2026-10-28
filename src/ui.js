@@ -86,11 +86,12 @@ export class UI {
     this.shownScore = 0;
   }
 
-  update(game, { hudOpacity = 1, dip = 0 } = {}) {
+  /** hudOpacity defaults to hiding the HUD at game over; the demo passes its own so the HUD fades under the end card. */
+  update(game, { hudOpacity = game.phase === 'over' ? 0 : 1, dip = 0 } = {}) {
     this.dip = dip;
     const e = this.el;
     const h = game.hud();
-    const showHud = game.phase !== 'ready' && game.phase !== 'over' && hudOpacity > 0;
+    const showHud = game.phase !== 'ready' && hudOpacity > 0;
     this.set('hudHidden', e.hud, 'class', showHud ? 'hud' : 'hud hidden');
     this.set('hudOpacity', e.hud, 'opacity', String(hudOpacity));
     if (showHud && this.safeDirty) this.measureSafe();
