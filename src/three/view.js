@@ -82,6 +82,8 @@ export class View {
     scene.add(this.guide, this.lane);
 
     this.director = new Director({ cinematic, titleTime });
+    /** While true, render() leaves the camera to its caller (Explore's orbit controls) instead of the director. */
+    this.free = false;
     this.size = { w: 1280, h: 720 };
     const post = createComposer(renderer, scene, this.camera, 1280 * pixelRatio, 720 * pixelRatio, samples);
     Object.assign(this, post);
@@ -369,7 +371,7 @@ export class View {
       }
     }
 
-    this.director.apply(this.camera, game, { establish: this.world.establish, alpha });
+    if (!this.free) this.director.apply(this.camera, game, { establish: this.world.establish, alpha });
     // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
     this.explosions.update(t - (1 - alpha) * DT, this.camera);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));

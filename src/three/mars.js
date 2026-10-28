@@ -929,6 +929,7 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
     establish: { pos: [270, 240, 380], tgt: [180, 0, -200], focus: [45, 0, 0], fov: 42 },
     fx: MARS_FX,
     keep: [beamMat],
+    groundHeight: terrainHeight,
     makeProps(model) {
       // props.glb also holds the tank farm; on Mars only its launch mount is used.
       const props = instantiate(model, propMats);
