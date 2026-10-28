@@ -91,9 +91,19 @@ function sharedGeometry() {
   return shared;
 }
 
-export function createBoosterMaterials(envIntensity = 1) {
+export function createBoosterMaterials(skin, envIntensity = 1) {
   return {
-    steel: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.15, envMapIntensity: envIntensity * 3.2 }),
+    steel: new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      map: skin.map,
+      metalness: 1,
+      roughness: 0.72,
+      roughnessMap: skin.roughnessMap,
+      bumpMap: skin.bumpMap,
+      bumpScale: 1.5,
+      anisotropy: 0.8,
+      envMapIntensity: envIntensity * 1.6,
+    }),
     darkSteel: new THREE.MeshStandardMaterial({ color: 0x3a3b3e, metalness: 0.85, roughness: 0.55 }),
     soot: new THREE.MeshStandardMaterial({ color: 0x1c1a19, metalness: 0.6, roughness: 0.85 }),
     fin: new THREE.MeshStandardMaterial({ color: 0x8a8d93, metalness: 0.9, roughness: 0.42 }),
@@ -106,27 +116,9 @@ export function createBoosterMaterials(envIntensity = 1) {
 
 const MODEL_NO_SHADOW = new Set(['inner', 'bell', 'throat']);
 
-/** Gives near-vertical faces exact cylinder normals, so ring seams don't band the polished steel. Axis along local Y. */
-export function smoothBarrelNormals(geometry) {
-  const n = geometry.attributes.normal;
-  const p = geometry.attributes.position;
-  for (let i = 0; i < n.count; i++) {
-    if (Math.abs(n.getY(i)) > 0.95) continue;
-    const x = p.getX(i);
-    const z = p.getZ(i);
-    const l = Math.hypot(x, z) || 1;
-    n.setXYZ(i, x / l, 0, z / l);
-  }
-  n.needsUpdate = true;
-}
-
 /** model: the loaded booster.glb scene; without it the booster is built procedurally. */
 export function createBooster(mats, model = null) {
   if (model) {
-    if (!model.userData.smoothed) {
-      model.traverse((o) => o.isMesh && o.userData.role === 'steel' && smoothBarrelNormals(o.geometry));
-      model.userData.smoothed = true;
-    }
     const throatMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false });
     const root = instantiate(model, { ...mats, throat: throatMat }, (role) => !MODEL_NO_SHADOW.has(role));
     return { root, throatMat };

@@ -101,12 +101,6 @@ All absolute URLs in the meta tags come from one build-time value, **`VITE_SITE_
 
 Without any of these, the build uses the placeholder `https://catch-the-booster.example` and prints a warning. The build rejects non-https values. After deploying, paste the `/` URL into a post (or X's card validator) to check the card. GitHub Pages can't send the required headers, so it isn't supported.
 
-### Worldwide leaderboard
-
-`api/leaderboard.js` is a Vercel Function that keeps each X handle's best score in Upstash Redis. To turn it on: Vercel project → Storage → Create Database → Upstash for Redis (free tier), connect it to the project, and redeploy. The integration sets `KV_REST_API_URL` and `KV_REST_API_TOKEN` (`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` also work). Until it's connected, the API answers 503 and the game shows the on-device board instead.
-
-Players type their handle; it isn't verified, and the API only rejects malformed handles, scores the reported run can't produce, and more than 10 submits a minute per IP.
-
 ## 3D models
 
 The booster, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
