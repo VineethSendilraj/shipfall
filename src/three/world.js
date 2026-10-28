@@ -1092,6 +1092,9 @@ function buildStarbase(root, scene, renderer, towerMats) {
     keyLight: key,
     dressing,
     envTarget,
+    // Title screen: from above the beach road, both towers left of the title card, the bay and the
+    // barrier island behind them and the Gulf past the beach on the right.
+    establish: { pos: [120, 260, 577], tgt: [339, 27, -265], focus: [45, 0, 0], fov: 42 },
     fx: STARBASE_FX,
     keep: [beamMat],
     outer,

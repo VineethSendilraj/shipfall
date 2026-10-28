@@ -66,7 +66,7 @@ async function loadFonts() {
 
 async function runDemo() {
   document.body.classList.add('demo');
-  view = createView({ pixelRatio: 1, cinematic: true, samples: 4, preserve: CAPTURE, map: initialMap(params, { remember: false }) });
+  view = createView({ pixelRatio: 1, cinematic: true, titleTime: DEMO.titleFrames * DT, samples: 4, preserve: CAPTURE, map: initialMap(params, { remember: false }) });
   if (!view) return;
   ui = new UI(view);
   fit();
