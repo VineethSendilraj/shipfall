@@ -554,8 +554,8 @@ export class Explore {
   }
 
   /**
-   * Scales the inspection lights to the camera's distance from the stack, so the wide views keep the night. The lamp
-   * is sized to the nearest part of the model, so a girder or the mount beside the camera doesn't burn out.
+   * Scales the inspection lights to the camera's distance from the stack, so the wide views keep the map's light.
+   * The lamp is sized to the nearest part of the model, so a girder or the mount beside the camera doesn't burn out.
    */
   light() {
     const { camera } = this.view;
