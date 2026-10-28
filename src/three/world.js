@@ -132,6 +132,8 @@ const LIGHT = siteLighting(TIME_OF_DAY);
 
 /** Particle and explosion colours for the site at its time of day (the defaults in effects.js are the night ones). */
 export const STARBASE_FX = LIGHT.fx;
+/** Unit vector toward the sun at the site's time of day. */
+export const SUN_DIR = LIGHT.sun;
 
 // ---------------------------------------------------------------- sky
 
@@ -938,8 +940,8 @@ export function bakeSky(renderer, sky, size = 1024) {
 }
 
 /**
- * Builds the launch site for `map` ('starbase' or 'mars') under one group that sits first in the scene,
- * and sets the scene's fog and environment. Returns the parts the view drives, plus:
+ * Builds the launch site for `map` ('starbase' or 'mars') under one group (`root`) that sits first in the
+ * scene, and sets the scene's fog and environment. Returns the parts the view drives, plus:
  *   useProps(model)  swaps the props.glb model in for the procedural dressing it replaces (throws if unusable)
  *   dispose()        removes the world and frees its GPU memory (shared tower materials are kept)
  */
@@ -958,6 +960,7 @@ export function buildWorld(scene, renderer, towerMats, map = 'starbase') {
   return {
     ...world,
     map,
+    root,
     useProps(model) {
       const props = world.makeProps(model);
       model.traverse((o) => o.geometry && shared.add(o.geometry));

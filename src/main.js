@@ -6,11 +6,19 @@ import { Sound } from './audio.js';
 import { UI } from './ui.js';
 import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows, clipRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
+import { Flight } from './flight.js';
+import { createFlightPilot } from './flight-pilot.js';
+import { FlightView } from './three/flight-view.js';
+import { FlightHud, report } from './flight-hud.js';
 import { initialMap, bindMapPicker } from './maps.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
-const CAPTURE = DEMO_MODE && params.get('capture') === '1';
+// ?flight=1 opens free flight; &pilot=1 lets the scripted pilot fly it; &capture=1 also steps it frame by frame.
+const FLIGHT = params.get('flight') === '1';
+const CAPTURE = (DEMO_MODE || FLIGHT) && params.get('capture') === '1';
+const PILOT = FLIGHT && (CAPTURE || params.get('pilot') === '1');
+const FLIGHT_SOUNDS = { ignite: 'ignite', stage: 'ignite', close: 'close', catch: 'catch', boosterLost: 'crash', orbit: 'unlock', deploy: 'close', flip: 'ignite', landingBurn: 'ignite', landed: 'catch' };
 const EMBED = document.body.classList.contains('embed');
 const SITE_URL = __SITE_URL__;
 const SOUND_KEY = 'catch-the-booster.sound';
@@ -126,14 +134,16 @@ async function runDemo() {
 // ------------------------------------------------------------------ play
 
 function runGame() {
-  view = createView({ pixelRatio: 1, cinematic: false, samples: 4, map: initialMap(params) });
+  view = createView({ pixelRatio: 1, cinematic: false, samples: 4, preserve: CAPTURE, map: initialMap(params) });
   if (!view) return;
   ui = new UI(view);
   const quality = new AutoQuality(view, { forced: params.get('quality') });
   fit();
   window.addEventListener('resize', fit);
   loadFonts();
-  loadModels().then((models) => view.useModels(models));
+  const models = loadModels();
+  // A capture applies the models once before its first frame, so a late load can't change frames mid-run.
+  if (!CAPTURE) models.then((m) => view.useModels(m));
 
   const sound = new Sound();
   let game = new Game({ width: WORLD_W, seed: 1 });
@@ -144,9 +154,14 @@ function runGame() {
   let paused = false;
   const held = { left: false, right: false, up: false, down: false };
   let closeLatch = false;
+  let flight = null;
+  let flightView = null;
+  let flightHud = null;
+  let pilot = null;
 
   const titleEl = EMBED ? $('quick-start') : $('title-screen');
   const overEl = $('gameover');
+  const flightOverEl = $('flight-over');
   const touchEl = $('touch');
   const soundBtn = $('sound');
   const shareLink = $('share');
@@ -210,6 +225,8 @@ function runGame() {
   // The embed always shows on-screen buttons: they are the mouse controls inside an X post.
   const showButtons = EMBED || isTouch;
   Object.defineProperty(window, '__game', { get: () => game });
+  Object.defineProperty(window, '__flight', { get: () => flight });
+  Object.defineProperty(window, '__flightView', { get: () => flightView });
   window.__view = view;
   Object.defineProperty(window, '__quality', { get: () => ({ level: quality.name, fps: quality.fps, dpr: view.pixelRatio }) });
 
@@ -237,6 +254,22 @@ function runGame() {
     view.director.reset();
     ui.resetScore();
     ui.enableCoach();
+    play();
+  }
+
+  function startFlight() {
+    mapPicker.apply();
+    flightView ??= new FlightView(view);
+    flightHud ??= new FlightHud(ui);
+    flight = new Flight({ seed: 1 });
+    pilot = PILOT ? createFlightPilot() : null;
+    flightView.enter(flight);
+    flightHud.enter();
+    document.body.classList.add('free-flight');
+    play();
+  }
+
+  function play() {
     state = 'playing';
     overTimer = -1;
     closeLatch = false;
@@ -251,6 +284,13 @@ function runGame() {
 
   function showTitle() {
     setPaused(false);
+    if (flight) {
+      flightView.exit();
+      flightHud.exit();
+      flight = null;
+      document.body.classList.remove('free-flight');
+      flightOverEl.classList.add('hidden');
+    }
     state = 'title';
     game = new Game({ width: WORLD_W, seed: 1 });
     view.director.reset();
@@ -286,6 +326,22 @@ function runGame() {
     else if (!canSubmit) $('again').focus({ preventScroll: true });
   }
 
+  function showFlightOver() {
+    state = 'over';
+    touchEl.classList.add('hidden');
+    document.body.classList.remove('touch-ui', 'playing');
+    const r = report(flight);
+    $('fo-title').textContent = r.title;
+    $('fo-lede').textContent = r.lede;
+    $('fo-sats').textContent = r.sats;
+    $('fo-landing').textContent = r.landing;
+    $('fo-booster').textContent = r.booster;
+    $('fo-time').textContent = r.time;
+    $('fo-share').href = postUrl(r.post);
+    flightOverEl.classList.remove('hidden');
+    $('fo-again').focus({ preventScroll: true });
+  }
+
   function setShareText(rank = 0) {
     const s = game.stats;
     const pts = game.score.toLocaleString('en-US');
@@ -293,7 +349,11 @@ function runGame() {
       s.catches === 0
         ? 'I tried to catch a falling rocket booster with a launch tower and it did not go well. Your turn:'
         : `I caught ${s.catches} rocket booster${s.catches === 1 ? '' : 's'} with a launch tower${s.perfects ? ` (${s.perfects} perfect)` : ''} for ${pts} pts${rank ? `, #${rank} worldwide` : ''}. Beat that:`;
-    shareLink.href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
+    shareLink.href = postUrl(text);
+  }
+
+  function postUrl(text) {
+    return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
   }
 
   // X frames the embed without allow-forms, so a submit event never fires there. Enter in the field still clicks this button.
@@ -349,14 +409,17 @@ function runGame() {
   $('play').addEventListener('click', startGame);
   $('quick-play').addEventListener('click', startGame);
   $('again').addEventListener('click', showTitle);
+  $('fly').addEventListener('click', startFlight);
+  $('quick-fly').addEventListener('click', startFlight);
+  $('fo-again').addEventListener('click', showTitle);
   for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
   $('board-back').addEventListener('click', closeBoard);
-  $('pause-btn').addEventListener('click', () => state === 'playing' && setPaused(true));
+  $('pause-btn').addEventListener('click', () => state === 'playing' && !flight && setPaused(true));
   $('resume').addEventListener('click', () => setPaused(false));
   $('restart').addEventListener('click', startGame);
   $('home').addEventListener('click', showTitle);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && state === 'playing') setPaused(true);
+    if (document.hidden && state === 'playing' && !flight) setPaused(true);
   });
   soundBtn.addEventListener('click', () => {
     unlocked = true;
@@ -398,7 +461,7 @@ function runGame() {
       unlocked = true;
       setSound(!sound.enabled);
     }
-    if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing') setPaused(true);
+    if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing' && !flight) setPaused(true);
   });
   window.addEventListener('keyup', (ev) => {
     const k = KEYMAP[ev.code];
@@ -433,6 +496,7 @@ function runGame() {
   }
 
   function step() {
+    if (flight) return stepFlight();
     game.events.length = 0;
     const input = state === 'playing' ? { ...held, close: closeLatch } : NO_INPUT;
     closeLatch = false;
@@ -454,6 +518,40 @@ function runGame() {
     }
   }
 
+  function stepFlight() {
+    const input = state !== 'playing' ? NO_INPUT : pilot ? pilot(flight) : { ...held, close: closeLatch };
+    closeLatch = false;
+    flightView.snapshot(flight);
+    flight.step(input);
+    flightView.step(flight);
+    for (const ev of flight.events) {
+      if (FLIGHT_SOUNDS[ev.type]) sound.play(FLIGHT_SOUNDS[ev.type]);
+      if (ev.type === 'landed') sound.play('perfect');
+      if (ev.type === 'over') {
+        overTimer = 2.6;
+        if (flight.ship.mode === 'crashed') sound.play('crash');
+      }
+    }
+    if (overTimer > 0) {
+      overTimer -= DT;
+      if (overTimer <= 0 && state === 'playing') showFlightOver();
+    }
+  }
+
+  function draw(alpha) {
+    if (flight) {
+      const f = flight;
+      sound.update(Math.max(f.ship.mode === 'stacked' || f.cut ? f.booster.throttle : 0, f.ship.throttle), false);
+      flightHud.update(f, { show: state === 'playing', dip: flightView.director.dip });
+      flightView.render(f, { alpha });
+      return;
+    }
+    const b = game.activeBooster();
+    sound.update(paused ? 0 : Math.max(0, ...game.boosters.map((x) => x.throttle)), !paused && state === 'playing' && b && b.rcs !== 0);
+    ui.update(game, { dip: view.director.dip });
+    view.render(game, { alpha });
+  }
+
   let last = performance.now();
   let acc = 0;
   const frame = (now) => {
@@ -468,13 +566,30 @@ function runGame() {
       acc -= DT;
       n++;
     }
-    const b = game.activeBooster();
-    sound.update(paused ? 0 : Math.max(0, ...game.boosters.map((x) => x.throttle)), !paused && state === 'playing' && b && b.rcs !== 0);
-    ui.update(game, { dip: view.director.dip });
-    view.render(game, { alpha: Math.min(1, acc / DT) });
+    draw(Math.min(1, acc / DT));
     requestAnimationFrame(frame);
   };
-  requestAnimationFrame(frame);
+
+  /** Frame-stepped free flight flown by the scripted pilot, for screenshots and scans: window.__advance(n, render). */
+  async function captureFlight() {
+    view.useModels(await Promise.race([models, new Promise((done) => setTimeout(done, DEMO_MODEL_WAIT_MS, null))]));
+    await loadFonts();
+    startFlight();
+    window.__advance = (n = 1, render = true) => {
+      for (let i = 0; i < n; i++) step();
+      if (render) draw(1);
+      const f = flight;
+      return { frame: f.frame, done: state === 'over', t: f.t, real: f.real, phase: f.phase, mode: f.ship.mode, booster: f.booster.state };
+    };
+    draw(1);
+    window.__flightReady = true;
+  }
+
+  if (CAPTURE) captureFlight();
+  else {
+    if (FLIGHT) startFlight();
+    requestAnimationFrame(frame);
+  }
 }
 
 if (DEMO_MODE) runDemo();

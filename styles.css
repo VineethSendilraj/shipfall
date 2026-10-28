@@ -145,7 +145,7 @@ body.paused #touch { display: none; }
 .corner { position: absolute; right: 18px; bottom: 18px; display: flex; gap: 8px; z-index: 5; }
 .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line); background: rgba(10, 11, 13, 0.62); color: var(--ink); cursor: pointer; }
 #pause-btn { display: none; }
-body.playing:not(.paused) #pause-btn { display: grid; }
+body.playing:not(.paused):not(.free-flight) #pause-btn { display: grid; }
 .icon-btn .wave { display: none; }
 .icon-btn[aria-pressed='true'] .wave { display: inline; }
 .icon-btn[aria-pressed='true'] .mute { display: none; }
@@ -319,6 +319,35 @@ body.compact .demo-card .disclaim { font-size: 10.5px; bottom: 22px; letter-spac
 body.touch-ui #corner { bottom: auto; top: calc(18px * var(--ui) + 112px); right: calc(18px * var(--ui)); }
 /* The pause card covers the corner's in-flight spot in embeds and on phones. */
 body.paused.touch-ui #corner, body.paused.compact #corner { top: auto; bottom: 10px; }
+
+/* ----------------------------------------------------------- free flight */
+body:not(.free-flight) #g-salt, body:not(.free-flight) #g-sspd, body:not(.free-flight) .timeline .fl, body:not(.free-flight) .align .retro { display: none; }
+body.free-flight .timeline .m-burn, body.free-flight .timeline .l-burn, body.free-flight .timeline .m-catch, body.free-flight .timeline .l-catch, body.free-flight .scorebox .meta { display: none; }
+/* Five instruments on the ship's side: a narrower timeline keeps the bar inside a 1280 px screen. */
+body.free-flight:not(.compact) .mission { width: calc(480px * var(--ui)); }
+body.free-flight:not(.compact) .cluster { gap: calc(12px * var(--ui)); }
+body.free-flight:not(.compact) .gauge, body.free-flight:not(.compact) .engines, body.free-flight:not(.compact) .align { width: calc(64px * var(--ui)); }
+body.free-flight .timeline text { font-size: 10.5px; letter-spacing: 1.1px; }
+.timeline .mark.past, .timeline .mark.on { fill: var(--ink); }
+.timeline .mark.ok { fill: var(--green); stroke: var(--green); }
+.timeline .mark.bad { fill: var(--red); stroke: var(--red); }
+.align .retro { fill: none; stroke: var(--amber); stroke-width: 1.6; }
+.align.ready .retro { stroke: var(--green); }
+.status.warn { opacity: 1; color: var(--amber); }
+.touch button.catch.idle { color: var(--muted); border-color: rgba(255, 255, 255, 0.18); }
+.fly-hint { margin: 14px 0 0; font-size: 13px; line-height: 2; color: var(--muted); }
+.fly-hint b { color: var(--ink); font-weight: 600; }
+.fly-hint kbd { font-size: 11px; padding: 2px 6px; min-width: 22px; }
+.fly-hint kbd.wide { min-width: 48px; }
+#flight-over .report { margin: 0; display: grid; gap: 4px; }
+#flight-over .report div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.04); font-size: 14px; font-variant-numeric: tabular-nums; }
+#flight-over .report dt { color: var(--muted); }
+#flight-over .report dd { margin: 0; text-align: right; }
+body.compact #flight-over .card { padding: 16px 18px 14px; border-radius: 16px; max-height: calc(100% - 16px); }
+body.compact #flight-over h1 { font-size: 34px; }
+body.compact #flight-over .lede { margin: 6px 0 10px; font-size: 13px; }
+body.compact #flight-over .report div { padding: 4px 8px; font-size: 12.5px; }
+body.tall #flight-over { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 
 /* ------------------------------------------------- map picker (src/maps.js) */
 .map-pick { display: flex; gap: 2px; padding: 3px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(6, 7, 9, 0.5); }
