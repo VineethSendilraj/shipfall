@@ -36,15 +36,18 @@ const LIGHT_NEAR = 25;
 const LAMP_LUX = 4.5; // what the camera lamp puts on the nearest part of the model
 const FILL_CD = 800;
 
-/** Focus presets in chip and key (1-9) order. Positions are relative to the foot of the stack unless `world`. */
+/**
+ * Focus presets in chip and key (1-9) order. Positions are relative to the foot of the stack unless `world`. A `wide`
+ * subject keeps its whole width on narrow screens.
+ */
 const PRESETS = [
   { id: 'stack', label: 'Stack', target: [0, 76, 0], camera: [62, 10, 200], fov: 44 },
   // From below, between two of the mount's legs.
-  { id: 'engines', label: 'Engines', target: [0, BOOSTER_Y + ENGINE_Y + 0.35, 0], camera: [0, 10, 6.3], fov: 52 },
+  { id: 'engines', label: 'Engines', target: [0, BOOSTER_Y + ENGINE_Y + 0.35, 0], camera: [0, 10, 6.3], fov: 52, wide: true },
   { id: 'fins', label: 'Grid fins', target: [0, BOOSTER_Y + 4.5, 0], camera: [11, BOOSTER_Y + 12, 14], fov: 40 },
   { id: 'ring', label: 'Hot-stage ring', target: [0, BOOSTER_Y + 10, 0], camera: [10, BOOSTER_Y + 12.5, 14], fov: 36 },
   { id: 'nose', label: 'Nose and tiles', target: [0, SHIP_PINS + 8, 0], camera: [8, SHIP_PINS + 11, 25.5], fov: 40 },
-  { id: 'flaps', label: 'Flaps', target: [0, SHIP_PINS - 25, 0], camera: [9, SHIP_PINS - 21, 30], fov: 44 },
+  { id: 'flaps', label: 'Flaps', target: [0, SHIP_PINS - 25, 0], camera: [9, SHIP_PINS - 21, 30], fov: 44, wide: true },
   { id: 'chopsticks', label: 'Chopsticks', target: [10, SHIP_PINS - 1, 0], camera: [-6, SHIP_PINS + 8, 40], fov: 46 },
   { id: 'tower', label: 'Tower top', target: [TOWER_DX, 148, 0], camera: [TOWER_DX + 34, 160, 30], fov: 42 },
   { id: 'farm', label: 'Tank farm', world: true, target: [-170, 14, -268], camera: [-122, 30, -190], fov: 40 },
@@ -340,11 +343,11 @@ export class Explore {
 
   /**
    * A preset's FOV, widened on screens narrower than square (counting the View's tall-screen lift) so its subject
-   * still fits across them.
+   * still fits across them. A wide subject keeps the preset's FOV from edge to edge.
    */
   fovFor(p) {
     const { size, lift } = this.view;
-    const narrow = Math.max(1, (size.h * (1 + lift)) / size.w) ** 0.6;
+    const narrow = Math.max(1, (size.h * (1 + lift)) / size.w) ** (p.wide ? 1 : 0.6);
     return THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(p.fov / 2)) * narrow));
   }
 
