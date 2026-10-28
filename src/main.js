@@ -145,6 +145,7 @@ function runGame() {
     game.start();
     view.director.reset();
     ui.resetScore();
+    ui.enableCoach();
     state = 'playing';
     overTimer = -1;
     closeLatch = false;
@@ -174,9 +175,15 @@ function runGame() {
     document.body.classList.remove('touch-ui', 'playing');
     const s = game.stats;
     $('go-kicker').textContent = game.lives > 0 ? 'mission report' : 'out of boosters';
-    $('go-score').textContent = `${game.score.toLocaleString('en-US')} pts`;
+    const best = loadBoard()[0]?.score ?? 0;
+    if (game.score > best && s.catches > 0) $('go-kicker').textContent = 'new personal best';
+    $('go-score').textContent = game.score.toLocaleString('en-US');
     $('go-stats').textContent = `${game.round} round${game.round === 1 ? '' : 's'} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${s.perfects} perfect · ${s.doubles} double`;
-    const text = `i caught the booster: ${game.score.toLocaleString('en-US')} pts`;
+    const pts = game.score.toLocaleString('en-US');
+    const text =
+      s.catches === 0
+        ? 'I tried to catch a falling rocket booster with a launch tower and it did not go well. Your turn:'
+        : `I caught ${s.catches} rocket booster${s.catches === 1 ? '' : 's'} with a launch tower${s.perfects ? ` (${s.perfects} perfect)` : ''} for ${pts} pts. Beat that:`;
     shareLink.href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
     const q = qualifies(game.score);
     form.classList.toggle('hidden', !q);
@@ -295,6 +302,7 @@ function runGame() {
     view.stepCamera(game);
     for (const ev of game.events) {
       if (ev.type === 'catch') {
+        ui.finishCoach();
         sound.play('catch');
         if (ev.perfect) sound.play('perfect');
       } else if (ev.type === 'gameover') {

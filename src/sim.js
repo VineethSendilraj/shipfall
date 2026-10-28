@@ -290,6 +290,7 @@ export class Game {
         vs: b.vy / PX_PER_M,
         lat: (b.x - tw.cx) / PX_PER_M,
         latPx: b.x - tw.cx,
+        armDy: (b.y - tw.armY) / PX_PER_M,
         fuel: b.fuel,
         burning: b.burning,
         cutoff: b.cutoff,
@@ -639,8 +640,11 @@ export class Game {
     b.vy = 0;
     const gx = b.x + (b.rot ? Math.sin(-b.rot) * 60 : 0);
     this.spawnSparks(gx, GROUND_Y - 6, 70, 0);
-    for (let i = 0; i < 26; i++) this.spawnFire(gx + this.fx.range(-40, 40), GROUND_Y - this.fx.range(4, 60), this.fx.range(-160, 160), this.fx.range(-260, -40), 0.9);
-    this.spawnDust(gx, 18);
+    for (let i = 0; i < 52; i++) this.spawnFire(gx + this.fx.range(-50, 50), GROUND_Y - this.fx.range(4, 90), this.fx.range(-200, 200), this.fx.range(-330, -40), 1.25);
+    for (let i = 0; i < 22; i++) {
+      this.pushParticle({ k: 1, x: gx + this.fx.range(-40, 40), y: GROUND_Y - this.fx.range(10, 70), vx: this.fx.range(-40, 40), vy: this.fx.range(-120, -40), t: 0, life: this.fx.range(2.2, 3.6), size: this.fx.range(26, 46), grow: 60 });
+    }
+    this.spawnDust(gx, 24);
     this.shake = Math.max(this.shake, 18);
     this.flash = 0.6;
     this.flashColor = '255,150,80';
