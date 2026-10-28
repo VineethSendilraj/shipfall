@@ -135,16 +135,38 @@ export const STARBASE_FX = LIGHT.fx;
 
 // ---------------------------------------------------------------- sky
 
-// Clear sky: pale and hazy at the horizon, deeper blue overhead, brighter around the sun. Shared by the sky,
-// its reflection environment and the water.
+// Clear sky: pale and hazy at the horizon, deeper blue overhead, brighter around the sun. The water reflects it
+// (cloud texture reads are not safe in the water's branch). siteSky() adds light clouds for the sky and its
+// reflection environment, so the steel picks them up: a few soft cumulus low over the horizon, thin cirrus above.
 const SKY_GLSL = /* glsl */ `
-uniform vec3 uSun; uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow;
+uniform vec3 uSun; uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow; uniform sampler2D uCloudNoise;
 float skyAngle(vec3 d, vec3 s) { return 2.0 * asin(min(1.0, length(d - s) * 0.5)); }
-vec3 siteSky(vec3 d) {
+vec3 clearSky(vec3 d) {
   float h = max(d.y, 0.0);
   vec3 col = mix(uHorizon, uZenith, 1.0 - exp(-3.5 * h));
   float side = max(dot(normalize(d.xz + vec2(1e-6, 0.0)), normalize(uSun.xz + vec2(1e-6, 0.0))), 0.0);
   return col + uGlow * (0.7 * pow(max(dot(d, uSun), 0.0), 12.0) + 0.5 * side * side * side * exp(-8.0 * h));
+}
+vec3 siteSky(vec3 d) {
+  // Clamped, so directions below the horizon (the sea, MSAA edge samples) keep every lookup bounded.
+  float h = clamp(d.y, 0.0, 1.0);
+  vec2 az = d.xz / max(length(d.xz), 1e-3);
+  // Lit clouds outshine the horizon haze. After dark they only just show.
+  float lum = dot(uHorizon, vec3(0.2126, 0.7152, 0.0722)) * mix(0.5, 1.5, smoothstep(-0.1, 0.1, uSun.y));
+  vec3 white = vec3(lum) + uGlow * pow(max(dot(d, uSun), 0.0), 6.0);
+  // Cumulus: noise on a ring (round it with the azimuth, across it with height) under a cutoff that rises with
+  // height, so each puff is a mound on the horizon, brighter where the noise thins upward (its sunlit top).
+  vec2 ring = az * (0.8 + 1.8 * h);
+  float n = texture2D(uCloudNoise, ring).r;
+  float up = texture2D(uCloudNoise, ring + az * 0.03).r;
+  float cumulus = smoothstep(0.6, 0.72, n - 0.5 * h) * smoothstep(0.0, 0.02, h);
+  vec3 cloud = mix(white * mix(0.65, 1.0, clamp(0.5 + (n - up) * 10.0, 0.0, 1.0)), uHorizon, 0.4 * smoothstep(0.1, 0.0, h));
+  // Cirrus: faint patches of streaks on a high, flat layer, all drawn out the same way.
+  vec2 p = d.xz / (h + 0.25);
+  float patches = texture2D(uCloudNoise, p * 0.1 + 0.5).r;
+  float streaks = texture2D(uCloudNoise, vec2(0.08 * p.x + 0.06 * p.y, 0.3 * p.y - 0.4 * p.x)).g;
+  float cirrus = 0.3 * smoothstep(0.52, 0.66, patches) * smoothstep(0.45, 0.7, streaks) * smoothstep(0.1, 0.35, h);
+  return mix(mix(clearSky(d), white, cirrus), cloud, cumulus);
 }
 `;
 
@@ -163,6 +185,7 @@ function skyUniforms() {
     uZenith: { value: LIGHT.zenith },
     uHorizon: { value: LIGHT.horizon },
     uGlow: { value: LIGHT.glow },
+    uCloudNoise: { value: puffNoise() },
   };
 }
 
@@ -568,7 +591,7 @@ function groundMaterial(sky) {
     ...sky,
     uSiteNear: { value: bakeSite(NEAR_MAP, true) },
     uSiteFar: { value: bakeSite(FAR_MAP, false) },
-    uDetail: { value: puffNoise() },
+    uDetail: { value: sky.uCloudNoise.value },
     uNearBox: { value: new THREE.Vector4(nx, nz, 1 / ns, 1 / ns) },
     uFarBox: { value: new THREE.Vector4(fx, fz, 1 / fs, 1 / fs) },
     uShallow: { value: new THREE.Color().setRGB(0.035, 0.095, 0.16) },
@@ -621,7 +644,7 @@ function groundMaterial(sky) {
           float F = 0.4 * (0.02 + 0.98 * pow(1.0 - max(dot(N, V), 0.0), 5.0));
           vec3 R = reflect(-V, N);
           R.y = max(abs(R.y), 0.5);
-          outgoingLight = mix(outgoingLight, outgoingLight * (1.0 - F) + siteSky(normalize(R)) * F, water);
+          outgoingLight = mix(outgoingLight, outgoingLight * (1.0 - F) + clearSky(normalize(R)) * F, water);
         }
         // Far ground fades into the horizon haze, so the edge of the ground never shows.
         outgoingLight = mix(outgoingLight, uHorizon, smoothstep(3600.0, 5200.0, distance(vSite, cameraPosition)));
