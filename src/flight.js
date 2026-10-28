@@ -298,18 +298,20 @@ export class Flight {
         // forward = (-sin h, 0, -cos h), right = (cos h, 0, -sin h)
         let vcx = (-s * fwd + c * right) * F.vMax;
         let vcz = (-c * fwd - s * right) * F.vMax;
+        // Edge of the site: outward speed is capped so the stack brakes to a stop at the fence, and drifts back
+        // in if it ends up past it.
         const ox = pos.x - this.mount.x;
         const oz = pos.z - this.mount.z;
         const od = Math.hypot(ox, oz);
-        if (od > F.fence) {
-          const out = (vcx * ox + vcz * oz) / od;
-          if (out > 0) {
-            vcx -= (out * ox) / od;
-            vcz -= (out * oz) / od;
+        if (od > F.fenceWarn) {
+          const ux = ox / od;
+          const uz = oz / od;
+          const out = vcx * ux + vcz * uz;
+          const allowed = od < F.fence ? Math.sqrt(2 * BRAKE_ACC * (F.fence - od)) : -Math.min(8, (od - F.fence) * 0.5);
+          if (out > allowed) {
+            vcx -= (out - allowed) * ux;
+            vcz -= (out - allowed) * uz;
           }
-          const back = Math.min(8, (od - F.fence) * 0.5);
-          vcx -= (back * ox) / od;
-          vcz -= (back * oz) / od;
         }
         const ax = KV_H * (vcx - vel.x) - dragX;
         const az = KV_H * (vcz - vel.z) - dragZ;

@@ -217,6 +217,19 @@ test('a full tank hovers for about three minutes', () => {
   assert.ok(Math.abs(perMin - 100 / 3) < 1.5, `${perMin.toFixed(2)} % per minute at hover`);
 });
 
+test('the flight computer warns, then turns back at the edge of the site', () => {
+  const f = liftTo(new Flight(), 120);
+  let warned = false;
+  let maxD = 0;
+  for (let i = 0; i < 60 * 110; i++) {
+    f.step({ climb: 0, yaw: 0, fwd: 1, right: 0 });
+    warned ||= f.warn === 'fence';
+    maxD = Math.max(maxD, Math.hypot(f.pos.x - DEFAULT_MOUNT.x, f.pos.z - DEFAULT_MOUNT.z));
+  }
+  assert.ok(warned, 'RETURN TO THE SITE warning');
+  assert.ok(maxD < FLIGHT.fence + 80, `stayed inside the fence (${maxD.toFixed(0)} m)`);
+});
+
 test('the flight computer stops climbing at the ceiling', () => {
   const f = new Flight();
   for (let i = 0; i < 60 * 100; i++) f.step(CLIMB);
