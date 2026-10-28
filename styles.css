@@ -337,10 +337,11 @@ body.tall #flight-over { align-items: start; padding-top: 16px; padding-bottom: 
 .home-top { position: absolute; top: 26px; left: 34px; right: 34px; display: flex; align-items: center; justify-content: space-between; gap: 20px; pointer-events: none; }
 .home-top > * { pointer-events: auto; }
 .wordmark { margin: 0; font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -0.005em; color: var(--ink); text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55); }
-.modes { display: flex; gap: 18px; }
-.modes button { font: 600 12.5px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); background: none; border: 0; border-bottom: 1px solid transparent; padding: 6px 0; cursor: pointer; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
-.modes button:hover { color: var(--ink); }
-.modes button[aria-pressed='true'] { color: var(--ink); border-bottom-color: var(--ink); }
+.modes { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; gap: 4px; padding: 4px; border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(10, 11, 13, 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.modes button { white-space: nowrap; font: 700 14px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #c9ced6; background: none; border: 0; border-radius: 7px; padding: 10px 20px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.modes button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.08); }
+.modes button[aria-pressed='true'] { color: #0b0c0e; background: var(--ink); }
 .modes button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 .pick { position: absolute; inset: 0; pointer-events: none; }
@@ -392,10 +393,12 @@ body.embed .how .taps { display: inline; }
 
 /* Small embeds and phones: the title on top, then the vehicle, then a stacked dock with a big play button. */
 body.compact .overlay.home { --hero-y: 36%; }
+/* Narrower than the wordmark plus the centered tabs: stack them. */
+@media (max-width: 1100px) { .home-top { flex-direction: column; gap: 12px; } .modes { position: static; transform: none; } }
 body.compact .home-top { top: 14px; left: 12px; right: 12px; flex-direction: column; gap: 6px; }
 body.compact .wordmark { font-size: 27px; }
-body.compact .modes { gap: 14px; }
-body.compact .modes button { font-size: 11px; padding: 4px 0; }
+body.compact .modes { position: static; transform: none; gap: 2px; padding: 3px; border-radius: 9px; }
+body.compact .modes button { font-size: 12px; letter-spacing: 0.1em; padding: 7px 12px; }
 body.compact .pick-arrow { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
 body.compact .pick-arrow[data-step='-1'] { transform: translateX(min(-120px, -26vw)); }
 body.compact .pick-arrow[data-step='1'] { transform: translateX(max(120px, 26vw)); }
@@ -413,7 +416,7 @@ body.compact .home-links .ext { font-size: 12px; padding: 4px 8px; text-shadow: 
 body.compact .how { padding: 16px 18px 14px; }
 body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
 body.compact .how .rules { margin: 12px 0 14px; font-size: 12px; }
-body.tall .overlay.home { --hero-y: 26%; }
+body.tall .overlay.home { --hero-y: 28%; }
 body.tall .home-dock { bottom: calc(30% + 8px); }
 body.tall .pick-label { bottom: calc(30% + 134px); }
 body.tall .how { top: 35%; }
