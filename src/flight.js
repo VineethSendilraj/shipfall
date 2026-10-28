@@ -438,15 +438,16 @@ export class Flight {
     const mass = BOOSTER_SPEC.dry + b.prop + this.shipMass();
     const rho = integrate(b, dt, mass, thrust, b.ang, STACK_AERO);
     b.prop -= (thrust / BOOSTER_SPEC.c) * dt;
-    b.throttle = fuel ? this.throttle : 0;
-    b.engines = b.throttle > 0 ? 33 : 0;
     this.trackQ(rho, b);
     s.x = b.x + Math.cos(b.ang) * BOOSTER_TOP;
     s.y = b.y + Math.sin(b.ang) * BOOSTER_TOP;
     s.vx = b.vx;
     s.vy = b.vy;
     s.ang = b.ang;
+    // Before the throttle update, so the plume never blanks for a frame between full thrust and the separation burn.
     if (!fuel) return this.stage();
+    b.throttle = this.throttle;
+    b.engines = b.throttle > 0 ? 33 : 0;
     if (hitsTower(b, b.ang, BOOSTER_BELLS, BOOSTER_TOP + SHIP_H)) return this.crashStack('hit the tower');
     if (lowest(b, b.ang, BOOSTER_BASE, BOOSTER_TOP + SHIP_H) < groundAt(L.phi * R) - 0.5) this.crashStack(this.t < 20 ? 'fell back onto the pad' : 'came down');
   }
