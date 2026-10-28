@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { instantiate } from './models.js';
 
 export const TOWER_H = 148.5;
 export const TOWER_HALF_M = 7;
@@ -101,12 +102,7 @@ export function createTowerMaterials() {
   };
 }
 
-/**
- * side = -1: arms reach toward -X (tower right of its lane); side = +1: arms reach toward +X.
- * The tower group's origin is the tower base center.
- */
-export function createTower(mats, side) {
-  const root = new THREE.Group();
+function addProceduralStructure(root, mats, side) {
   const lattice = latticeTower(mats.lattice);
   root.add(lattice);
 
@@ -135,6 +131,37 @@ export function createTower(mats, side) {
     rail.castShadow = true;
     root.add(rail);
   }
+}
+
+function addProceduralArm(pivot, mats, armGeo) {
+  const arm = new THREE.Mesh(armGeo, mats.arm);
+  arm.castShadow = true;
+  arm.receiveShadow = true;
+  pivot.add(arm);
+  const reach = 26 - (TOWER_HALF_M + 1.4);
+  const pad = new THREE.Mesh(new THREE.BoxGeometry(7, 0.35, ARM_W * 0.9), mats.pad);
+  pad.position.set(reach, 0.12, 0);
+  pivot.add(pad);
+  const stay = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mats.carriage);
+  stay.applyMatrix4(beamMatrix(new THREE.Vector3(0, 5.5, 0), new THREE.Vector3(11, -0.3, 0), 0.45, new THREE.Matrix4()));
+  stay.castShadow = true;
+  pivot.add(stay);
+}
+
+/**
+ * side = -1: arms reach toward -X (tower right of its lane); side = +1: arms reach toward +X.
+ * The tower group's origin is the tower base center. model: the loaded tower.glb scene (built for side = -1
+ * and mirrored for side = +1); without it the tower is built procedurally.
+ */
+export function createTower(mats, side, model = null) {
+  const root = new THREE.Group();
+  if (model) {
+    const structure = instantiate(model.getObjectByName('towerStatic'), mats);
+    structure.scale.x = -side;
+    root.add(structure);
+  } else {
+    addProceduralStructure(root, mats, side);
+  }
 
   // Aviation lights (emissive, bloom), blinked by the view.
   const lightMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 0.25, 0.15), toneMapped: false });
@@ -155,7 +182,7 @@ export function createTower(mats, side) {
 
   // Carriage + arms (moved vertically by the view).
   const carriage = new THREE.Group();
-  const cg = new THREE.Mesh(carriageGeometry(), mats.carriage);
+  const cg = model ? instantiate(model.getObjectByName('carriage'), mats) : new THREE.Mesh(carriageGeometry(), mats.carriage);
   cg.scale.x = -side;
   cg.castShadow = true;
   cg.receiveShadow = true;
@@ -167,30 +194,20 @@ export function createTower(mats, side) {
     carriage.add(panel);
   }
 
-  const armGeo = armGeometry();
+  const armNode = model?.getObjectByName('arm');
+  const armGeo = armNode ? null : armGeometry();
   const glowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.3, 1.6, 2.4), toneMapped: false });
-  const padMat = mats.pad;
   const arms = [];
   for (const zSign of [1, -1]) {
     const pivot = new THREE.Group();
     pivot.position.set(side * (TOWER_HALF_M + 1.4), 0, zSign * ARM_Z);
-    const arm = new THREE.Mesh(armGeo, mats.arm);
-    arm.castShadow = true;
-    arm.receiveShadow = true;
-    pivot.add(arm);
-    const reach = 26 - (TOWER_HALF_M + 1.4);
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(7, 0.35, ARM_W * 0.9), padMat);
-    pad.position.set(reach, 0.12, 0);
-    pivot.add(pad);
+    if (armNode) pivot.add(instantiate(armNode, mats, (role) => role !== 'pad'));
+    else addProceduralArm(pivot, mats, armGeo);
     for (const zz of [-ARM_W * 0.52, ARM_W * 0.52]) {
       const strip = new THREE.Mesh(new THREE.BoxGeometry(ARM_LEN * 0.82, 0.16, 0.14), glowMat);
       strip.position.set(ARM_LEN * 0.5, -0.2, zz);
       pivot.add(strip);
     }
-    const stay = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mats.carriage);
-    stay.applyMatrix4(beamMatrix(new THREE.Vector3(0, 5.5, 0), new THREE.Vector3(11, -0.3, 0), 0.45, new THREE.Matrix4()));
-    stay.castShadow = true;
-    pivot.add(stay);
     carriage.add(pivot);
     arms.push({ pivot, zSign });
   }

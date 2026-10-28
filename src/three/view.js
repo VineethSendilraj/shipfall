@@ -3,6 +3,7 @@ import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
 import { createTower, createTowerMaterials } from './tower.js';
 import { buildWorld, bakeSky } from './world.js';
 import { boosterSkin } from './textures.js';
+import { instantiate } from './models.js';
 import { createPlume, createParticles } from './effects.js';
 import { createComposer } from './post.js';
 import { Director, toX, toY } from './director.js';
@@ -43,12 +44,14 @@ export class View {
     this.camera = new THREE.PerspectiveCamera(38, 16 / 9, 1, 6000);
 
     const towerMats = createTowerMaterials();
+    this.towerMats = towerMats;
     this.world = buildWorld(scene, renderer, towerMats);
     this.towers = [createTower(towerMats, -1), createTower(towerMats, 1)];
     for (const t of this.towers) scene.add(t.root);
     this.towers[1].root.visible = false;
 
     const mats = createBoosterMaterials(boosterSkin(), 1.0);
+    this.boosterMats = mats;
     this.pool = [0, 1, 2].map(() => {
       const b = createBooster(mats);
       const plume = createPlume();
@@ -84,6 +87,56 @@ export class View {
     this.lift = 0;
     this._v = new THREE.Vector3();
     this._v2 = new THREE.Vector3();
+  }
+
+  /**
+   * Swaps the loaded Blender models in for the procedural ones. A model that failed to load (null), or that
+   * can't be instantiated, leaves its procedural version in place. Everything is rebuilt before anything is
+   * swapped, and render() re-applies all per-frame state, so this can run between any two frames.
+   */
+  useModels(models) {
+    if (!models) return;
+    const build = (name, fn) => {
+      if (!models[name]) return null;
+      try {
+        return fn(models[name]);
+      } catch (err) {
+        console.error(`${name} model unusable; keeping the procedural one`, err);
+        return null;
+      }
+    };
+    const boosters = build('booster', (m) => this.pool.map(() => createBooster(this.boosterMats, m)));
+    const towers = build('tower', (m) => [createTower(this.towerMats, -1, m), createTower(this.towerMats, 1, m)]);
+    const props = build('props', (m) => instantiate(m, this.world.dressing.mats));
+
+    const replace = (oldRoot, newRoot) => {
+      newRoot.visible = oldRoot.visible;
+      this.scene.remove(oldRoot);
+      this.scene.add(newRoot);
+      oldRoot.traverse((o) => {
+        if (o.isInstancedMesh) o.dispose();
+        o.geometry?.dispose();
+      });
+    };
+    if (boosters) {
+      this.pool.forEach((slot, i) => {
+        const next = boosters[i];
+        next.root.add(slot.plume.group);
+        replace(slot.root, next.root);
+        slot.root = next.root;
+        slot.throatMat = next.throatMat;
+      });
+    }
+    if (towers) {
+      this.towers.forEach((old, i) => replace(old.root, towers[i].root));
+      this.towers = towers;
+    }
+    if (props) {
+      const { mount, tanks } = this.world.dressing;
+      mount.visible = false;
+      tanks.visible = false;
+      this.scene.add(props);
+    }
   }
 
   setQuality(q) {

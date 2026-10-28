@@ -2,13 +2,13 @@
 
 A 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
 
-**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: every model, texture, the sky and the effects are generated procedurally at runtime.
+**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: the booster, tower and site models are built from code in this repo (see [3D models](#3d-models)), and the textures, the sky and the effects are generated procedurally at runtime.
 
-- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): PBR brushed-stainless booster with four lattice grid fins, a hot-stage ring, catch pins and 33 engine bells; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
+- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): a brushed-stainless booster with rolled rings and weld seams, a vented hot-stage ring, four lattice grid fins on actuator housings, catch hardpoints and 33 engine bells under the heat shield; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
 - Moonlit night sky (procedural stars, milky way, textured moon), moon-cast shadows, inverse-square floodlights, warm engine light on the booster and tower.
 - HDR post-processing: bloom on the plume and lights, heat haze under the engines, vignette and a subtle lens fringe.
 - A cinematic camera: low-angle tracking during descent, a close-up on each catch, and a wide shot when the second tower comes online.
-- Static site only: no backend, no API keys, no analytics, no runtime network calls (no CDNs).
+- Static site only: no backend, no API keys, no analytics, no third-party network calls (no CDNs; the only runtime fetches are the game's own model files).
 - Playable inline in an X post through a player card: `/` is the share page, `/embed/` is the game-only page X iframes (see [X player card](#x-player-card)).
 
 ## Controls
@@ -107,6 +107,23 @@ Without any of these, the build uses the placeholder `https://catch-the-booster.
 
 Players type their handle; it isn't verified, and the API only rejects malformed handles, scores the reported run can't produce, and more than 10 submits a minute per IP.
 
+## 3D models
+
+The booster, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
+
+| File | Triangles | Size |
+| --- | --- | --- |
+| `booster.glb` | 70,746 | 466 KB |
+| `tower.glb` (structure, carriage, one arm drawn twice) | 24,984 | 260 KB |
+| `props.glb` | 32,810 | 194 KB |
+
+- The game loads them at startup (`src/three/models.js`) and swaps them in when they arrive; until then, or if a file fails to load, it uses the procedural three.js models in `booster.js`, `tower.js` and `world.js`. `?demo=1` waits up to 6 s for them before the first step, so a demo run never changes models midway.
+- Units are meters with +Y up, in the same frame as the procedural models: catch hardpoints rest on the arms at y = 0, bell exits at y = -67.6, and the arm and carriage nodes keep the pivots `setArms()` rotates and raises. The tower is built for the right-hand tower and mirrored for the left one.
+- Each mesh is named after a game material (glTF extra `role`: `steel`, `darkSteel`, `fin`, `bell`, `throat`, `lattice`, `arm`, `tankSteel`, …). The GLBs carry no materials; the game assigns its own, and the booster body keeps the cylindrical UVs its skin texture expects.
+- Rebuild with Blender (tested with 5.2): `blender/build.sh` runs `blender/build_models.py` headless and compresses with `@gltf-transform/cli`. `blender/build.sh --render <dir>` also writes preview renders.
+
+No third-party models are used. Before modeling, downloadable CC0 / CC-BY candidates were checked and set aside: Sketchfab and BlendSwap require an account to download, Printables and Cults3D models are non-commercial or "no AI" licensed 3D-print files, and Poly Pizza has only stylized low-poly rockets and tanks.
+
 ## Project layout
 
 ```
@@ -118,13 +135,14 @@ vite.config.mjs            multi-page build, meta/markup injection
 styles.css                 HUD, overlays, embed + compact + tall layouts
 src/sim.js                 fixed-step physics, catch rules, scoring, rounds (DOM-free)
 src/demo.js                demo config + runner; src/demo-script.js frame-keyed inputs
-src/three/                 3D view: booster, tower, world/sky, effects, camera director, post-processing
+src/three/                 3D view: booster, tower, world/sky, effects, camera director, post-processing, model loader
+blender/                   Blender script that builds public/models/*.glb, and the build wrapper
 src/quality.js             automatic render-quality fallback
 src/ui.js                  DOM HUD, popups, banners, demo cards
 src/main.js                game loop, input (keyboard/mouse/touch), leaderboard, sound
-public/                    card.jpg, _headers, font licenses (copied to dist/ as-is)
+public/                    card.jpg, _headers, models/*.glb, font licenses (copied to dist/ as-is)
 vercel.json                Vercel build + headers
 scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
 ```
 
-Font: Barlow, SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm).
+Font: Barlow, SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm). 3D models: built from `blender/` in this repo, no third-party assets.

@@ -167,8 +167,11 @@ function setDressing(scene, rng, towerMats) {
   olm.position.set(-30, 0, -70);
   scene.add(olm);
 
-  // Tank farm and outbuildings on the horizon.
+  // Tank farm and outbuildings on the horizon. The props model replaces the `tanks` group; its rng draws
+  // still run so the buildings keep their places.
   const farm = new THREE.Group();
+  const tanks = new THREE.Group();
+  farm.add(tanks);
   const tankSteel = new THREE.MeshStandardMaterial({ color: 0xb4b8be, metalness: 1, roughness: 0.34 });
   const bandMat = new THREE.MeshStandardMaterial({ color: 0x5c6066, metalness: 0.9, roughness: 0.5 });
   const insulated = new THREE.MeshStandardMaterial({ color: 0x8d8b86, metalness: 0, roughness: 0.82 });
@@ -180,37 +183,37 @@ function setDressing(scene, rng, towerMats) {
     const tank = new THREE.Mesh(new THREE.CylinderGeometry(r, r, hgt, 32), tankSteel);
     tank.position.set(x, hgt / 2 + 1.5, z);
     tank.castShadow = true;
-    farm.add(tank);
+    tanks.add(tank);
     const head = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 8, 0, Math.PI * 2, 0, Math.PI / 2), tankSteel);
     head.scale.y = 0.35;
     head.position.set(x, hgt + 1.5, z);
-    farm.add(head);
+    tanks.add(head);
     for (const fy of [0.3, 0.62]) {
       const band = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.02, r * 1.02, 0.5, 32, 1, true), bandMat);
       band.position.set(x, 1.5 + hgt * fy, z);
-      farm.add(band);
+      tanks.add(band);
     }
     const skirt = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.95, 1.5, 24), towerMats.concrete);
     skirt.position.set(x, 0.75, z);
-    farm.add(skirt);
+    tanks.add(skirt);
   }
   const rack = new THREE.Mesh(new THREE.BoxGeometry(150, 0.7, 0.7), bandMat);
   rack.position.set(-150, 7, -250);
-  farm.add(rack);
+  tanks.add(rack);
   const rack2 = rack.clone();
   rack2.position.y = 8.4;
-  farm.add(rack2);
+  tanks.add(rack2);
   for (let i = 0; i < 3; i++) {
     const x = -90 + i * 24;
     const sph = new THREE.Mesh(new THREE.SphereGeometry(9, 32, 20), insulated);
     sph.position.set(x, 11.5, -300);
     sph.castShadow = true;
-    farm.add(sph);
+    tanks.add(sph);
     for (let k = 0; k < 4; k++) {
       const a = (k / 4) * Math.PI * 2 + 0.4;
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 11, 8), bandMat);
       leg.position.set(x + Math.cos(a) * 7.4, 5.5, -300 + Math.sin(a) * 7.4);
-      farm.add(leg);
+      tanks.add(leg);
     }
   }
   const windowGeo = new THREE.PlaneGeometry(1.6, 0.9);
@@ -254,6 +257,11 @@ function setDressing(scene, rng, towerMats) {
     dots.setColorAt(i, col);
   }
   scene.add(dots);
+  return {
+    mount: olm,
+    tanks,
+    mats: { tankSteel, band: bandMat, insulated, concrete: towerMats.concrete, mountSteel: steel, dark: hole.material },
+  };
 }
 
 const beamMat = new THREE.ShaderMaterial({
@@ -405,7 +413,7 @@ export function buildWorld(scene, renderer, towerMats) {
   }
   scene.add(lamps);
 
-  setDressing(scene, rng, towerMats);
+  const dressing = setDressing(scene, rng, towerMats);
 
   const haze = new THREE.Mesh(
     new THREE.CylinderGeometry(250, 250, 90, 96, 1, true),
@@ -429,5 +437,5 @@ export function buildWorld(scene, renderer, towerMats) {
   haze.position.y = 45;
   haze.renderOrder = 2;
   scene.add(haze);
-  return { sky, skyMat, floods, moon };
+  return { sky, skyMat, floods, moon, dressing };
 }

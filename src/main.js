@@ -1,5 +1,6 @@
 import { Game, DT, NO_INPUT } from './sim.js';
 import { View } from './three/view.js';
+import { loadModels } from './three/models.js';
 import { createDemoRunner, DEMO } from './demo.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
@@ -16,6 +17,7 @@ const WORLD_W = 1280;
 const $ = (id) => document.getElementById(id);
 
 const canvas = $('gl');
+const DEMO_MODEL_WAIT_MS = 6000;
 let view;
 let ui;
 
@@ -67,6 +69,7 @@ async function runDemo() {
   ui = new UI(view);
   fit();
   window.addEventListener('resize', fit);
+  const models = loadModels();
   await loadFonts();
 
   const runner = createDemoRunner();
@@ -84,6 +87,11 @@ async function runDemo() {
     runner.step();
     view.stepCamera(runner.game);
   };
+
+  // One frame with the procedural models so the canvas isn't blank, then every demo frame uses the same
+  // assets: the Blender models if they load in time, otherwise the procedural ones for the whole run.
+  draw();
+  view.useModels(await Promise.race([models, new Promise((done) => setTimeout(done, DEMO_MODEL_WAIT_MS, null))]));
 
   if (CAPTURE) {
     window.__advance = (n = 1, render = true) => {
@@ -123,6 +131,7 @@ function runGame() {
   fit();
   window.addEventListener('resize', fit);
   loadFonts();
+  loadModels().then((models) => view.useModels(models));
 
   const sound = new Sound();
   let game = new Game({ width: WORLD_W, seed: 1 });

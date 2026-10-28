@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { instantiate } from './models.js';
 
 export const R = 4.5;
 const BODY_TOP = 8;
@@ -109,10 +110,19 @@ export function createBoosterMaterials(skin, envIntensity = 1) {
     inner: new THREE.MeshStandardMaterial({ color: 0x141518, metalness: 0.4, roughness: 0.9 }),
     pin: new THREE.MeshStandardMaterial({ color: 0xb9bcc2, metalness: 0.9, roughness: 0.35 }),
     dome: new THREE.MeshStandardMaterial({ color: 0x8b8f96, metalness: 0.85, roughness: 0.62 }),
+    bell: new THREE.MeshStandardMaterial({ color: 0x2c2b2a, metalness: 0.9, roughness: 0.45, side: THREE.DoubleSide }),
   };
 }
 
-export function createBooster(mats) {
+const MODEL_NO_SHADOW = new Set(['inner', 'bell', 'throat']);
+
+/** model: the loaded booster.glb scene; without it the booster is built procedurally. */
+export function createBooster(mats, model = null) {
+  if (model) {
+    const throatMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false });
+    const root = instantiate(model, { ...mats, throat: throatMat }, (role) => !MODEL_NO_SHADOW.has(role));
+    return { root, throatMat };
+  }
   const geo = sharedGeometry();
   const root = new THREE.Group();
   const add = (g, m, cast = true) => {
@@ -201,9 +211,8 @@ export function createBooster(mats) {
   for (let i = 0; i < 3; i++) layout.push([0.95, (i / 3) * Math.PI * 2 + 0.3]);
   for (let i = 0; i < 10; i++) layout.push([2.35, (i / 10) * Math.PI * 2]);
   for (let i = 0; i < 20; i++) layout.push([3.72, (i / 20) * Math.PI * 2 + 0.08]);
-  const bellMat = new THREE.MeshStandardMaterial({ color: 0x2c2b2a, metalness: 0.9, roughness: 0.45, side: THREE.DoubleSide });
   const throatMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false });
-  const bells = new THREE.InstancedMesh(geo.bell, bellMat, 33);
+  const bells = new THREE.InstancedMesh(geo.bell, mats.bell, 33);
   const throats = new THREE.InstancedMesh(geo.throat, throatMat, 33);
   const one = new THREE.Vector3(1, 1, 1);
   layout.forEach(([r, a], i) => {
