@@ -87,23 +87,48 @@ function skyMaterial({ withStars }) {
 
 function buildEnvironment(renderer) {
   const envScene = new THREE.Scene();
-  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(100, 48, 24), skyMaterial({ withStars: false })));
-  const panel = new THREE.MeshBasicMaterial({ color: new THREE.Color(5, 3.6, 2.4), side: THREE.DoubleSide });
-  const warm = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.4, 0.7, 0.35), side: THREE.DoubleSide });
-  for (const [x, y, z, s, m] of [
-    [60, 6, 50, 14, panel],
-    [-70, 8, 40, 12, panel],
-    [20, 3, 80, 26, warm],
-    [-30, 4, -80, 30, warm],
+  // Neutral night dome for reflections only: a saturated blue sky makes bare steel read as blue plastic.
+  const dome = new THREE.ShaderMaterial({
+    vertexShader: 'varying vec3 vDir; void main() { vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `varying vec3 vDir;
+      void main() {
+        float h = normalize(vDir).y;
+        vec3 col = mix(vec3(0.16, 0.12, 0.09), vec3(0.018, 0.02, 0.026), smoothstep(-0.02, 0.45, h));
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+    side: THREE.BackSide,
+    depthWrite: false,
+  });
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(100, 48, 24), dome));
+  const flood = new THREE.MeshBasicMaterial({ color: new THREE.Color(24, 18, 12), side: THREE.DoubleSide });
+  const sodium = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 1.7, 0.75), side: THREE.DoubleSide });
+  const cool = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 1.35, 1.8), side: THREE.DoubleSide });
+  // Floodlight heads at the mast positions, plus softer sodium and cool sources around the horizon.
+  for (const [x, y, z, w, h, m] of [
+    [62, 16, 26, 6, 3, flood],
+    [-86, 14, 20, 6, 3, flood],
+    [-22, 14, -46, 5, 2.5, flood],
+    [40, 4, 85, 40, 6, sodium],
+    [-70, 5, -60, 46, 7, sodium],
+    [85, 3, -40, 30, 4, sodium],
+    [-90, 6, 55, 26, 5, cool],
   ]) {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.45), m);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
     p.position.set(x, y, z);
     p.lookAt(0, 0, 0);
     envScene.add(p);
   }
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(98, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.035, 0.032, 0.03) }));
+  // Horizon glow: the lit site seen low on every side.
+  const band = new THREE.Mesh(
+    new THREE.CylinderGeometry(96, 96, 10, 64, 1, true),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(0.55, 0.36, 0.22), side: THREE.BackSide }),
+  );
+  band.position.y = 2;
+  envScene.add(band);
+  // Floodlit concrete pad below: the main thing a vertical steel tank reflects at night.
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(98, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.42, 0.33, 0.24) }));
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -2;
+  ground.position.y = -3;
   envScene.add(ground);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const rt = pmrem.fromScene(envScene, 0.02);
@@ -144,18 +169,49 @@ function setDressing(scene, rng, towerMats) {
 
   // Tank farm and outbuildings on the horizon.
   const farm = new THREE.Group();
+  const tankSteel = new THREE.MeshStandardMaterial({ color: 0xb4b8be, metalness: 1, roughness: 0.34 });
+  const bandMat = new THREE.MeshStandardMaterial({ color: 0x5c6066, metalness: 0.9, roughness: 0.5 });
+  const insulated = new THREE.MeshStandardMaterial({ color: 0x8d8b86, metalness: 0, roughness: 0.82 });
   for (let i = 0; i < 9; i++) {
-    const r = rng.range(3, 6);
-    const hgt = rng.range(14, 30);
-    const tank = new THREE.Mesh(new THREE.CylinderGeometry(r, r, hgt, 24), white);
-    tank.position.set(-220 + i * 13 + rng.range(-2, 2), hgt / 2, -260 + rng.range(-10, 10));
+    const r = rng.range(3.2, 5.2);
+    const hgt = rng.range(16, 30);
+    const x = -220 + i * 12.5 + rng.range(-1.5, 1.5);
+    const z = -262 + rng.range(-6, 6);
+    const tank = new THREE.Mesh(new THREE.CylinderGeometry(r, r, hgt, 32), tankSteel);
+    tank.position.set(x, hgt / 2 + 1.5, z);
     tank.castShadow = true;
     farm.add(tank);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 8, 0, Math.PI * 2, 0, Math.PI / 2), tankSteel);
+    head.scale.y = 0.35;
+    head.position.set(x, hgt + 1.5, z);
+    farm.add(head);
+    for (const fy of [0.3, 0.62]) {
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.02, r * 1.02, 0.5, 32, 1, true), bandMat);
+      band.position.set(x, 1.5 + hgt * fy, z);
+      farm.add(band);
+    }
+    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.95, 1.5, 24), towerMats.concrete);
+    skirt.position.set(x, 0.75, z);
+    farm.add(skirt);
   }
+  const rack = new THREE.Mesh(new THREE.BoxGeometry(150, 0.7, 0.7), bandMat);
+  rack.position.set(-150, 7, -250);
+  farm.add(rack);
+  const rack2 = rack.clone();
+  rack2.position.y = 8.4;
+  farm.add(rack2);
   for (let i = 0; i < 3; i++) {
-    const s = new THREE.Mesh(new THREE.SphereGeometry(9, 24, 16), white);
-    s.position.set(-90 + i * 24, 10, -300);
-    farm.add(s);
+    const x = -90 + i * 24;
+    const sph = new THREE.Mesh(new THREE.SphereGeometry(9, 32, 20), insulated);
+    sph.position.set(x, 11.5, -300);
+    sph.castShadow = true;
+    farm.add(sph);
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + 0.4;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 11, 8), bandMat);
+      leg.position.set(x + Math.cos(a) * 7.4, 5.5, -300 + Math.sin(a) * 7.4);
+      farm.add(leg);
+    }
   }
   const windowGeo = new THREE.PlaneGeometry(1.6, 0.9);
   const windowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.6, 0.9), toneMapped: false });
@@ -200,6 +256,34 @@ function setDressing(scene, rng, towerMats) {
   scene.add(dots);
 }
 
+const beamMat = new THREE.ShaderMaterial({
+  uniforms: { uColor: { value: new THREE.Color(1.0, 0.78, 0.52) } },
+  vertexShader: /* glsl */ `
+    varying float vV; varying float vEdge; varying float vDepth;
+    void main() {
+      vV = uv.y;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      vec3 n = normalize(normalMatrix * normal);
+      vEdge = abs(dot(n, normalize(-mv.xyz)));
+      vDepth = -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform vec3 uColor; varying float vV; varying float vEdge; varying float vDepth;
+    void main() {
+      // Fade out close to the camera so standing inside a beam doesn't wash the frame.
+      float a = vV * vV * vEdge * vEdge * 0.04 * smoothstep(40.0, 160.0, vDepth);
+      gl_FragColor = vec4(uColor * a, 0.0);
+    }`,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.CustomBlending,
+  blendSrc: THREE.OneFactor,
+  blendDst: THREE.OneFactor,
+  side: THREE.DoubleSide,
+  fog: false,
+});
+
 function lightMast(scene, x, z, target, intensity) {
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 34, 10), new THREE.MeshStandardMaterial({ color: 0x3d4046, metalness: 0.6, roughness: 0.6 }));
   pole.position.set(x, 17, z);
@@ -213,6 +297,15 @@ function lightMast(scene, x, z, target, intensity) {
   spot.position.set(x, 34.5, z);
   spot.target.position.copy(target);
   scene.add(spot, spot.target);
+  const from = new THREE.Vector3(x, 34.5, z);
+  const len = from.distanceTo(target) * 1.25;
+  const cone = new THREE.CylinderGeometry(2.2, len * Math.tan(THREE.MathUtils.degToRad(24)), len, 32, 1, true);
+  cone.translate(0, -len / 2, 0);
+  const beam = new THREE.Mesh(cone, beamMat);
+  beam.position.copy(from);
+  beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), target.clone().sub(from).normalize());
+  beam.frustumCulled = false;
+  scene.add(beam);
   return spot;
 }
 
@@ -256,7 +349,7 @@ export function buildWorld(scene, renderer, towerMats) {
   const hemi = new THREE.HemisphereLight(0x4a5f9a, 0x1a1512, 0.8);
   scene.add(hemi);
 
-  const moon = new THREE.DirectionalLight(0xb9c9ff, 1.25);
+  const moon = new THREE.DirectionalLight(0xccd5ea, 1.25);
   moon.position.copy(MOON_DIR).multiplyScalar(420);
   moon.target.position.set(-20, 40, 0);
   moon.position.add(moon.target.position);
@@ -273,7 +366,7 @@ export function buildWorld(scene, renderer, towerMats) {
   moon.shadow.normalBias = 0.6;
   scene.add(moon, moon.target);
 
-  const fill = new THREE.DirectionalLight(0x8ea4d6, 0.55);
+  const fill = new THREE.DirectionalLight(0xaab4c8, 0.25);
   fill.position.set(60, 40, 300);
   fill.target.position.set(0, 60, 0);
   scene.add(fill, fill.target);
@@ -311,5 +404,28 @@ export function buildWorld(scene, renderer, towerMats) {
   scene.add(lamps);
 
   setDressing(scene, rng, towerMats);
+
+  const haze = new THREE.Mesh(
+    new THREE.CylinderGeometry(250, 250, 90, 96, 1, true),
+    new THREE.ShaderMaterial({
+      vertexShader: /* glsl */ `varying float vY; void main() { vY = position.y + 45.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: /* glsl */ `
+        varying float vY;
+        void main() {
+          float a = exp(-vY / 16.0) * 0.32;
+          gl_FragColor = vec4(vec3(0.42, 0.29, 0.19) * a, a * 0.55);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.BackSide,
+      blending: THREE.CustomBlending,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneMinusSrcAlphaFactor,
+      fog: false,
+    }),
+  );
+  haze.position.y = 45;
+  haze.renderOrder = 2;
+  scene.add(haze);
   return { sky, skyMat, floods, moon };
 }
