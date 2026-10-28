@@ -206,13 +206,18 @@ export class Explore {
     this.controls ??= this.createControls();
     this.controls.enabled = true;
     // The glide starts from the title camera, which hasn't been placed yet when the page opens on ?explore=1.
-    this.view.director.apply(this.view.camera, this.game);
-    this.controls.target.copy(this.view.director.tgt);
-    for (const [i, p] of PRESETS.entries()) this.chips[i].lastChild.textContent = p.labels?.[this.view.world.map] ?? p.label;
+    const { camera, director, world } = this.view;
+    director.apply(camera, this.game, { establish: world.establish });
+    // The title looks down on the site, so the glide pivots where its line of sight meets the ground.
+    camera.getWorldDirection(this.dir);
+    this.controls.target.copy(camera.position).addScaledVector(this.dir, -camera.position.y / this.dir.y);
+    for (const [i, p] of PRESETS.entries()) this.chips[i].lastChild.textContent = p.labels?.[world.map] ?? p.label;
     $('explore').classList.remove('hidden');
     document.body.classList.add('exploring');
     const start = PRESETS.find((p) => p.id === focus);
     this.focus(start ?? PRESETS[0], !!start);
+    // The glide in starts at the title camera, outside the site and the orbit limits.
+    if (this.flight) this.flight.outside = true;
     if (!this.hinted) {
       this.hinted = true;
       this.hint.classList.add('on');
@@ -292,6 +297,8 @@ export class Explore {
     c.autoRotateSpeed = 0.9;
     c.addEventListener('start', () => {
       this.wake();
+      // Taking over a glide from outside would snap the camera inside the orbit limits, so it runs to its end.
+      if (this.flight?.outside) return;
       this.flight = null;
       for (const chip of this.chips) chip.classList.remove('on');
     });
@@ -344,7 +351,8 @@ export class Explore {
     // Longer glides take longer, so the camera doesn't sweep past the tower and the arms in a blur.
     const seconds = GLIDE_S * (1 + 0.4 * Math.log1p(from.position.distanceTo(to.position) / 25));
     // Bow out and up in proportion to how far the pivot travels, so the camera swings wide of the stack and the tower.
-    const f = { t: 0, seconds, from, to, a, b, turn, hop: 0.4 * from.target.distanceTo(to.target) };
+    // A glide that starts during one from outside can start outside too.
+    const f = { t: 0, seconds, from, to, a, b, turn, hop: 0.4 * from.target.distanceTo(to.target), outside: !!this.flight?.outside };
     this.route(f);
     this.flight = f;
   }
@@ -492,7 +500,7 @@ export class Explore {
     const dx = p.x - SITE.x;
     const dz = p.z - SITE.z;
     const k = SITE_R / Math.hypot(dx, dz);
-    if (k < 1) p.set(SITE.x + dx * k, p.y, SITE.z + dz * k);
+    if (k < 1 && !this.flight?.outside) p.set(SITE.x + dx * k, p.y, SITE.z + dz * k);
     // More than one round for the corners, where getting out of one shape can put the camera in another.
     for (let round = 0; round < 3; round++) {
       for (const shape of this.shapes) {
