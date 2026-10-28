@@ -1,6 +1,8 @@
 // Global leaderboard: best score per X handle, stored in Upstash Redis (Vercel Marketplace).
-// GET  /api/leaderboard          -> { entries: [{ handle, score, catches, perfects, rounds }] }
-// POST /api/leaderboard {handle, score, catches, perfects, rounds} -> { rank, best, entries }
+// GET  /api/leaderboard[?handle=x] -> { entries, total, me?, around? }
+// POST /api/leaderboard {handle, score, catches, perfects, rounds} -> { rank, best, entries, total, me, around }
+// entries: the top 10; around: the player's rank +-1, so the game can show where you are beyond the top 10.
+// Every row: { rank, handle, score, catches, perfects, rounds }.
 
 const BOARD = 'ctb:board';
 const WHO = 'ctb:who';
@@ -44,8 +46,9 @@ export function checkRun({ score, catches, perfects, rounds }) {
   return null;
 }
 
-async function top(db) {
-  const [flat] = await redis(db, [['ZREVRANGE', BOARD, 0, TOP - 1, 'WITHSCORES']]);
+/** Board rows for ranks start..stop (0-based, inclusive), joined with each handle's run details. */
+async function rows(db, start, stop) {
+  const [flat] = await redis(db, [['ZREVRANGE', BOARD, start, stop, 'WITHSCORES']]);
   const keys = [];
   for (let i = 0; i < flat.length; i += 2) keys.push([flat[i], Number(flat[i + 1])]);
   if (!keys.length) return [];
@@ -55,18 +58,30 @@ async function top(db) {
     try {
       m = JSON.parse(meta[i] || '{}');
     } catch {}
-    return { handle: m.h || key, score, catches: m.c ?? null, perfects: m.p ?? null, rounds: m.r ?? null };
+    return { rank: start + i + 1, handle: m.h || key, score, catches: m.c ?? null, perfects: m.p ?? null, rounds: m.r ?? null };
   });
+}
+
+/** The top 10, the field size, and (for a handle on the board) its row and neighbors. */
+async function board(db, key) {
+  const [entries, [total, rank]] = await Promise.all([rows(db, 0, TOP - 1), redis(db, [['ZCARD', BOARD], ['ZREVRANK', BOARD, key ?? '']])]);
+  const out = { entries, total };
+  if (key && Number.isInteger(rank)) {
+    out.around = await rows(db, Math.max(0, rank - 1), rank + 1);
+    out.me = out.around.find((r) => r.rank === rank + 1);
+  }
+  return out;
 }
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
-export async function GET() {
+export async function GET(request) {
   const db = store();
   if (!db) return json({ error: 'leaderboard not configured' }, 503);
+  const handle = request ? normalizeHandle(new URL(request.url).searchParams.get('handle')) : null;
   try {
-    return json({ entries: await top(db) });
+    return json(await board(db, handle?.toLowerCase()));
   } catch {
     return json({ error: 'leaderboard unavailable' }, 502);
   }
@@ -99,8 +114,8 @@ export async function POST(request) {
       const meta = JSON.stringify({ h: handle, c: run.catches, p: run.perfects, r: run.rounds, t: Date.now() });
       await redis(db, [['HSET', WHO, key, meta]]);
     }
-    const [rank, best] = await redis(db, [['ZREVRANK', BOARD, key], ['ZSCORE', BOARD, key]]);
-    return json({ rank: rank + 1, best: Number(best), entries: await top(db) });
+    const data = await board(db, key);
+    return json({ rank: data.me.rank, best: data.me.score, ...data });
   } catch {
     return json({ error: 'leaderboard unavailable' }, 502);
   }

@@ -20,7 +20,11 @@ function fakeUpstash() {
         const sorted = [...z.entries()].sort((x, y) => y[1] - x[1]).slice(a[1], a[2] + 1);
         return sorted.flatMap(([m, s]) => [m, String(s)]);
       }
-      case 'ZREVRANK': return [...z.entries()].sort((x, y) => y[1] - x[1]).findIndex(([m]) => m === a[1]);
+      case 'ZREVRANK': {
+        const i = [...z.entries()].sort((x, y) => y[1] - x[1]).findIndex(([m]) => m === a[1]);
+        return i < 0 ? null : i;
+      }
+      case 'ZCARD': return z.size;
       case 'ZSCORE': return String(z.get(a[1]));
       case 'HGET': return h.get(a[1]) ?? null;
       case 'HSET': h.set(a[1], a[2]); return 1;
@@ -76,6 +80,19 @@ await test('each handle keeps its best score', async () => {
   const res = await (await post({ handle: 'alice', ...run(3100) })).json();
   assert.equal(res.best, 4200);
   assert.deepEqual(res.entries.map((e) => [e.handle, e.score]), [['Alice', 4200], ['bob', 3600]]);
+});
+
+await test('a player below the top 10 gets their rank, the field size and their neighbors', async () => {
+  for (let i = 0; i < 12; i++) await post({ handle: `pilot${i}`, ...run(5000 + i * 100) }, `10.0.0.${i}`);
+  const res = await (await post({ handle: 'rookie', ...run(3050) }, '10.0.1.1')).json();
+  // 12 pilots, then Alice (4,200), bob (3,600), rookie (3,050).
+  assert.equal(res.total, 15);
+  assert.equal(res.rank, 15);
+  assert.equal(res.entries.length, 10);
+  assert.deepEqual(res.around.map((r) => [r.rank, r.handle]), [[14, 'bob'], [15, 'rookie']]);
+  const got = await (await GET(new Request('http://x/api/leaderboard?handle=@ROOKIE'))).json();
+  assert.equal(got.me.rank, 15);
+  assert.equal(got.me.handle, 'rookie');
 });
 
 await test('one IP is rate limited', async () => {

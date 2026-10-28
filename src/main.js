@@ -3,7 +3,7 @@ import { View } from './three/view.js';
 import { createDemoRunner, DEMO } from './demo.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
-import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle } from './leaderboard.js';
+import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
 
 const params = new URLSearchParams(location.search);
@@ -133,17 +133,19 @@ function runGame() {
   const handleInput = $('initials');
   const formNote = $('initials-note');
 
-  /** Shows the worldwide board when the backend answers, otherwise this device's best runs. */
-  async function showBoard(ol, heading, size, { entries = null, highlight = -1 } = {}) {
-    const local = loadBoard();
-    if (!entries) {
-      renderBoard(ol, local);
+  // Small embeds show fewer rows so the game over actions stay on screen.
+  const overRows = () => (document.body.classList.contains('compact') ? 6 : 10);
+
+  /** Shows the worldwide board (with the player's place if they're on it), otherwise this device's best runs. */
+  async function showBoard(ol, heading, size, data = null) {
+    if (!data) {
+      renderBoard(ol, localRows());
       heading.textContent = 'Your best catches';
-      entries = await fetchGlobal();
+      data = await fetchGlobal(savedHandle());
     }
-    if (entries) {
-      renderBoard(ol, entries.slice(0, size), highlight, 'No catches yet. Be the first.');
-      heading.textContent = 'Worldwide';
+    if (data) {
+      renderBoard(ol, boardRows(data, size));
+      heading.textContent = data.total ? `Worldwide · ${data.total.toLocaleString('en-US')} player${data.total === 1 ? '' : 's'}` : 'Worldwide';
     }
   }
   showBoard($('board-title'), $('board-title-h'), 5);
@@ -199,9 +201,10 @@ function runGame() {
     form.classList.toggle('hidden', !canSubmit);
     handleInput.value = savedHandle();
     formNote.textContent = '';
+    formNote.classList.remove('placed');
     form.querySelector('.initials-row').classList.remove('hidden');
     form.querySelector('label').classList.remove('hidden');
-    showBoard($('board-over'), $('board-over-h'), 10);
+    showBoard($('board-over'), $('board-over-h'), overRows());
     overEl.classList.remove('hidden');
     // Focusing the input on a phone pops the keyboard over the card, so only desktop gets autofocus.
     if (canSubmit && !isTouch) setTimeout(() => handleInput.focus(), 50);
@@ -230,15 +233,16 @@ function runGame() {
     const res = await submitGlobal({ handle, score: game.score, catches: s.catches, perfects: s.perfects, rounds: game.round });
     const { list, index } = addEntry(handle, game.score, game.round);
     if (res?.rank) {
-      const mine = res.entries.findIndex((e) => normalizeHandle(e.handle)?.toLowerCase() === handle.toLowerCase());
-      await showBoard($('board-over'), $('board-over-h'), 10, { entries: res.entries, highlight: mine });
-      formNote.textContent = res.best > game.score ? `Your best is still ${res.best.toLocaleString('en-US')} (#${res.rank} worldwide)` : `You're #${res.rank} worldwide`;
+      await showBoard($('board-over'), $('board-over-h'), overRows(), res);
+      const place = `#${res.rank.toLocaleString('en-US')} of ${res.total.toLocaleString('en-US')}`;
+      formNote.textContent = res.best > game.score ? `Your best is still ${res.best.toLocaleString('en-US')} (${place})` : `You're ${place}`;
+      formNote.classList.add('placed');
       setShareText(res.best > game.score ? 0 : res.rank);
     } else if (res?.error) {
       formNote.textContent = res.error;
       return;
     } else {
-      renderBoard($('board-over'), list, index);
+      renderBoard($('board-over'), localRows(list, index));
       $('board-over-h').textContent = 'Your best catches';
       formNote.textContent = 'Saved on this device';
     }
