@@ -391,6 +391,7 @@ body.compact .chip { padding: 6px 9px; font-size: 10.5px; letter-spacing: 0.1em;
 body.compact .chip kbd { display: none; }
 body.tall .explore-chips { bottom: calc(30% + 12px); }
 body.tall .explore-hint { bottom: calc(30% + 52px); }
+.title-actions { display: grid; grid-template-columns: 1fr 1fr; }
 body.compact .title-actions .btn { white-space: nowrap; }
 body.compact #play { padding: 10px; font-size: 15px; }
 body.compact #play span { display: none; }
