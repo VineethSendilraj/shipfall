@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
-import { createShip, createShipMaterials, createShipPlume, SHIP_ENGINE_Y } from './ship.js';
+import { createShip, createShipMaterials, createShipPlume, faceTower, SHIP_ENGINE_Y } from './ship.js';
 import { createTower, createTowerMaterials } from './tower.js';
 import { buildWorld, bakeSky } from './world.js';
 import { createPlume, createParticles } from './effects.js';
@@ -137,6 +137,7 @@ export class View {
           replace(slot.root, next.root);
           slot.root = next.root;
           slot.throatMat = next.throatMat;
+          slot.spin = next.spin;
         });
     }
     if (towers) {
@@ -328,6 +329,8 @@ export class View {
       }
       const root = slot.root;
       root.visible = !(b.state === 'crashed' && b.alpha < 0.88);
+      // Tower 0's lattice stands on the +x side of its arms, tower 1's on the -x side.
+      if (slot.spin) faceTower(slot, b.tower === 0 ? 1 : -1);
       const X = toX(b.x);
       const Y = toY(b.y);
       if (b.state === 'tumbling' || b.state === 'crashed') {

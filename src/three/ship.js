@@ -224,14 +224,32 @@ function proceduralShip(mats, throatMat) {
 
 const MODEL_NO_SHADOW = new Set(['inner', 'bell', 'throat']);
 
-/** model: the loaded ship.glb scene; without it the ship is built procedurally. */
+/** Lathe angle (from +z toward +x) of the middle of the tiles once turned: they face a tower on the +x side. */
+export const TILES_AT = Math.PI / 2;
+/** How far the hull, tiles and flaps are turned about the axis from their modeled angle (WIND). */
+export const SPIN = TILES_AT - WIND;
+
+/**
+ * model: the loaded ship.glb scene; without it the ship is built procedurally.
+ * Everything but the catch pins sits in `spin`, turned so the tiles face the tower; the pins stay on the +-z arms.
+ */
 export function createShip(mats, model = null) {
   const throatMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false });
-  if (model) {
-    const root = instantiate(model, { ...mats, throat: throatMat }, (role) => !MODEL_NO_SHADOW.has(role));
-    return { root, throatMat };
-  }
-  return { root: proceduralShip(mats, throatMat), throatMat };
+  const built = model ? instantiate(model, { ...mats, throat: throatMat }, (role) => !MODEL_NO_SHADOW.has(role)) : proceduralShip(mats, throatMat);
+  const root = new THREE.Group();
+  const spin = new THREE.Group();
+  root.add(spin);
+  spin.add(built);
+  const pins = [];
+  built.traverse((o) => o.isMesh && (o.userData.role === 'pin' || o.material === mats.pin) && pins.push(o));
+  for (const pin of pins) root.attach(pin);
+  spin.rotation.y = SPIN;
+  return { root, spin, throatMat };
+}
+
+/** Turns the tiles toward the tower on side `towerSide` (+1: +x, -1: -x). */
+export function faceTower(ship, towerSide) {
+  ship.spin.rotation.y = towerSide * TILES_AT - WIND;
 }
 
 /** Landing-burn plume from the three sea-level engines at the center: the booster's plume, narrower. */
