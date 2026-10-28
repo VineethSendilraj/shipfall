@@ -712,22 +712,23 @@ function towerB(root, lattice) {
 
 /** Low town along the barrier island, a few condo towers toward the pass. */
 function farTown(root, rng) {
-  const N = 240;
-  const town = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }), N);
-  const tints = [0xe9e6df, 0xd8d4cb, 0xcfd6dc, 0xe2d6c4, 0xbfc3c6].map((c) => new THREE.Color(c));
+  const tints = [0xe9e6df, 0xd8d4cb, 0xcfd6dc, 0xe2d6c4, 0xbfc3c6];
+  const boxes = tints.map(() => []);
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const p = new THREE.Vector3();
   const s = new THREE.Vector3();
-  for (let i = 0; i < N; i++) {
+  for (let i = 0; i < 240; i++) {
     const x = 1100 - 3700 * rng.next() ** 2;
     const tall = rng.chance(0.06);
     p.set(x, 0, stripZ(x) + rng.range(-35, 35));
     s.set(tall ? rng.range(14, 26) : rng.range(8, 22), tall ? rng.range(28, 60) : rng.range(4, 12), rng.range(8, 18));
-    town.setMatrixAt(i, m.compose(p, q.setFromAxisAngle(UP, rng.range(-0.15, 0.15)), s));
-    town.setColorAt(i, tints[Math.floor(rng.next() * tints.length)]);
+    m.compose(p, q.setFromAxisAngle(UP, rng.range(-0.15, 0.15)), s);
+    boxes[Math.floor(rng.next() * tints.length)].push(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0).applyMatrix4(m));
   }
-  root.add(town);
+  // Merged per colour, not instanced with colours: that would be one more shader to rebuild when the second
+  // tower's light comes on, a visible hitch.
+  tints.forEach((c, i) => root.add(new THREE.Mesh(mergeGeometries(boxes[i]), new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 }))));
 }
 
 function siteDressing(root, rng, towerMats) {
