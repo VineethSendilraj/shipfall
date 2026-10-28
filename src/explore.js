@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ARM_REACH, GROUND_Y, PX_PER_M } from './sim.js';
 import { toX } from './three/director.js';
-import { ENGINE_Y, R } from './three/booster.js';
+import { ENGINE_Y } from './three/booster.js';
 import { createStack, SHIELD_Y, SHIP_Y } from './three/stack.js';
 
 const $ = (id) => document.getElementById(id);
@@ -18,13 +18,22 @@ const SITE = new THREE.Vector3(0, 0, -60);
 const SITE_R = 560;
 const PIVOT_R = 330;
 const FLOOR_Y = 1.5; // low enough to look up at the engines from under the mount, above its ground plate
+// The camera's near plane is 1 m out and its corners about 1.4 m, so this keeps the model out of the picture.
+const CLEAR = 1.6;
+const ROUTE_N = 200; // samples per glide when bending it around the model
+const BEND_MAX = 40; // longer than any bend needs, since no part of the model is more than about 30 m across
+const SLOPE = 0.5; // how fast a bend may grow or shrink, in meters per meter of glide
+const END_SLOPE = 3; // the same near the ends, where the camera moves slowly
+// A bend also eases in and out over at least SMOOTH samples (about four frames mid-glide), with these weights.
+const SMOOTH = 10;
+const KERNEL = Array.from({ length: 2 * SMOOTH + 1 }, (_, m) => (SMOOTH + 1 - Math.abs(m - SMOOTH)) / (SMOOTH + 1) ** 2);
 const IDLE_S = 8;
 const GLIDE_S = 1.2; // a short glide; one across the site takes about twice as long
 const AIM_MS = 150;
-// The inspection lights fade in from LIGHT_FAR meters off the model and are full from LIGHT_NEAR.
+// The inspection lights fade in from LIGHT_FAR meters off the stack and are full from LIGHT_NEAR.
 const LIGHT_FAR = 40;
 const LIGHT_NEAR = 25;
-const LAMP_LUX = 4.5; // what the camera lamp puts on the nearest part of the model
+const LAMP_LUX = 4.5; // what the camera lamp puts on the nearest part of the stack
 const FILL_CD = 800;
 
 /** Focus presets in chip and key (1-9) order. Positions are relative to the foot of the stack unless `world`. */
@@ -41,10 +50,67 @@ const PRESETS = [
   { id: 'farm', label: 'Tank farm', world: true, target: [-170, 14, -268], camera: [-122, 30, -190], fov: 40 },
 ];
 
+// The stack's outline, measured from its models in meters from the foot. The hull is upright cylinders
+// [radius, bottom, top]. The parts that stick out are boxes [angle from +x toward +z, [out from, to],
+// [sideways from, to], [bottom, top]]: the catch pins, the grid fins, then the aft and forward flaps.
+const HULL = [[5.17, 19.2, 142], [3.55, 142, 143], [2.7, 143, 145], [1.8, 145, 147.35]];
+const PARTS = [
+  ...[0.5, 1.5].flatMap((k) => [86.8, 131.3].map((y) => [k * Math.PI, [4.8, 5.85], [-0.7, 0.7], [y, y + 1.4]])),
+  ...[0.25, 0.75, 1.25, 1.75].map((k) => [k * Math.PI, [4.8, 8.95], [-1.85, 1.85], [89.6, 91.3]]),
+  [0, [5.3, 8.6], [-3.2, -1.6], [100.4, 111]],
+  [Math.PI, [5.4, 8.85], [-2.5, -1.4], [100.4, 111]],
+  [0, [4.8, 7.1], [-2.6, -1.5], [134.9, 140.8]],
+  [Math.PI, [4.9, 7.25], [-2.1, -1.3], [134.9, 140.8]],
+];
+const AXES = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]].map((a) => new THREE.Vector3(...a));
+const probe = new THREE.Vector3();
+const push = new THREE.Vector3();
+const ahead = new THREE.Vector3();
+
 function setFov(camera, fov) {
   if (camera.fov === fov) return;
   camera.fov = fov;
   camera.updateProjectionMatrix();
+}
+
+/** Signed distance to an upright cylinder (negative inside). */
+function cylinder(x, z, r, y0, y1) {
+  return (p) => {
+    const side = Math.hypot(p.x - x, p.z - z) - r;
+    const end = Math.abs(p.y - (y0 + y1) / 2) - (y1 - y0) / 2;
+    return Math.min(Math.max(side, end), 0) + Math.hypot(Math.max(side, 0), Math.max(end, 0));
+  };
+}
+
+/** Signed distance to a box centered on (x, y, z) with half sizes hx, hy, hz, turned by yaw about the vertical. */
+function box(x, y, z, hx, hy, hz, yaw = 0) {
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+  return (p) => {
+    const dx = p.x - x;
+    const dz = p.z - z;
+    const qx = Math.abs(dx * c - dz * s) - hx;
+    const qy = Math.abs(p.y - y) - hy;
+    const qz = Math.abs(dx * s + dz * c) - hz;
+    return Math.min(Math.max(qx, qy, qz), 0) + Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0));
+  };
+}
+
+/** The box around a mesh's geometry, placed by its world matrix, which only turns about the vertical. */
+function meshBox(mesh) {
+  mesh.geometry.computeBoundingBox();
+  const b = mesh.geometry.boundingBox;
+  const c = b.getCenter(new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+  const h = b.getSize(new THREE.Vector3()).multiply(new THREE.Vector3().setFromMatrixScale(mesh.matrixWorld)).multiplyScalar(0.5);
+  const e = mesh.matrixWorld.elements;
+  return box(c.x, c.y, c.z, h.x, h.y, h.z, Math.atan2(-e[2], e[0]));
+}
+
+/** The direction out of a shape at p, by central differences. */
+function outward(shape, p, n) {
+  n.set(0, 0, 0);
+  for (const a of AXES) n.addScaledVector(a, shape(probe.copy(p).addScaledVector(a, 0.01)));
+  return n.normalize();
 }
 
 /** Splits a mesh's triangles into those within r meters (horizontally) of p and the rest, sharing its vertex buffers. */
@@ -109,6 +175,7 @@ export class Explore {
     this.active = false;
     this.idle = 0;
     this.flight = null;
+    this.shapes = [];
     this.pickables = [];
     this.aimedAt = 0;
     this.raycaster = new THREE.Raycaster();
@@ -171,7 +238,7 @@ export class Explore {
     this.stack = createStack(view.boosterMats, view.shipMats, models);
     this.stack.root.position.set(this.foot.x, BOOSTER_Y, this.foot.z);
     view.scene.add(this.stack.root);
-    this.stackBox = new THREE.Box3().setFromObject(this.stack.root);
+    this.hull = HULL.map(([r, y0, y1]) => cylinder(this.foot.x, this.foot.z, r, y0, y1));
     // The engines are off, and their glow discs would hide the insides of the bells.
     this.stack.booster.throatMat.visible = false;
     // Inspection lights for close-ups: a lamp beside the camera, and a spot from under the mount on the engine bells.
@@ -265,19 +332,9 @@ export class Explore {
     const turn = THREE.MathUtils.euclideanModulo(b.theta - a.theta + Math.PI, Math.PI * 2) - Math.PI;
     // Longer glides take longer, so the camera doesn't sweep past the tower and the arms in a blur.
     const seconds = GLIDE_S * (1 + 0.4 * Math.log1p(from.position.distanceTo(to.position) / 25));
-    // Bow out and up in proportion to how far the pivot travels, so the camera swings around or over the stack and
-    // the tower instead of through them.
+    // Bow out and up in proportion to how far the pivot travels, so the camera swings wide of the stack and the tower.
     const f = { t: 0, seconds, from, to, a, b, turn, hop: 0.4 * from.target.distanceTo(to.target) };
-    // From a pose the user picked, the short way round can pass through the tower or its arms. Then go the long way
-    // round, or else swing wider, if that misses the keep-out boxes (other than one an end is in).
-    const walls = this.walls?.filter((w) => !w.containsPoint(from.position) && !w.containsPoint(to.position)) ?? [];
-    if (this.crosses(f, walls)) {
-      const long = { ...f, turn: f.turn - Math.sign(f.turn) * 2 * Math.PI };
-      const wide = { ...f };
-      for (let i = 0; i < 8 && this.crosses(wide, walls); i++) wide.hop = 1.4 * wide.hop + 4;
-      if (Math.abs(f.turn) > (2 * Math.PI) / 3 && !this.crosses(long, walls)) f.turn = long.turn;
-      else if (!this.crosses(wide, walls)) f.hop = wide.hop;
-    }
+    this.route(f);
     this.flight = f;
   }
 
@@ -293,26 +350,109 @@ export class Explore {
 
   /**
    * Puts the pivot and the camera where the glide has them at eased progress e: the pivot moves straight, the camera
-   * around it in spherical coordinates.
+   * around it in spherical coordinates, or straight too on a glide that route() put on a line. Both rise on the way.
    */
   glideAt(f, e, target, position) {
     target.lerpVectors(f.from.target, f.to.target, e);
     const bow = f.hop * Math.sin(Math.PI * e);
-    const radius = Math.exp(lerp(Math.log(f.a.radius), Math.log(f.b.radius), e)) + bow;
-    position.setFromSphericalCoords(radius, lerp(f.a.phi, f.b.phi, e), f.a.theta + f.turn * e).add(target);
+    if (f.line) position.lerpVectors(f.from.position, f.to.position, e);
+    else {
+      const radius = Math.exp(lerp(Math.log(f.a.radius), Math.log(f.b.radius), e)) + bow;
+      position.setFromSphericalCoords(radius, lerp(f.a.phi, f.b.phi, e), f.a.theta + f.turn * e).add(target);
+    }
     // The rise stays small near the ends, where the camera can be under the mount.
-    position.y += bow * Math.sin(Math.PI * e);
+    position.y = Math.max(FLOOR_Y, position.y + bow * Math.sin(Math.PI * e));
+    return position;
   }
 
-  crosses(f, walls) {
-    const target = new THREE.Vector3();
-    const position = new THREE.Vector3();
-    for (let e = 0.05; e < 1; e += 0.05) {
-      this.glideAt(f, e, target, position);
-      position.y = Math.max(FLOOR_Y, position.y);
-      if (walls.some((w) => w.containsPoint(position))) return true;
+  /**
+   * Takes a glide around the model on its curve, on a straight line, or on the curve the long way round when the
+   * short way turns more than 120 degrees, whichever needs the smallest bend.
+   */
+  route(f) {
+    const most = (bend) => Math.max(...bend.map((b) => b.length()));
+    f.bend = this.bendAround(f);
+    if (!most(f.bend)) return;
+    const ways = [{ ...f, line: true }];
+    if (Math.abs(f.turn) > (2 * Math.PI) / 3) ways.push({ ...f, line: false, turn: f.turn - Math.sign(f.turn) * 2 * Math.PI });
+    for (const way of ways) {
+      way.bend = this.bendAround(way);
+      if (most(way.bend) < most(f.bend)) Object.assign(f, way);
     }
-    return false;
+  }
+
+  /**
+   * The bend that takes a glide around the model. Each run of samples closer than CLEAR moves along the axis that
+   * clears it with the least bend, each sample by what it needs. The bend grows and shrinks by at most SLOPE per
+   * meter of glide, eases in and out, and falls to zero at both ends by at most END_SLOPE per meter, so the camera
+   * never jumps. Where that leaves a sample short near an end, the clamp slides the camera along the model.
+   */
+  bendAround(f) {
+    const pts = [];
+    for (let i = 0; i <= ROUTE_N; i++) pts.push(this.glideAt(f, i / ROUTE_N, new THREE.Vector3(), new THREE.Vector3()));
+    // Distance along the glide to each sample.
+    const s = [0];
+    for (let i = 1; i <= ROUTE_N; i++) s.push(s[i - 1] + pts[i].distanceTo(pts[i - 1]));
+    const bend = pts.map(() => new THREE.Vector3());
+    const p = new THREE.Vector3();
+    const at = (k) => p.copy(pts[k]).add(bend[k]);
+    const clear = (k) => this.toModel(at(k)) >= CLEAR;
+    const need = new Float64Array(ROUTE_N + 1);
+    const eased = new Float64Array(ROUTE_N + 1);
+    for (let pass = 0; pass < 3; pass++) {
+      let bent = false;
+      for (let i = 1; i < ROUTE_N; i++) {
+        if (clear(i)) continue;
+        let j = i;
+        while (j + 1 < ROUTE_N && !clear(j + 1)) j++;
+        let best = null;
+        for (const axis of AXES) {
+          // An axis that needs more than the best cost so far can't win, so its search stops there or at BEND_MAX.
+          const limit = Math.min(best?.cost ?? Infinity, BEND_MAX);
+          need.fill(0);
+          let amount = 0;
+          for (let k = i; k <= j && amount < limit; k++) amount = Math.max(amount, (need[k] = this.escape(at(k), axis, limit)));
+          if (amount >= limit) continue;
+          const run = need.slice(i, j + 1);
+          for (let k = 1; k <= ROUTE_N; k++) need[k] = Math.max(need[k], need[k - 1] - SLOPE * (s[k] - s[k - 1]));
+          for (let k = ROUTE_N - 1; k >= 0; k--) need[k] = Math.max(need[k], need[k + 1] - SLOPE * (s[k + 1] - s[k]));
+          for (let k = 0; k <= ROUTE_N; k++) {
+            eased[k] = 0;
+            for (let m = -SMOOTH; m <= SMOOTH; m++) eased[k] += (need[k + m] ?? 0) * KERNEL[m + SMOOTH];
+          }
+          // Easing lowers the peaks, so the eased bend is raised until it covers the run again.
+          let raise = 1;
+          for (let k = i; k <= j; k++) raise = Math.max(raise, run[k - i] / eased[k]);
+          // How far the run and the bent samples stay inside CLEAR or under the floor; that costs far more than length.
+          let short = 0;
+          for (let k = 0; k <= ROUTE_N; k++) {
+            // A smooth minimum, so the bend has no corner where the end limit takes over.
+            need[k] = ((raise * eased[k]) ** -4 + (END_SLOPE * Math.min(s[k], s[ROUTE_N] - s[k])) ** -4) ** -0.25;
+            if (!need[k] && (k < i || k > j)) continue;
+            at(k).addScaledVector(axis, need[k]);
+            short = Math.max(short, CLEAR - this.toModel(p), FLOOR_Y - p.y);
+          }
+          const cost = amount + 1000 * short;
+          if (!best || cost < best.cost) best = { cost, axis, bend: need.slice() };
+        }
+        if (best && Math.max(...best.bend) > 0.01) {
+          for (let k = 0; k <= ROUTE_N; k++) bend[k].addScaledVector(best.axis, best.bend[k]);
+          bent = true;
+        }
+        i = j;
+      }
+      if (!bent) break;
+    }
+    return bend;
+  }
+
+  /** How far p has to move along dir to be clear of the model with a little to spare, or limit if that's less. */
+  escape(p, dir, limit) {
+    let t = 0;
+    for (let d = this.toModel(p); d < CLEAR + 0.25 && t < limit; d = this.toModel(ahead.copy(p).addScaledVector(dir, t))) {
+      t += Math.max(CLEAR + 0.25 - d, 0.5);
+    }
+    return t;
   }
 
   /** One glide step. */
@@ -324,11 +464,14 @@ export class Explore {
     f.t = Math.min(1, f.t + dt / f.seconds);
     const e = f.t * f.t * (3 - 2 * f.t);
     this.glideAt(f, e, this.controls.target, camera.position);
+    const x = e * ROUTE_N;
+    const i = Math.min(Math.floor(x), ROUTE_N - 1);
+    camera.position.add(push.lerpVectors(f.bend[i], f.bend[i + 1], x - i));
     setFov(camera, lerp(f.from.fov, f.to.fov, e));
     if (f.t === 1) this.flight = null;
   }
 
-  /** Keeps the camera above the ground and inside the site, and the pivot above the ground. */
+  /** Keeps the camera above the ground, inside the site and clear of the model, and the pivot above the ground. */
   clamp() {
     const { camera } = this.view;
     const p = camera.position;
@@ -339,6 +482,13 @@ export class Explore {
     const dz = p.z - SITE.z;
     const k = SITE_R / Math.hypot(dx, dz);
     if (k < 1) p.set(SITE.x + dx * k, p.y, SITE.z + dz * k);
+    // More than one round for the corners, where getting out of one shape can put the camera in another.
+    for (let round = 0; round < 3; round++) {
+      for (const shape of this.shapes) {
+        const d = shape(p);
+        if (d < CLEAR) p.addScaledVector(outward(shape, p, push), CLEAR - d);
+      }
+    }
     camera.lookAt(t);
   }
 
@@ -349,37 +499,53 @@ export class Explore {
   orbit(dt) {
     const c = this.controls;
     const p = this.view.camera.position;
-    if (this.idle > IDLE_S && !c.autoRotate && this.walls) c.autoRotate = !this.blocked(p);
+    if (this.idle > IDLE_S && !c.autoRotate) c.autoRotate = !this.blocked(p);
     const was = c.autoRotate && this.blocked(p);
     c.update(dt);
     if (c.autoRotate && !was && this.blocked(p)) c.autoRotateSpeed *= -1;
   }
 
-  /**
-   * Boxes 2 m clear of the stack, the tower, and the carriage with its arms. The carriage gets its own box because
-   * the tower's would then reach over the stack along the open arms.
-   */
+  /** The model the camera stays clear of, as signed distances to cylinders and boxes. */
   keepOut() {
+    const { x, z } = this.foot;
+    const shapes = [...this.hull];
+    for (const [a, [r0, r1], [s0, s1], [y0, y1]] of PARTS) {
+      const r = (r0 + r1) / 2;
+      const s = (s0 + s1) / 2;
+      const [cos, sin] = [Math.cos(a), Math.sin(a)];
+      shapes.push(box(x + r * cos - s * sin, (y0 + y1) / 2, z + r * sin + s * cos, (r1 - r0) / 2, (y1 - y0) / 2, (s1 - s0) / 2, -a));
+    }
+    // The launch mount: ring table, clamps, ground plate, and six legs 11 m out.
+    shapes.push(cylinder(x, z, 14.3, 17.75, MOUNT_TOP), cylinder(x, z, 6.9, 20, 24.5), cylinder(x, z, 9.2, -10, 0.6));
+    for (let k = 0; k < 6; k++) shapes.push(cylinder(x + 11 * Math.cos((k * Math.PI) / 3), z + 11 * Math.sin((k * Math.PI) / 3), 2.5, -10, 20));
+    // The tower from its base: lattice, top and boom, mast, footing. The carriage and the arms get a box per mesh.
     const tw = this.view.towers[0];
-    const box = (objs) => objs.reduce((b, o) => b.expandByObject(o), new THREE.Box3()).expandByScalar(2);
-    return [box([this.stack.root]), box(tw.root.children.filter((c) => c !== tw.carriage)), box([tw.carriage])];
+    const t = tw.root.position;
+    shapes.push(
+      box(t.x, t.y + 70, t.z, 8.5, 80, 8.5),
+      box(t.x + 5.15, t.y + 153.7, t.z, 13.65, 3.7, 8.5),
+      box(t.x - 3, t.y + 166.2, t.z + 3, 0.65, 8.9, 0.65),
+      box(t.x, t.y - 3, t.z, 10, 7, 10),
+    );
+    tw.carriage.traverse((m) => m.isMesh && shapes.push(meshBox(m)));
+    return shapes;
   }
 
   blocked(p) {
-    return this.walls.some((b) => b.containsPoint(p));
+    return this.toModel(p) < CLEAR + 0.5;
   }
 
-  /** Distance from p to the stack, taken as an upright cylinder of the booster's radius. */
+  /** Distance from p to the model (negative inside it). */
   toModel(p) {
-    const { min, max } = this.stackBox;
-    const out = Math.max(0, Math.hypot(p.x - this.foot.x, p.z - this.foot.z) - R);
-    return Math.hypot(out, Math.max(0, min.y - p.y, p.y - max.y));
+    let d = Infinity;
+    for (const shape of this.shapes) d = Math.min(d, shape(p));
+    return d;
   }
 
-  /** Scales the inspection lights to the camera's distance from the model, so the wide views keep the night. */
+  /** Scales the inspection lights to the camera's distance from the stack, so the wide views keep the night. */
   light() {
     const { camera } = this.view;
-    const near = Math.max(1, this.toModel(camera.position));
+    const near = Math.max(1, Math.min(...this.hull.map((h) => h(camera.position))));
     const fade = 1 - THREE.MathUtils.smoothstep(near, LIGHT_NEAR, LIGHT_FAR);
     // Up and to the right of the camera, so the light shapes the surface instead of flattening it.
     this.lamp.position.set(0.2 * near, 0.3 * near, 0).applyQuaternion(camera.quaternion).add(camera.position);
@@ -396,7 +562,7 @@ export class Explore {
     if (this.stack) this.light();
     this.view.render(this.game);
     // Only a render places the tower and its arms.
-    if (this.stack) this.walls ??= this.keepOut();
+    if (this.stack && !this.shapes.length) this.shapes = this.keepOut();
   }
 
   /** Saves the view as a PNG. The canvas doesn't keep its pixels between frames, so it renders one first. */
