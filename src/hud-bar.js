@@ -125,7 +125,7 @@ export class HudBar {
     const e = this.el;
     const round = Math.max(1, h.round);
     const lives = '●'.repeat(h.lives) + '○'.repeat(Math.max(0, 3 - h.lives));
-    const tower = h.double && h.booster ? ` · TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : '';
+    const tower = h.double && h.booster ? ` · ${h.kind === 'ship' ? 'SHIP · ' : ''}TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : '';
     this.set('flight', compact ? `FLIGHT ${round}${tower} · ${lives}` : `CATCH THE BOOSTER · FLIGHT ${round}`, (v) => (e.flight.textContent = v));
     this.set('clock', clock(game.t), (v) => (e.clock.textContent = v));
     this.set('mscore', h.score.toLocaleString('en-US'), (v) => (e.mscore.textContent = v));
@@ -167,7 +167,7 @@ export class HudBar {
     const burnLabel = b?.cutoff ? 'ENGINE CUTOFF' : 'LANDING BURN';
     this.set('burnL', burnLabel, (v) => (this.marks.burn.label.textContent = v));
     this.set('burnC', b?.burning ? 'on' : this.burnF >= 0 ? 'past' : '', (v) => this.marks.burn.label.setAttribute('class', `l-burn ${v}`));
-    const catchState = lost ? ['BOOSTER LOST', 'bad'] : h.ready ? ['CATCH', 'ok'] : game.phase === 'outro' ? ['SECURED', 'ok'] : ['CATCH', ''];
+    const catchState = lost ? [lost, 'bad'] : h.ready ? ['CATCH', 'ok'] : game.phase === 'outro' ? ['SECURED', 'ok'] : ['CATCH', ''];
     this.set('catchL', catchState[0], (v) => (this.marks.catch.label.textContent = v));
     this.set('catchC', catchState[1], (v) => this.marks.catch.label.setAttribute('class', `l-catch ${v}`));
   }
