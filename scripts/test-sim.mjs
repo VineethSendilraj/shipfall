@@ -61,9 +61,21 @@ function calmRound1(booster) {
   return g;
 }
 
-/** Flies round 1 from over the tower with the arms parked across the hover; steer(frame, booster) returns -1, 0 or 1. */
-function approach(steer, fuel = 100) {
-  const g = calmRound1({ zeroY: 300 });
+/** Calm round over the tower whose first two rng.range draws (entry speed jitter, then catch height) sit at fractions u and v of their ranges. */
+function calmSpawn(round, u, v) {
+  const g = new Game({ width: 1280, seed: 7, overrides: { [round]: { boosters: [{ spawnDx: 0, vx0: 0 }], wind: { base: 0, gusts: [] } } } });
+  const { range } = g.rng;
+  const draws = [u, v];
+  g.rng.range = (lo, hi) => (draws.length ? lo + draws.shift() * (hi - lo) : range(lo, hi));
+  g.round = round - 1;
+  g.start();
+  g.rng.range = range;
+  while (g.phase !== 'live') g.step(NO_INPUT);
+  return g;
+}
+
+/** Flies a booster from over the tower (round 1 by default) with the arms parked across the hover; steer(frame, booster) returns -1, 0 or 1. */
+function approach(steer, fuel = 100, g = calmRound1({ zeroY: 300 })) {
   const b = g.boosters[0];
   const tw = g.towers[0];
   b.fuel = fuel;
@@ -139,6 +151,16 @@ test('a pilot who never steers keeps the full catch window', () => {
   const r = approach(still);
   assert.ok(unlimited > 4 && r.secs >= unlimited - 0.05, `${r.secs} s of ${unlimited} s`);
   assert.deepEqual(r.cutoff, { text: 'ENGINE CUTOFF', early: false });
+});
+test('every booster in every round gives a pilot who never steers at least 1.2 s to catch it', () => {
+  // Difficulty stops rising at round 10. Spawn offset, drift and wind only change how much a pilot must steer.
+  const shortest = [];
+  for (let round = 1; round <= 10; round++) {
+    let secs = Infinity;
+    for (let i = 0; i <= 4; i++) for (let k = 0; k <= 16; k++) secs = Math.min(secs, approach(still, 100, calmSpawn(round, i / 4, k / 16)).secs);
+    shortest.push(secs);
+  }
+  assert.ok(shortest.every((s) => s >= 1.2), `shortest window per round: ${shortest.map((s) => s.toFixed(2)).join(', ')} s`);
 });
 test('3.85 s of lateral thrust leaves about half the window', () => {
   const unlimited = approach(still, Infinity).secs;
