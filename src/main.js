@@ -55,7 +55,7 @@ function createView(opts) {
 }
 
 async function loadFonts() {
-  await Promise.all([document.fonts.load('700 40px "Space Grotesk"'), document.fonts.load('700 20px "JetBrains Mono"')]).catch(() => {});
+  await Promise.all([document.fonts.load('500 40px "Barlow"'), document.fonts.load('600 20px "Barlow"')]).catch(() => {});
 }
 
 // ------------------------------------------------------------------ demo

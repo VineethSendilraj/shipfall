@@ -28,6 +28,9 @@ export function boosterSkin() {
   const rng = createRng(77);
   const [c, g] = makeCanvas(W, H);
   const [rc, rg] = makeCanvas(W / 2, H / 2);
+  const [bc, bg] = makeCanvas(W, H);
+  bg.fillStyle = 'rgb(128,128,128)';
+  bg.fillRect(0, 0, W, H);
 
   g.fillStyle = '#c4c8cd';
   g.fillRect(0, 0, W, H);
@@ -36,16 +39,18 @@ export function boosterSkin() {
 
   const ringH = 52;
   for (let y = 0, i = 0; y < H; y += ringH, i++) {
-    const l = rng.range(-14, 14);
-    const warm = rng.range(-6, 6);
+    const l = rng.range(-5, 5);
+    const warm = rng.range(-2, 2);
     g.fillStyle = `rgb(${196 + l + warm},${200 + l},${205 + l - warm})`;
     g.fillRect(0, y, W, ringH);
-    const r = Math.round(rng.range(62, 96));
+    const r = Math.round(rng.range(74, 90));
     rg.fillStyle = `rgb(${r},${r},${r})`;
     rg.fillRect(0, y / 2, W / 2, ringH / 2);
     const seamX = rng.range(0, W);
     g.fillStyle = 'rgba(70,72,76,0.55)';
     g.fillRect(seamX, y, 2, ringH);
+    bg.fillStyle = 'rgb(176,176,176)';
+    bg.fillRect(seamX - 1, y, 4, ringH);
   }
   for (let i = 0; i < 2600; i++) {
     const x = rng.range(0, W);
@@ -62,6 +67,11 @@ export function boosterSkin() {
     g.fillRect(0, y + 1.5, W, 1);
     rg.fillStyle = 'rgb(140,140,140)';
     rg.fillRect(0, y / 2 - 1, W / 2, 2);
+    bg.fillStyle = 'rgb(190,190,190)';
+    bg.fillRect(0, y - 2, W, 4);
+    bg.fillStyle = 'rgb(150,150,150)';
+    bg.fillRect(0, y - 4, W, 2);
+    bg.fillRect(0, y + 2, W, 2);
   }
 
   // Engine soot: heavy at the base, streaking upward.
@@ -88,7 +98,7 @@ export function boosterSkin() {
   rg.fillStyle = rgrad;
   rg.fillRect(0, sootTop / 2, W / 2, (H - sootTop) / 2);
 
-  return { map: toTexture(c), roughnessMap: toTexture(rc, { srgb: false }) };
+  return { map: toTexture(c), roughnessMap: toTexture(rc, { srgb: false }), bumpMap: toTexture(bc, { srgb: false }) };
 }
 
 /** Tileable launch-pad concrete with expansion joints and damp patches (low roughness = wet sheen). */

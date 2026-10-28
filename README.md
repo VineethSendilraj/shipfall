@@ -121,4 +121,4 @@ vercel.json                Vercel build + headers
 scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
 ```
 
-Fonts: Space Grotesk and JetBrains Mono, SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm).
+Font: Barlow, SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm).

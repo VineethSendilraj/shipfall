@@ -38,13 +38,14 @@ const FinalShader = {
       vec2 cc = vUv - 0.5;
       float r2 = dot(cc, cc);
       vec3 col;
-      col.r = texture2D(tDiffuse, uv + cc * r2 * 0.006).r;
+      col.r = texture2D(tDiffuse, uv + cc * r2 * 0.0015).r;
       col.g = texture2D(tDiffuse, uv).g;
-      col.b = texture2D(tDiffuse, uv - cc * r2 * 0.006).b;
+      col.b = texture2D(tDiffuse, uv - cc * r2 * 0.0015).b;
       float vig = smoothstep(1.05, 0.3, length(cc * vec2(1.0, 0.9)) * 1.25);
       col *= mix(0.55, 1.0, vig);
       col += uFlash;
       col *= 1.0 - uDip;
+      col *= 1.0 + (h21(vUv * 1931.0 + fract(uTime * 37.0) * 91.0) - 0.5) * 0.06;
       gl_FragColor = vec4(col, 1.0);
     }`,
 };
