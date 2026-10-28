@@ -42,8 +42,8 @@ const LIGHTING = [
   { el: -5, key: [0.55, 0.6, 0.85], keyI: 0.5, zenith: [0.01, 0.022, 0.07], horizon: [0.16, 0.11, 0.12], glow: [0.35, 0.12, 0.04], hemi: [0.05, 0.07, 0.15], fill: [0.08, 0.08, 0.1], env: 0.8, fog: 0.0006, floods: 1, stars: 0.3 },
   { el: 0, key: [1, 0.45, 0.18], keyI: 1, zenith: [0.025, 0.055, 0.2], horizon: [0.6, 0.36, 0.28], glow: [1.2, 0.45, 0.12], hemi: [0.06, 0.06, 0.1], fill: [0.15, 0.1, 0.08], env: 0.8, fog: 0.0003, floods: 0.4, stars: 0 },
   { el: 7, key: [1, 0.7, 0.42], keyI: 2, zenith: [0.035, 0.12, 0.5], horizon: [0.55, 0.6, 0.8], glow: [0.8, 0.45, 0.18], hemi: [0.05, 0.07, 0.12], fill: [0.25, 0.2, 0.16], env: 0.9, fog: 0.00018, floods: 0, stars: 0 },
-  { el: 22, key: [1, 0.9, 0.78], keyI: 2.6, zenith: [0.045, 0.17, 0.72], horizon: [0.42, 0.78, 1.4], glow: [0.35, 0.28, 0.18], hemi: [0.05, 0.08, 0.14], fill: [0.3, 0.27, 0.24], env: 1, fog: 0.0001, floods: 0, stars: 0 },
-  { el: 45, key: [1, 0.96, 0.9], keyI: 2.8, zenith: [0.05, 0.2, 0.85], horizon: [0.4, 0.8, 1.5], glow: [0.15, 0.13, 0.1], hemi: [0.05, 0.08, 0.14], fill: [0.3, 0.28, 0.25], env: 1, fog: 0.00008, floods: 0, stars: 0 },
+  { el: 22, key: [1, 0.9, 0.78], keyI: 2.6, zenith: [0.045, 0.17, 0.72], horizon: [0.42, 0.78, 1.4], glow: [0.35, 0.28, 0.18], hemi: [0.05, 0.08, 0.14], fill: [0.15, 0.135, 0.12], env: 1, fog: 0.0001, floods: 0, stars: 0 },
+  { el: 45, key: [1, 0.96, 0.9], keyI: 2.8, zenith: [0.05, 0.2, 0.85], horizon: [0.4, 0.8, 1.5], glow: [0.15, 0.13, 0.1], hemi: [0.05, 0.08, 0.14], fill: [0.15, 0.14, 0.125], env: 1, fog: 0.00008, floods: 0, stars: 0 },
 ];
 
 // Particle and explosion colours by night and by day (white deluge steam, a bright sun on the smoke).
