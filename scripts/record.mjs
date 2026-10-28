@@ -5,7 +5,7 @@
 // the fixed-step simulation by exactly two 1/60 s steps, renders, and is screenshotted. The result plays
 // back at real speed at 30 fps with no dropped or duplicated frames, identically on every run.
 //
-// Usage: npm run record [-- --out artifacts --qa 14]
+// Usage: npm run record [-- --out artifacts --qa 14 --size 1080x1080]
 import { chromium } from 'playwright';
 import ffmpegPath from 'ffmpeg-static';
 import { spawn, spawnSync } from 'node:child_process';
@@ -22,8 +22,7 @@ const OUT = arg('out', 'artifacts');
 const QA = Number(arg('qa', 14));
 const FPS = 30;
 const STEPS_PER_FRAME = 60 / FPS;
-const W = 1280;
-const H = 720;
+const [W, H] = arg('size', '1280x720').split('x').map(Number);
 const DONE_TIMEOUT_MS = Number(arg('timeout', 45 * 60 * 1000));
 // Sim frames (60 Hz) to save as cover stills.
 const STILLS = { 'booster-still-title': 100, 'booster-still-approach': 352, 'booster-still-catch': 430, 'booster-still-double': 1478 };

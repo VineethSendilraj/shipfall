@@ -55,9 +55,15 @@ export class Director {
         this.closeT = 0;
         this.close = { x: toX(tw.cx), y: toY(tw.armY), side: tw.side };
       }
+      if (b.state === 'crashed' && !this.seen.has(`crash${b.id}`)) {
+        this.seen.add(`crash${b.id}`);
+        const tw = game.towers[b.tower];
+        this.closeT = 0;
+        this.close = { x: toX(b.x), y: 0, side: b.x >= tw.cx ? 1 : -1, crash: true };
+      }
     }
     const otherFalling = game.boosters.some((b) => b.state === 'falling' || b.state === 'waiting');
-    const closeDur = otherFalling ? 0 : this.cinematic ? 1.7 : 1.3;
+    const closeDur = otherFalling ? 0 : this.close?.crash ? 1.6 : this.cinematic ? 1.7 : 1.3;
     const inClose = this.closeT >= 0 && this.closeT < closeDur && game.phase !== 'over';
 
     if (game.phase === 'ready') {
@@ -77,6 +83,14 @@ export class Director {
       T.set(mid + 6, 72, 0);
       fov = 36;
       k = 0.04;
+    } else if (inClose && this.close.crash) {
+      const c = this.close;
+      const s = c.side;
+      const u = this.closeT;
+      P.set(c.x + s * (64 - u * 6), 9 + u * 2, (125 - u * 8) * widen);
+      T.set(c.x - s * 5, 17 + u * 3, 0);
+      fov = 40;
+      k = 0.06;
     } else if (inClose) {
       const c = this.close;
       const s = c.side;
@@ -99,7 +113,9 @@ export class Director {
         catchY = 230;
       }
       const top = catchY + 14;
-      const bottom = Math.min(arm - 6, catchY - 68);
+      // While the engines burn, extend the frame down to show the flame and its ground blast.
+      const burn = b && b.state === 'falling' ? b.throttle : 0;
+      const bottom = Math.max(-4, Math.min(arm - 6, catchY - 68 - 30 * burn));
       const span = top - bottom + 18;
       const halfFov = THREE.MathUtils.degToRad(fov / 2);
       const dist = clamp(span / (2 * Math.tan(halfFov)) * 1.08, 110, 290) * widen;

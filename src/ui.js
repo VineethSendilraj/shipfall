@@ -19,6 +19,7 @@ export class UI {
       round: $('h-round'),
       lives: $('h-lives'),
       tower: $('h-tower'),
+      coach: $('h-coach'),
       popups: $('popups'),
       banner: $('banner'),
       bannerTitle: document.querySelector('#banner .banner-title'),
@@ -40,6 +41,34 @@ export class UI {
     this.bannerRef = null;
     this.bannerIn = 0;
     this.bannerT = 0;
+    this.coachOn = false;
+  }
+
+  /** First-round coach: one line at a time until the player's first catch. */
+  enableCoach() {
+    try {
+      this.coachOn = localStorage.getItem('ctb-coached') !== '1';
+    } catch {
+      this.coachOn = true;
+    }
+  }
+
+  finishCoach() {
+    if (!this.coachOn) return;
+    this.coachOn = false;
+    try {
+      localStorage.setItem('ctb-coached', '1');
+    } catch {}
+  }
+
+  coachLine(game, h) {
+    const b = h.booster;
+    if (!this.coachOn || game.phase !== 'live' || game.round > 1 || !b || b.waiting) return '';
+    const touch = document.body.classList.contains('touch-ui');
+    if (h.ready) return touch ? 'tap CATCH now' : 'press SPACE to catch';
+    if (Math.abs(b.latPx) > 15) return touch ? '◀ ▶ steer over the tower' : '← → steer over the tower';
+    if (Math.abs(b.armDy) > 3) return touch ? '▲ ▼ move the arms to the pins' : '↑ ↓ move the arms to the pins';
+    return 'hold steady, wait for the catch window';
   }
 
   setScale(s) {
@@ -64,7 +93,7 @@ export class UI {
     this.dip = dip;
     const e = this.el;
     const h = game.hud();
-    const showHud = game.phase !== 'ready' && hudOpacity > 0;
+    const showHud = game.phase !== 'ready' && game.phase !== 'over' && hudOpacity > 0;
     this.set('hudHidden', e.hud, 'class', showHud ? 'hud' : 'hud hidden');
     this.set('hudOpacity', e.hud, 'opacity', String(hudOpacity));
     if (showHud && this.safeDirty) this.measureSafe();
@@ -89,13 +118,18 @@ export class UI {
         for (const k of ['alt', 'vs', 'lat']) this.set(k, e[k], 'text', '—');
         this.set('vsC', e.vs, 'class', 'val');
         this.set('latC', e.lat, 'class', 'val');
-        this.set('eng', e.engine, 'text', game.phase === 'outro' ? 'SECURED' : 'STANDBY');
+        if (game.boosters.some((x) => x.state === 'crashed' || x.state === 'tumbling')) this.lostRound = `${game.seed}:${game.round}`;
+        const lost = this.lostRound === `${game.seed}:${game.round}`;
+        this.set('eng', e.engine, 'text', game.phase === 'outro' ? (lost ? 'BOOSTER LOST' : 'SECURED') : 'STANDBY');
         this.set('engC', e.engine, 'class', 'engine');
       }
       this.set('status', e.status, 'text', h.ready ? 'CATCH WINDOW' : '');
       this.set('statusC', e.status, 'class', h.ready ? 'status on' : 'status');
       this.set('gust', e.gust, 'text', h.gust ? `WIND GUST ${h.gust > 0 ? '→' : '←'}` : '');
       this.set('gustC', e.gust, 'class', h.gust ? 'gust on' : 'gust');
+      const coach = this.coachLine(game, h);
+      this.set('coach', e.coach, 'text', coach);
+      this.set('coachC', e.coach, 'class', coach ? 'coach on' : 'coach');
       this.shownScore += (h.score - this.shownScore) * 0.2;
       if (Math.abs(h.score - this.shownScore) < 1) this.shownScore = h.score;
       this.set('score', e.score, 'text', Math.round(this.shownScore).toLocaleString('en-US'));

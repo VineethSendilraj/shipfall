@@ -12,18 +12,17 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const candidatesDir = argv.includes('--candidates') ? argv[argv.indexOf('--candidates') + 1] : null;
 const SIZE = 1080;
-// Sim frame (60 Hz) of the chosen shot: round 1, arms closed on the catch pins, close-up camera.
-const CARD_FRAME = Number(process.env.CARD_FRAME || 441);
+// Sim frame (60 Hz) of the chosen shot: round 1 approach, booster tilted on its landing burn beside the open arms.
+const CARD_FRAME = Number(process.env.CARD_FRAME || 352);
 const CATCHES = [398, 823, 1291, 1461];
 const GL_ARGS = (process.env.CHROMIUM_ARGS || '--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist').split(' ').filter(Boolean);
 
 const CARD_CSS = `
   #hud, #popups, #banner, #demo-title, #demo-end, .disclaimer { display: none !important; }
   .card-title { position: absolute; left: 0; right: 0; top: 64px; text-align: center; pointer-events: none; }
-  .card-title h1 { margin: 0; font: 700 84px var(--display); letter-spacing: -0.02em; line-height: 1;
-    background: linear-gradient(180deg, #ffffff 20%, #b4c4ea); -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 6px 26px rgba(0,0,0,0.75)); }
-  .card-foot { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font: 500 16px var(--mono); letter-spacing: 0.16em; color: rgba(225,233,255,0.78); text-shadow: 0 1px 6px rgba(0,0,0,0.9); }
+  .card-title h1 { margin: 0; font: 600 84px var(--display); letter-spacing: -0.01em; line-height: 1; color: #f1f2f4;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.7); }
+  .card-foot { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font: 600 16px var(--display); letter-spacing: 0.12em; color: rgba(241,242,244,0.8); text-shadow: 0 1px 8px rgba(0,0,0,0.9); }
 `;
 
 const { server, url } = await startServer({ port: 0, quiet: true });
