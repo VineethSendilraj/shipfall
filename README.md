@@ -9,7 +9,7 @@ A 3D browser game: a rocket booster is falling back to the launch site at night.
 - HDR post-processing: bloom on the plume and lights, heat haze under the engines, vignette and a subtle lens fringe.
 - A cinematic camera: low-angle tracking during descent, a close-up on each catch, and a wide shot when the second tower comes online.
 - Static site only: no backend, no API keys, no analytics, no third-party network calls (no CDNs; the only runtime fetches are the game's own model files).
-- Shares on X as a large image card: `/` is the share page, `/embed/` is a compact game-only page for small frames (see [Share card](#share-card)).
+- Playable inside an X post through a player card: `/` is the share page, `/embed/` is the game-only page X frames (see [X player card](#x-player-card)).
 
 ## Controls
 
@@ -74,20 +74,21 @@ Outputs (default directory `artifacts/`, git-ignored; override with `-- --out <d
 
 With a real GPU you can pass different Chromium flags, e.g. `CHROMIUM_ARGS="--use-gl=egl" npm run record`.
 
-## Share card
+## X player card
 
-A link to `/` posts on X as a `summary_large_image` card. X no longer draws player cards (an inline iframe) for new domains: the card validator passes, but the post shows no card.
+A post of `/` shows `/embed/` in a frame: x.com plays it inside the post, while X's phone apps show the image with a play button and open the frame's page in their in-app browser. DMs and the post composer show no player, so test with a real post. X reserves player cards for audio and video, so it may stop showing a game's frame. X caches a card for about seven days, so post a fixed page at a new address (for example `/?v=3`).
 
 - **`/`** (share page): the full game with title screen, rules and leaderboard, plus all card meta tags. Share this URL.
-- **`/embed/`** (compact page): the game only, full-bleed at any frame size (designed for 480×480), no scrollbars. One tap on **Play** starts it, and audio stays off until that first gesture. The big on-screen buttons work with mouse and touch, the keyboard works once the frame has focus, and on tall viewports the buttons, start card and game-over card stay above the bottom 30%. Links open in a new tab. It doesn't depend on the parent page and works standalone.
-- **Meta tags** (both pages): `twitter:card=summary_large_image`, `twitter:image=<SITE_URL>/share.jpg`, `twitter:title`/`twitter:description`, and `og:title`/`og:description`/`og:image`/`og:url`. Set `VITE_TWITTER_SITE=@handle` to add `twitter:site` as well.
-- **Card image**: `public/share.jpg`, 1200×630 (X shows it at about 2:1), a frame of the real 3D scene (round-1 chopstick catch) rendered by `npm run card`.
+- **`/embed/`** (player): the game only, full-bleed at any frame size (designed for 480×480), no scrollbars. One tap on **Play** starts it, and audio stays off until that first gesture. The big on-screen buttons work with mouse and touch, the keyboard works once the frame has focus, and on tall viewports the buttons, start card and game-over card stay above the bottom 30%. Links open in a new tab. It doesn't depend on the parent page and works standalone.
+- **Meta tags** (both pages): `twitter:card=player`, `twitter:site` (`CARD.site`, or `VITE_TWITTER_SITE=@handle`), `twitter:player=<SITE_URL>/embed/` at 480×480, `twitter:image=<SITE_URL>/player.jpg`, `twitter:title`/`twitter:description`, and `og:title`/`og:description`/`og:image`/`og:url`.
+- **Sandbox**: X frames the player with `sandbox="allow-popups allow-same-origin allow-scripts allow-presentation"`, so the handle box submits on the button's click rather than a form submit event. `scripts/fixtures/embed-host.html` frames `/embed/` the same way.
+- **Card images**: `public/player.jpg` (1080×1080, the frame's shape, for X) and `public/share.jpg` (1200×630, `og:image` for wide link previews), both a frame of the real 3D scene (round-1 chopstick catch) rendered by `npm run card`.
 - **Performance**: about 170 KB of gzipped JS. An auto-quality monitor measures real frame times and steps down from high to medium, low and then minimal (pixel ratio 1.5, 1, 0.75 then 0.5; MSAA replaced by FXAA; shadows and bloom off at the bottom levels; a baked sky cube map instead of the procedural sky shader) whenever it can't hold about 33 fps. Software renderers such as SwiftShader start at `low`.
 - **Headers**: `vercel.json` and `public/_headers` (Cloudflare Pages) send `Content-Security-Policy: frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com` on every route and no `X-Frame-Options`. `vercel.json` sets `trailingSlash: true`, so `/embed/` returns 200 directly (only `/embed` redirects).
 
 ```bash
-npm run check:card        # build, serve dist/, verify meta tags, share.jpg, HTML size, headers, JS budget
-npm run card              # re-render public/share.jpg from the demo scene
+npm run check:card        # build, serve dist/, verify meta tags, card images, HTML size, headers, JS budget
+npm run card              # re-render public/player.jpg and public/share.jpg from the demo scene
 npm run record:embed      # Playwright video of /embed/ inside a 480×480 iframe host page + screenshots
 ```
 
@@ -128,7 +129,7 @@ No third-party models are used. Before modeling, downloadable CC0 / CC-BY candid
 
 ```
 index.html                 share page (meta tags + full game)
-embed/index.html           compact game-only page
+embed/index.html           player page for the X card (game only)
 src/game.html              shared game markup, injected into both pages at build time
 site.config.mjs            SITE_URL resolution + card meta tags (used by the build and check:card)
 vite.config.mjs            multi-page build, meta/markup injection
@@ -140,7 +141,7 @@ blender/                   Blender script that builds public/models/*.glb, and t
 src/quality.js             automatic render-quality fallback
 src/ui.js                  DOM HUD, popups, banners, demo cards
 src/main.js                game loop, input (keyboard/mouse/touch), leaderboard, sound
-public/                    share.jpg, _headers, models/*.glb, font licenses (copied to dist/ as-is)
+public/                    player.jpg, share.jpg, _headers, models/*.glb, font licenses (copied to dist/ as-is)
 vercel.json                Vercel build + headers
 scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
 ```

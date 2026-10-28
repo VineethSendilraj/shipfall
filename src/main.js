@@ -273,7 +273,8 @@ function runGame() {
     shareLink.href = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
   }
 
-  form.addEventListener('submit', async (ev) => {
+  // X frames the embed without allow-forms, so a submit event never fires there. Enter in the field still clicks this button.
+  form.querySelector('button[type=submit]').addEventListener('click', async (ev) => {
     ev.preventDefault();
     const handle = normalizeHandle(handleInput.value);
     if (!handle) {
