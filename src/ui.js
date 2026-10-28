@@ -34,6 +34,12 @@ export class UI {
     this.scale = 1;
     this.safe = null;
     this.safeDirty = true;
+    this.cut = new Set();
+    this.popupMax = 0;
+    this.popupExit = 1;
+    this.bannerRef = null;
+    this.bannerIn = 0;
+    this.bannerT = 0;
   }
 
   setScale(s) {
@@ -126,6 +132,7 @@ export class UI {
 
   updatePopups(game) {
     const live = new Set();
+    let maxO = 0;
     const { w, h } = this.view.size;
     for (const p of game.popups) {
       if (p.t < 0) continue;
@@ -155,14 +162,21 @@ export class UI {
         y = q.y - p.t * 24 * this.scale;
       }
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) scale(${s.toFixed(3)})`;
-      el.style.opacity = Math.max(0, fade * (1 - this.dip)).toFixed(3);
+      // A fade-to-black or the end card ends a popup for good, so it can't linger into the next shot.
+      if (this.dip >= 0.25 || this.popupExit <= 0) this.cut.add(p.id);
+      const exit = this.cut.has(p.id) ? 0 : Math.min(1 - this.dip * 4, this.popupExit);
+      const o = Math.max(0, fade * exit);
+      if (o > maxO) maxO = o;
+      el.style.opacity = o.toFixed(3);
     }
     for (const [id, el] of this.popupEls) {
       if (!live.has(id)) {
         el.remove();
         this.popupEls.delete(id);
+        this.cut.delete(id);
       }
     }
+    this.popupMax = maxO;
   }
 
   updateBanner(game) {
@@ -170,12 +184,21 @@ export class UI {
     const e = this.el;
     if (!b) {
       e.banner.style.opacity = '0';
+      this.bannerRef = null;
       return;
     }
+    if (b !== this.bannerRef) {
+      this.bannerRef = b;
+      this.bannerIn = 0;
+      this.bannerT = game.t;
+    }
+    // The banner only starts fading in once no popup is visible, so the two never share the screen.
+    if (this.popupMax < 0.02) this.bannerIn += Math.max(0, game.t - this.bannerT);
+    this.bannerT = game.t;
     this.set('bannerT', e.bannerTitle, 'text', b.text);
     this.set('bannerS', e.bannerSub, 'text', b.sub || '');
     this.set('bannerC', e.banner, 'class', b.gold ? 'banner gold' : 'banner');
-    const fin = Math.min(1, b.t / 0.25);
+    const fin = Math.min(1, this.bannerIn / 0.25);
     const fout = Math.min(1, (b.dur - b.t) / 0.45);
     const o = Math.max(0, Math.min(fin, fout)) * (1 - this.dip);
     e.banner.style.opacity = o.toFixed(3);
@@ -193,15 +216,17 @@ export class UI {
     } else {
       e.demoTitle.classList.add('hidden');
     }
+    // Popups clear within 8 frames of game over; the end card only starts fading in after that.
+    this.popupExit = overAt >= 0 ? Math.max(0, 1 - (frame - overAt) / 8) : 1;
     if (overAt >= 0) {
-      const u = (frame - overAt) / 26;
+      const u = (frame - overAt - 10) / 26;
       e.demoEnd.classList.remove('hidden');
       document.body.classList.add('demo-end');
       e.demoEnd.style.opacity = Math.min(1, Math.max(0, u)).toFixed(3);
       e.demoScore.textContent = game.score.toLocaleString('en-US');
       const s = game.stats;
       e.demoStats.textContent = `${game.round} rounds · ${s.catches} catches · ${s.perfects} perfect · ${s.doubles} double`;
-      return Math.max(0, 1 - u);
+      return Math.min(1, Math.max(0, 1 - u));
     }
     e.demoEnd.classList.add('hidden');
     return 1;
