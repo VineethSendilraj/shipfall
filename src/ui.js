@@ -171,7 +171,9 @@ export class UI {
       } else {
         const q = this.view.project(p.x, p.y);
         x = q.x;
-        y = q.y - p.t * 24 * this.scale;
+        // Near the ground the anchor sits behind the HUD bar or the touch buttons, so the text starts above them.
+        const floor = this.safe ? this.safe.bottom - p.size * this.scale * 0.6 : Infinity;
+        y = Math.min(q.y, floor) - p.t * 24 * this.scale;
       }
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) scale(${s.toFixed(3)})`;
       // A fade-to-black or the end card ends a popup for good, so it can't linger into the next shot.
