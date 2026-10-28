@@ -1,17 +1,17 @@
-// Renders the share-card image (public/card.jpg, 1080x1080) from the real 3D scene: the deterministic
+// Renders the share-card image (public/share.jpg, 1200x630) from the real 3D scene: the deterministic
 // ?demo=1 showcase is stepped to a chopstick-catch frame in headless Chromium and screenshotted.
-// Usage: npm run card            (writes public/card.jpg)
+// Usage: npm run card            (writes public/share.jpg)
 //        npm run card -- --candidates /tmp/card-candidates   (renders a contact set of catch frames to pick from)
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startServer } from './serve.mjs';
+import { CARD } from '../site.config.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const candidatesDir = argv.includes('--candidates') ? argv[argv.indexOf('--candidates') + 1] : null;
-const SIZE = 1080;
 // Sim frame (60 Hz) of the chosen shot: round 1 approach, booster tilted on its landing burn beside the open arms.
 const CARD_FRAME = Number(process.env.CARD_FRAME || 352);
 const CATCHES = [398, 823, 1291, 1461];
@@ -19,15 +19,15 @@ const GL_ARGS = (process.env.CHROMIUM_ARGS || '--use-gl=angle --use-angle=swifts
 
 const CARD_CSS = `
   #hud, #popups, #banner, #demo-title, #demo-end, .disclaimer { display: none !important; }
-  .card-title { position: absolute; left: 0; right: 0; top: 64px; text-align: center; pointer-events: none; }
-  .card-title h1 { margin: 0; font: 600 84px var(--display); letter-spacing: -0.01em; line-height: 1; color: #f1f2f4;
+  .card-title { position: absolute; left: 0; right: 0; top: 40px; text-align: center; pointer-events: none; }
+  .card-title h1 { margin: 0; font: 600 64px var(--display); letter-spacing: -0.01em; line-height: 1; color: #f1f2f4;
     text-shadow: 0 4px 30px rgba(0,0,0,0.7); }
-  .card-foot { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font: 600 16px var(--display); letter-spacing: 0.12em; color: rgba(241,242,244,0.8); text-shadow: 0 1px 8px rgba(0,0,0,0.9); }
+  .card-foot { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; font: 600 14px var(--display); letter-spacing: 0.12em; color: rgba(241,242,244,0.8); text-shadow: 0 1px 8px rgba(0,0,0,0.9); }
 `;
 
 const { server, url } = await startServer({ port: 0, quiet: true });
 const browser = await chromium.launch({ args: GL_ARGS });
-const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: { width: CARD.imageWidth, height: CARD.imageHeight }, deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.error('[page error]', e.message));
 await page.goto(`${url}/?demo=1&capture=1`);
 await page.waitForFunction(() => window.__demoReady === true, null, { timeout: 120000 });
@@ -59,9 +59,9 @@ if (candidatesDir) {
   }
 } else {
   await stepTo(CARD_FRAME);
-  const out = join(REPO, 'public/card.jpg');
+  const out = join(REPO, 'public', CARD.image);
   await page.screenshot({ path: out, type: 'jpeg', quality: 88 });
-  console.log(`wrote ${out} (${SIZE}x${SIZE}, sim frame ${CARD_FRAME})`);
+  console.log(`wrote ${out} (${CARD.imageWidth}x${CARD.imageHeight}, sim frame ${CARD_FRAME})`);
 }
 await browser.close();
 server.close();
