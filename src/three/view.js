@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
 import { createTower, createTowerMaterials } from './tower.js';
 import { buildWorld, bakeSky } from './world.js';
-import { boosterSkin } from './textures.js';
 import { instantiate } from './models.js';
 import { createPlume, createParticles } from './effects.js';
 import { createComposer } from './post.js';
@@ -50,7 +49,7 @@ export class View {
     for (const t of this.towers) scene.add(t.root);
     this.towers[1].root.visible = false;
 
-    const mats = createBoosterMaterials(boosterSkin(), 1.0);
+    const mats = createBoosterMaterials(1.0);
     this.boosterMats = mats;
     this.pool = [0, 1, 2].map(() => {
       const b = createBooster(mats);
