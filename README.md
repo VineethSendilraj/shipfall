@@ -2,9 +2,9 @@
 
 A 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
 
-**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: the booster, tower and site models are built from code in this repo (see [3D models](#3d-models)), and the textures, the sky and the effects are generated procedurally at runtime.
+**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: the booster, ship, tower and site models are built from code in this repo (see [3D models](#3d-models)), and the textures, the sky and the effects are generated procedurally at runtime.
 
-- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): a brushed-stainless booster with rolled rings and weld seams, a vented hot-stage ring, four lattice grid fins on actuator housings, catch hardpoints and 33 engine bells under the heat shield; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
+- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): a brushed-stainless booster with rolled rings and weld seams, a vented hot-stage ring, four lattice grid fins on actuator housings, catch hardpoints and 33 engine bells under the heat shield; a stainless upper stage (the ship) with an ogive nose, black hexagonal heat-shield tiles, two forward and two aft flaps and six engines; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
 - Moonlit night sky (procedural stars, milky way, textured moon), moon-cast shadows, inverse-square floodlights, warm engine light on the booster and tower.
 - HDR post-processing: bloom on the plume and lights, heat haze under the engines, vignette and a subtle lens fringe.
 - A cinematic camera: low-angle tracking during descent, a close-up on each catch, and a wide shot when the second tower comes online.
@@ -24,15 +24,15 @@ A 3D browser game: a rocket booster is falling back to the launch site at night.
 
 ### Rules
 
-The landing burn ignites automatically below 112 m and slows the booster into a brief, slow descent before engine cutoff. A catch succeeds if, at the moment the arms finish closing:
+The landing burn ignites automatically below 112 m (143 m for the ship, which lights up with its pins at the same height) and slows the vehicle into a brief, slow descent before engine cutoff. A catch succeeds if, at the moment the arms finish closing:
 
-- the catch pins (just below the grid fins) are within **±12 px (±3 m)** of the arms vertically,
+- the catch pins (just below the booster's grid fins, or the ship's forward flaps) are within **±12 px (±3 m)** of the arms vertically,
 - the lateral offset from the catch centerline is **under 15 px (3.75 m)**, and
 - the descent rate is **under 3 m/s** (4 px = 1 m).
 
 Otherwise it's a miss: the arms clang off the booster, or it slides past and hits the pad. You have 3 boosters.
 
-Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (3 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises and two boosters come in per round (+500 for catching both). Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
+Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (3 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises, and from then on each round brings a booster to tower A and a ship to tower B (+500 for catching both). The ship uses the same catch tolerances; it is 50 m tall against the booster's 80 m, so the arms clang on it over a shorter span. Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
 
 ## Run locally
 
@@ -48,7 +48,7 @@ Open `/?demo=1` for the scripted showcase (also works on `/embed/?demo=1`; it is
 
 ## Deterministic demo (`?demo=1`)
 
-A roughly 28 s showcase: a title card, then round 1 with a visible arm adjustment and a clean catch, then round 2 with a wind gust, a near-miss lateral correction and a **PERFECT** catch, then **double catch unlocked**, with both boosters caught, and finally an end card with the score and the disclaimer.
+A roughly 28 s showcase: a title card, then round 1 with a visible arm adjustment and a clean catch, then round 2 with a wind gust, a near-miss lateral correction and a **PERFECT** catch, then **double catch unlocked**, with a booster caught at tower A and the ship at tower B, and finally an end card with the score and the disclaimer.
 
 - All randomness comes from a seeded `mulberry32` PRNG (`src/rng.js`); the demo never calls `Math.random()` or `Date.now()`.
 - The simulation (`src/sim.js`) advances by frame count with a fixed `dt = 1/60 s`. The camera director is stepped with it.
@@ -109,18 +109,21 @@ Players type their handle; it isn't verified, and the API only rejects malformed
 
 ## 3D models
 
-The booster, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
+The booster, the ship, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
 
 | File | Triangles | Size |
 | --- | --- | --- |
-| `booster.glb` | 70,746 | 466 KB |
-| `tower.glb` (structure, carriage, one arm drawn twice) | 24,984 | 260 KB |
-| `props.glb` | 32,810 | 194 KB |
+| `booster.glb` | 77,188 | 637 KB |
+| `ship.glb` | 38,444 | 257 KB |
+| `tower.glb` (structure, carriage, one arm drawn twice) | 58,056 | 656 KB |
+| `props.glb` | 53,678 | 390 KB |
 
-- The game loads them at startup (`src/three/models.js`) and swaps them in when they arrive; until then, or if a file fails to load, it uses the procedural three.js models in `booster.js`, `tower.js` and `world.js`. `?demo=1` waits up to 6 s for them before the first step, so a demo run never changes models midway.
-- Units are meters with +Y up, in the same frame as the procedural models: catch hardpoints rest on the arms at y = 0, bell exits at y = -67.6, and the arm and carriage nodes keep the pivots `setArms()` rotates and raises. The tower is built for the right-hand tower and mirrored for the left one.
-- Each mesh is named after a game material (glTF extra `role`: `steel`, `darkSteel`, `fin`, `bell`, `throat`, `lattice`, `arm`, `tankSteel`, …). The GLBs carry no materials; the game assigns its own, and the booster body keeps the cylindrical UVs its skin texture expects.
-- Rebuild with Blender (tested with 5.2): `blender/build.sh` runs `blender/build_models.py` headless and compresses with `@gltf-transform/cli`. `blender/build.sh --render <dir>` also writes preview renders.
+- The game loads them at startup (`src/three/models.js`) and swaps them in when they arrive; until then, or if a file fails to load, it uses the procedural three.js models in `booster.js`, `ship.js`, `tower.js` and `world.js`. `?demo=1` waits up to 6 s for them before the first step, so a demo run never changes models midway.
+- Units are meters with +Y up, in the same frame as the procedural models: catch hardpoints rest on the arms at y = 0, the booster's bell exits are at y = -67.6 and the ship's at y = -35 (its nose tip at y = 15.5), and the arm and carriage nodes keep the pivots `setArms()` rotates and raises. The tower is built for the right-hand tower and mirrored for the left one.
+- Each mesh is named after a game material (glTF extra `role`: `steel`, `darkSteel`, `fin`, `bell`, `throat`, `tiles`, `lattice`, `arm`, `tankSteel`, …). The GLBs carry no materials; the game assigns its own. The booster body keeps the cylindrical UVs its skin texture expects; the ship's steel shares that texture (V in meters at the booster's scale), and its `tiles` carry UVs in meters / 64 for the hex tile texture `ship.js` draws.
+- Ambient occlusion is baked with Cycles into a vertex color (`COLOR_0`) on every mesh except the engine throats, which the game tints at runtime. Meshes with it get a vertex-colored copy of their role material (one per material); long members are cut along their length so the per-vertex bake can shade the joints.
+- The ship: tiles cover the windward half between the flap hinges, which sit off the camera axis so the flaps stand out on both sides; the catch pins stay on the ±Z sides where the arms close. Three sea-level engines at the center (they carry the throat discs and the plume) and three vacuum engines on the outer ring.
+- Rebuild with Blender (tested with 5.2): `blender/build.sh` runs `blender/build_models.py` headless (the AO bake is part of it) and compresses with `@gltf-transform/cli`. `blender/build.sh --render <dir>` also writes preview renders; `--no-bake` skips the bake for quick geometry iterations.
 
 No third-party models are used. Before modeling, downloadable CC0 / CC-BY candidates were checked and set aside: Sketchfab and BlendSwap require an account to download, Printables and Cults3D models are non-commercial or "no AI" licensed 3D-print files, and Poly Pizza has only stylized low-poly rockets and tanks.
 
@@ -135,7 +138,7 @@ vite.config.mjs            multi-page build, meta/markup injection
 styles.css                 HUD, overlays, embed + compact + tall layouts
 src/sim.js                 fixed-step physics, catch rules, scoring, rounds (DOM-free)
 src/demo.js                demo config + runner; src/demo-script.js frame-keyed inputs
-src/three/                 3D view: booster, tower, world/sky, effects, camera director, post-processing, model loader
+src/three/                 3D view: booster, ship, tower, world/sky, effects, camera director, post-processing, model loader
 blender/                   Blender script that builds public/models/*.glb, and the build wrapper
 src/quality.js             automatic render-quality fallback
 src/ui.js                  DOM HUD, popups, banners, demo cards

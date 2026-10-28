@@ -21,9 +21,21 @@ export const CATCH_TOL_Y = 12;
 export const CATCH_TOL_X = 15;
 export const CATCH_MAX_VY = 3;
 
-/** Booster geometry relative to its catch point (the hardpoints just below the grid fins). */
-export const BOOSTER = { halfW: 18, top: -48, bottom: 264, center: 108 };
+/**
+ * Vehicle geometry in px relative to the catch point (the pins the arms close under), +y down: half width,
+ * top of the nose, engine exits, the pivot it tumbles about, how far below that pivot a tumbling vehicle
+ * reaches the pad, where its side thrusters puff and how wide its exhaust starts. The booster's pins sit
+ * just below its grid fins; the ship's sit below its forward flaps, so it is much shorter beneath them.
+ */
+export const VEHICLES = {
+  booster: { halfW: 18, top: -48, bottom: 264, center: 108, tumbleR: 70, rcsY: -34, exhaustW: 13 },
+  ship: { halfW: 18, top: -62, bottom: 140, center: 60, tumbleR: 45, rcsY: -30, exhaustW: 6 },
+};
+export const BOOSTER = VEHICLES.booster;
+export const SHIP = VEHICLES.ship;
+/** The booster lights its landing burn at this altitude; the ship lights up with its pins at the same height. */
 export const BURN_ALT_M = 112;
+const burnAltM = (v) => BURN_ALT_M + (BOOSTER.bottom - v.bottom) / PX_PER_M;
 export const DOUBLE_UNLOCK_SCORE = 3000;
 export const START_LIVES = 3;
 export const CLOSE_TIME = 0.1;
@@ -43,6 +55,7 @@ const MAX_PARTICLES = 900;
 export const NO_INPUT = Object.freeze({ left: false, right: false, up: false, down: false, close: false });
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const dims = (b) => VEHICLES[b.kind];
 
 export function towerPositions(W) {
   const a = Math.round(Math.min(W * 0.64, W - 96));
@@ -88,6 +101,7 @@ export class Game {
     this.roundDouble = false;
     const pos = towerPositions(width);
     this.towers = [makeTower(0, -1, pos.a)];
+    // Every vehicle in flight: a booster at tower A, and in double-catch rounds also a ship at tower B.
     this.boosters = [];
     this.particles = [];
     this.popups = [];
@@ -164,15 +178,15 @@ export class Game {
       tw.reopenT = 0.25;
     }
     this.roundDouble = this.doubleUnlocked && this.towers.length > 1;
-    this.params = [this.makeBoosterParams(0, 0)];
-    if (this.roundDouble) this.params.push(this.makeBoosterParams(1, 1));
+    this.params = [{ ...this.makeBoosterParams(0, 0), kind: 'booster' }];
+    if (this.roundDouble) this.params.push({ ...this.makeBoosterParams(1, 1), kind: 'ship' });
     this.wind = this.makeWind();
     this.roundT = 0;
     this.roundCatches = 0;
     const windKt = Math.round((Math.abs(this.wind.base) / PX_PER_M) * 1.94 * 2);
     this.banner = {
       text: `ROUND ${this.round}`,
-      sub: this.roundDouble ? 'double catch · two boosters inbound' : `wind ${windKt} kt ${this.wind.base > 0 ? '→' : '←'}`,
+      sub: this.roundDouble ? 'double catch · booster and ship inbound' : `wind ${windKt} kt ${this.wind.base > 0 ? '→' : '←'}`,
       t: 0,
       dur: 1.6,
     };
@@ -185,6 +199,7 @@ export class Game {
       const tw = this.towers[i];
       this.boosters.push({
         id: this.nextId++,
+        kind: p.kind,
         tower: i,
         slot: i,
         x: clamp(tw.cx + p.spawnDx, 40, this.W - 40),
@@ -228,7 +243,7 @@ export class Game {
       const t = makeTower(1, 1, towerPositions(this.W).b);
       t.rise = 0;
       this.towers.push(t);
-      this.banner = { text: 'DOUBLE CATCH UNLOCKED', sub: 'second tower online · two boosters per round', t: 0, dur: UNLOCK_TIME, gold: true };
+      this.banner = { text: 'DOUBLE CATCH UNLOCKED', sub: 'second tower online · booster and ship per round', t: 0, dur: UNLOCK_TIME, gold: true };
       this.setPhase('unlock');
       this.emit('unlock');
       return;
@@ -253,7 +268,7 @@ export class Game {
   }
 
   altitudeM(b) {
-    return (GROUND_Y - (b.y + BOOSTER.bottom)) / PX_PER_M;
+    return (GROUND_Y - (b.y + dims(b).bottom)) / PX_PER_M;
   }
 
   windAt(t) {
@@ -281,6 +296,7 @@ export class Game {
       gust: Math.abs(this.gust) > 12 ? Math.sign(this.gust) : 0,
       ready: tw.ready,
       booster: null,
+      kind: b ? b.kind : 'booster',
       towerIdx: tw.idx,
       double: this.roundDouble,
     };
@@ -426,7 +442,7 @@ export class Game {
           b.y += b.vy * DT;
           b.rot += b.rotV * DT;
           b.throttle *= 0.85;
-          if (b.y + BOOSTER.center + 70 >= GROUND_Y) this.crash(b);
+          if (b.y + dims(b).center + dims(b).tumbleR >= GROUND_Y) this.crash(b);
           break;
         case 'crashed':
           b.alpha -= DT * 1.6;
@@ -446,17 +462,18 @@ export class Game {
   }
 
   updateFalling(b, input) {
+    const V = dims(b);
     const alt = this.altitudeM(b);
     let ay = G;
 
-    if (!b.burning && !b.cutoff && alt <= BURN_ALT_M) {
+    if (!b.burning && !b.cutoff && alt <= burnAltM(V)) {
       b.burning = true;
       this.emit('ignite');
     }
     if (b.burning && b.y > b.zeroY + b.hoverLen) {
       b.burning = false;
       b.cutoff = true;
-      this.addPopup('ENGINE CUTOFF', b.x, b.y + BOOSTER.bottom + 30, { color: '#f2b84b', size: 18, dur: 1.2 });
+      this.addPopup('ENGINE CUTOFF', b.x, b.y + V.bottom + 30, { color: '#f2b84b', size: 18, dur: 1.2 });
       this.emit('cutoff');
     }
     if (b.burning) {
@@ -503,22 +520,23 @@ export class Game {
       this.spawnExhaust(b);
       this.spawnGroundBlast(b);
     }
-    if (b.y + BOOSTER.bottom >= GROUND_Y) this.crash(b);
+    if (b.y + V.bottom >= GROUND_Y) this.crash(b);
   }
 
   collideTowers(b) {
+    const V = dims(b);
     for (const tw of this.towers) {
       if (tw.rise < 0.6) continue;
       const lo = tw.x - TOWER_HALF - 6;
       const hi = tw.x + TOWER_HALF + 6;
-      const bl = b.x - BOOSTER.halfW;
-      const br = b.x + BOOSTER.halfW;
+      const bl = b.x - V.halfW;
+      const br = b.x + V.halfW;
       if (br > lo && bl < hi) {
         const pushLeft = b.x < tw.x;
-        b.x = pushLeft ? lo - BOOSTER.halfW : hi + BOOSTER.halfW;
+        b.x = pushLeft ? lo - V.halfW : hi + V.halfW;
         const impact = Math.abs(b.vx);
         b.vx = (pushLeft ? -1 : 1) * Math.max(18, impact * 0.5);
-        const cy = clamp(tw.armY, b.y + BOOSTER.top + 20, b.y + BOOSTER.bottom - 20);
+        const cy = clamp(tw.armY, b.y + V.top + 20, b.y + V.bottom - 20);
         this.spawnSparks(pushLeft ? lo : hi, cy, 22, pushLeft ? -1 : 1);
         this.shake = Math.max(this.shake, 7);
         this.addPopup('CLANG!', pushLeft ? lo - 40 : hi + 40, cy - 30, { color: '#f2b84b', size: 22, dur: 0.9 });
@@ -538,8 +556,8 @@ export class Game {
     if (Math.abs(dy) <= CATCH_TOL_Y && Math.abs(dx) < CATCH_TOL_X && vy < CATCH_MAX_VY) {
       return this.catchBooster(tw, b, dy, dx, vy);
     }
-    const top = b.y + BOOSTER.top;
-    const bottom = b.y + BOOSTER.bottom;
+    const top = b.y + dims(b).top;
+    const bottom = b.y + dims(b).bottom;
     if (Math.abs(dx) < 70 && tw.armY > top - 4 && tw.armY < bottom + 4) {
       let reason = 'missed the hardpoints';
       if (vy >= CATCH_MAX_VY) reason = `too fast · ${vy.toFixed(1)} m/s`;
@@ -574,9 +592,10 @@ export class Game {
 
     const px = tw.cx;
     const py = tw.armY - 8;
-    this.spawnSparks(px - BOOSTER.halfW - 3, py, 22, -1);
-    this.spawnSparks(px + BOOSTER.halfW + 3, py, 22, 1);
-    this.spawnClampVapor(px, py);
+    const hw = dims(b).halfW;
+    this.spawnSparks(px - hw - 3, py, 22, -1);
+    this.spawnSparks(px + hw + 3, py, 22, 1);
+    this.spawnClampVapor(px, py, hw);
     this.shake = Math.max(this.shake, perfect ? 9 : 6);
     this.flash = perfect ? 0.5 : 0.3;
     this.flashColor = perfect ? '255,206,130' : '255,236,214';
@@ -590,7 +609,7 @@ export class Game {
     });
     this.addPopup(`+${pts.toLocaleString('en-US')}`, labelX, py - 74, { color: '#ffffff', size: 28, dur: 1.6, delay: 0.12, sy: 0.245 });
     this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#c9cdd3', size: 17, dur: 1.6, delay: 0.2, sy: 0.29 });
-    this.emit('catch', { perfect, pts });
+    this.emit('catch', { perfect, pts, kind: b.kind });
 
     if (this.roundDouble && this.roundCatches === 2) {
       this.score += 500;
@@ -678,15 +697,16 @@ export class Game {
 
   spawnExhaust(b) {
     const f = this.fx;
+    const V = dims(b);
     const n = 2 + Math.round(b.throttle * 5);
-    const ex = b.x - Math.sin(b.tilt) * BOOSTER.bottom;
-    const ey = b.y + Math.cos(b.tilt) * BOOSTER.bottom;
+    const ex = b.x - Math.sin(b.tilt) * V.bottom;
+    const ey = b.y + Math.cos(b.tilt) * V.bottom;
     const sx = -Math.sin(b.tilt);
     for (let i = 0; i < n; i++) {
       const speed = 240 + b.throttle * 300 + f.range(-50, 50);
       this.pushParticle({
         k: 0,
-        x: ex + f.range(-13, 13),
+        x: ex + f.range(-V.exhaustW, V.exhaustW),
         y: ey + f.range(0, 12),
         vx: b.vx * 0.5 + sx * speed + f.range(-35, 35),
         vy: b.vy * 0.5 + speed,
@@ -704,8 +724,9 @@ export class Game {
   spawnRcs(b, dir) {
     const f = this.fx;
     if (!f.chance(0.7)) return;
-    const y = b.y - 34 + f.range(-3, 3);
-    this.pushParticle({ k: 3, x: b.x - dir * (BOOSTER.halfW + 2), y, vx: -dir * f.range(150, 230) + b.vx, vy: b.vy * 0.8 + f.range(-25, 25), t: 0, life: f.range(0.25, 0.45), size: f.range(4, 7), grow: 34 });
+    const V = dims(b);
+    const y = b.y + V.rcsY + f.range(-3, 3);
+    this.pushParticle({ k: 3, x: b.x - dir * (V.halfW + 2), y, vx: -dir * f.range(150, 230) + b.vx, vy: b.vy * 0.8 + f.range(-25, 25), t: 0, life: f.range(0.25, 0.45), size: f.range(4, 7), grow: 34 });
   }
 
   spawnSparks(x, y, n, dir, cool = false) {
@@ -724,7 +745,7 @@ export class Game {
     const f = this.fx;
     const k = (1 - alt / 55) * b.throttle;
     if (!f.chance(0.35 + k * 0.65)) return;
-    const ex = b.x - Math.sin(b.tilt) * BOOSTER.bottom;
+    const ex = b.x - Math.sin(b.tilt) * dims(b).bottom;
     const n = 1 + Math.round(k * 3);
     for (let i = 0; i < n; i++) {
       const side = f.chance(0.5) ? 1 : -1;
@@ -732,12 +753,12 @@ export class Game {
     }
   }
 
-  /** A ring of vented vapor where the arms clamp the booster. */
-  spawnClampVapor(x, y) {
+  /** A ring of vented vapor where the arms clamp the vehicle. */
+  spawnClampVapor(x, y, halfW) {
     const f = this.fx;
     for (let i = 0; i < 18; i++) {
       const side = i % 2 ? 1 : -1;
-      this.pushParticle({ k: 3, x: x + side * (BOOSTER.halfW + f.range(0, 8)), y: y + f.range(-10, 10), vx: side * f.range(60, 190), vy: f.range(-70, 20), t: 0, life: f.range(0.7, 1.4), size: f.range(8, 15), grow: 40 });
+      this.pushParticle({ k: 3, x: x + side * (halfW + f.range(0, 8)), y: y + f.range(-10, 10), vx: side * f.range(60, 190), vy: f.range(-70, 20), t: 0, life: f.range(0.7, 1.4), size: f.range(8, 15), grow: 40 });
     }
   }
 

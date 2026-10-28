@@ -1,22 +1,25 @@
-"""Builds the Catch the Booster GLB models (booster, tower, props) with bpy.
+"""Builds the Catch the Booster GLB models (booster, ship, tower, props) with bpy.
 
 Run headless from the repo root:
 
     /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
         --python blender/build_models.py -- --out <dir> [--render <dir>] [--blend <file.blend>]
 
-Writes <dir>/booster.glb, tower.glb and props.glb uncompressed; blender/build.sh compresses them into
-public/models/. Geometry is written in three.js axes (meters, +Y up, +Z toward the default camera) and
+Writes <dir>/booster.glb, ship.glb, tower.glb and props.glb uncompressed; blender/build.sh compresses them
+into public/models/. Geometry is written in three.js axes (meters, +Y up, +Z toward the default camera) and
 rotated into Blender's Z-up on the way in; the glTF exporter rotates it back, so every number here matches
 src/three/*.js. Each mesh is named after the game material it takes (custom property `role`, exported as
-glTF extras); the GLBs carry no materials.
+glTF extras); the GLBs carry no materials. Cycles bakes ambient occlusion into a vertex color attribute
+(glTF COLOR_0) on every mesh except the engine throats, which the game tints at runtime.
 """
 
 import argparse
+import bisect
 import math
 import sys
 
 import bpy
+import numpy as np
 from mathutils import Matrix, Vector
 
 TAU = math.tau
@@ -109,87 +112,111 @@ def centroid(pts, f):
     return c / len(f)
 
 
-def box(g, size, m=IDENT, c=0.0, smooth=False):
-    """Box centred on the origin (full sizes), every edge chamfered by c, then transformed by m."""
+# Ambient occlusion is baked per vertex, so long faces need vertices where the shading changes: close to the
+# ends of a member, where it meets the next one, and at a modest spacing along it.
+AO_MIN_LEN = 2.5  # members at least this long get cuts
+AO_END = (0.45,)  # cut positions measured from each end
+AO_MID = 6.0  # longest remaining segment
+
+
+def member_cuts(length):
+    """Cut positions in (0, length) for a long member."""
+    if length < AO_MIN_LEN:
+        return []
+    ends = [e for e in AO_END if e < length / 2 - 0.2]
+    lo = max(ends, default=0.0)
+    n = max(1, math.ceil((length - 2 * lo) / AO_MID))
+    mid = [lo + (length - 2 * lo) * i / n for i in range(1, n)]
+    return sorted(ends + mid + [length - e for e in ends])
+
+
+def box(g, size, m=IDENT, c=0.0, smooth=False, cuts=None):
+    """Box centred on the origin (full sizes), every edge chamfered by c, then transformed by m. Long sides are
+    cut for the AO bake (member_cuts); cuts={axis: [box-local positions]} replaces the cuts of an axis."""
     h = [s / 2 for s in size]
-    faces = []
+    c = min(c, 0.45 * min(h)) if c > 0 else 0.0
+    P = []
+    for a in range(3):
+        e = h[a] - c
+        if cuts and a in cuts:
+            inner = sorted(p for p in cuts[a] if -e + 0.05 < p < e - 0.05)
+        else:
+            inner = [-e + x for x in member_cuts(2 * e)] if 2 * h[a] >= AO_MIN_LEN else []
+        P.append([-e] + inner + [e])
+    pts, index, faces = [], {}, []
+
+    def vid(p):
+        key = (round(p[0], 6), round(p[1], 6), round(p[2], 6))
+        if key not in index:
+            index[key] = len(pts)
+            pts.append(tuple(p))
+        return index[key]
+
+    def at(k, vk, j, vj, l, vl):
+        p = [0.0, 0.0, 0.0]
+        p[k], p[j], p[l] = vk, vj, vl
+        return vid(p)
+
+    for k in range(3):
+        j, l = [a for a in range(3) if a != k]
+        for sk in (-1, 1):
+            for a in range(len(P[j]) - 1):
+                for b in range(len(P[l]) - 1):
+                    faces.append([at(k, sk * h[k], j, P[j][ja], l, P[l][lb])
+                                  for ja, lb in ((a, b), (a + 1, b), (a + 1, b + 1), (a, b + 1))])
     if c > 0:
-        c = min(c, 0.45 * min(h))
-        pts = []
+        # Chamfer strips run along axis l between the faces normal to k and j.
+        for l in range(3):
+            k, j = [a for a in range(3) if a != l]
+            for sk in (-1, 1):
+                for sj in (-1, 1):
+                    for i in range(len(P[l]) - 1):
+                        faces.append([at(k, sk * h[k], j, sj * (h[j] - c), l, P[l][i]),
+                                      at(k, sk * h[k], j, sj * (h[j] - c), l, P[l][i + 1]),
+                                      at(k, sk * (h[k] - c), j, sj * h[j], l, P[l][i + 1]),
+                                      at(k, sk * (h[k] - c), j, sj * h[j], l, P[l][i])])
         for sx in (-1, 1):
             for sy in (-1, 1):
                 for sz in (-1, 1):
                     s = (sx, sy, sz)
+                    tri = []
                     for k in range(3):
-                        p = [s[j] * (h[j] - c) for j in range(3)]
+                        p = [s[a] * (h[a] - c) for a in range(3)]
                         p[k] = s[k] * h[k]
-                        pts.append(tuple(p))
-
-        def vi(s, k):
-            return (((s[0] > 0) * 2 + (s[1] > 0)) * 2 + (s[2] > 0)) * 3 + k
-
-        for k in range(3):
-            j, l = [a for a in range(3) if a != k]
-            for sk in (-1, 1):
-                quad = []
-                for sj, sl in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-                    s = [0, 0, 0]
-                    s[k], s[j], s[l] = sk, sj, sl
-                    quad.append(vi(s, k))
-                faces.append(quad)
-            for sj in (-1, 1):
-                for sl in (-1, 1):
-                    s0 = [0, 0, 0]
-                    s0[k], s0[j], s0[l] = -1, sj, sl
-                    s1 = list(s0)
-                    s1[k] = 1
-                    faces.append([vi(s0, j), vi(s1, j), vi(s1, l), vi(s0, l)])
-        for sx in (-1, 1):
-            for sy in (-1, 1):
-                for sz in (-1, 1):
-                    faces.append([vi((sx, sy, sz), k) for k in range(3)])
-    else:
-        pts = [(sx * h[0], sy * h[1], sz * h[2]) for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)]
-
-        def vi(s):
-            return ((s[0] > 0) * 2 + (s[1] > 0)) * 2 + (s[2] > 0)
-
-        for k in range(3):
-            j, l = [a for a in range(3) if a != k]
-            for sk in (-1, 1):
-                quad = []
-                for sj, sl in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-                    s = [0, 0, 0]
-                    s[k], s[j], s[l] = sk, sj, sl
-                    quad.append(vi(s))
-                faces.append(quad)
+                        tri.append(vid(p))
+                    faces.append(tri)
     faces = [orient_to(pts, f, centroid(pts, f)) for f in faces]
     g.add(xf(m, pts), faces, smooth)
 
 
-def box_at(g, lo, hi, m=IDENT, c=0.0):
-    """Box spanning corner lo to corner hi (local coordinates of m)."""
+def box_at(g, lo, hi, m=IDENT, c=0.0, cuts=None):
+    """Box spanning corner lo to corner hi (local coordinates of m); cuts={axis: [positions in those coordinates]}."""
     size = [hi[i] - lo[i] for i in range(3)]
     mid = [(hi[i] + lo[i]) / 2 for i in range(3)]
-    box(g, size, m @ T(*mid), c)
+    local = {a: [p - mid[a] for p in v] for a, v in cuts.items()} if cuts else None
+    box(g, size, m @ T(*mid), c, cuts=local)
 
 
 def prism(g, poly, y0, y1, m=IDENT, caps=True, smooth=False):
-    """Extrudes polygon [(x, z), ...] along local Y from y0 to y1."""
+    """Extrudes polygon [(x, z), ...] along local Y from y0 to y1, cut along its length for the AO bake."""
     n = len(poly)
-    pts = [(x, y0, z) for x, z in poly] + [(x, y1, z) for x, z in poly]
+    dirn = 1.0 if y1 > y0 else -1.0
+    levels = [y0] + [y0 + dirn * x for x in member_cuts(abs(y1 - y0))] + [y1]
+    pts = [(x, y, z) for y in levels for x, z in poly]
     area = sum(poly[i][0] * poly[(i + 1) % n][1] - poly[(i + 1) % n][0] * poly[i][1] for i in range(n))
     sgn = 1.0 if area > 0 else -1.0
     faces = []
-    for i in range(n):
-        i1 = (i + 1) % n
-        dx = poly[i1][0] - poly[i][0]
-        dz = poly[i1][1] - poly[i][1]
-        faces.append(orient_to(pts, (i, i1, i1 + n, i + n), (sgn * dz, 0.0, -sgn * dx)))
+    for r in range(len(levels) - 1):
+        b0, b1 = r * n, (r + 1) * n
+        for i in range(n):
+            i1 = (i + 1) % n
+            dx = poly[i1][0] - poly[i][0]
+            dz = poly[i1][1] - poly[i][1]
+            faces.append(orient_to(pts, (b0 + i, b0 + i1, b1 + i1, b1 + i), (sgn * dz, 0.0, -sgn * dx)))
     if caps:
-        dirn = 1.0 if y1 > y0 else -1.0
+        last = (len(levels) - 1) * n
         faces.append(orient_to(pts, range(n), (0.0, -dirn, 0.0)))
-        faces.append(orient_to(pts, range(n, 2 * n), (0.0, dirn, 0.0)))
+        faces.append(orient_to(pts, range(last, last + n), (0.0, dirn, 0.0)))
     g.add(xf(m, pts), faces, smooth)
 
 
@@ -226,25 +253,40 @@ def ibeam(g, a, b, depth, width, tw=None, tf=None, up=(0.0, 1.0, 0.0), ext=0.0):
     prism(g, poly, -length / 2 - ext, length / 2 + ext, m)
 
 
-def lathe(g, strips, segs, m=IDENT, a0=0.0, a1=TAU, uv_v=None, smooth=True):
+def refine_strip(strip, max_len):
+    """Inserts points so no straight segment of a profile strip is longer than max_len (for the AO bake)."""
+    out = [strip[0]]
+    for a, b in zip(strip, strip[1:]):
+        n = max(1, math.ceil(math.hypot(b[0] - a[0], b[1] - a[1]) / max_len - 1e-9))
+        out.extend(tuple(a[q] + (b[q] - a[q]) * i / n for q in range(len(a))) for i in range(1, n + 1))
+    return out
+
+
+def lathe(g, strips, segs, m=IDENT, a0=0.0, a1=TAU, uv_v=None, smooth=True, refine=None, uv_u=None):
     """Revolves profile strips [[(r, y), ...], ...] about +Y with angle t at (r sin t, y, r cos t), like three.js
-    CylinderGeometry. A strip listed top to bottom faces outward. Strips share no vertices (hard edges between)."""
+    CylinderGeometry. A strip listed top to bottom faces outward. Strips share no vertices (hard edges between).
+    A point may carry its own UV v as (r, y, v); uv_u(t, r) replaces the default u = column / segs."""
     full = abs((a1 - a0) - TAU) < 1e-6
-    cols = segs if (full and uv_v is None) else segs + 1
+    has_v = uv_v is not None or any(len(p) > 2 for s in strips for p in s)
+    cols = segs if (full and not has_v and uv_u is None) else segs + 1
     for strip in strips:
+        if refine:
+            strip = refine_strip(strip, refine)
         pts, rows, vuv = [], [], []
-        for r, y in strip:
+        for p in strip:
+            r, y = p[0], p[1]
+            v = p[2] if len(p) > 2 else (uv_v(y) if uv_v else 0.0)
             if r < 1e-7:
                 rows.append([len(pts)] * cols)
                 pts.append((0.0, y, 0.0))
-                vuv.append((0.5, uv_v(y) if uv_v else 0.0))
+                vuv.append((uv_u((a0 + a1) / 2, 0.0) if uv_u else 0.5, v))
                 continue
             row = []
             for j in range(cols):
                 t = a0 + (a1 - a0) * j / segs
                 row.append(len(pts))
                 pts.append((r * math.sin(t), y, r * math.cos(t)))
-                vuv.append((j / segs, uv_v(y) if uv_v else 0.0))
+                vuv.append((uv_u(t, r) if uv_u else j / segs, v))
             rows.append(row)
         faces, uvs = [], []
         for i in range(len(strip) - 1):
@@ -267,34 +309,36 @@ def lathe(g, strips, segs, m=IDENT, a0=0.0, a1=TAU, uv_v=None, smooth=True):
         g.add(xf(m, pts), faces, smooth, uvs if g.uvs is not None else None)
 
 
-def disc(g, r, segs, y=0.0, m=IDENT, up=False, r_in=0.0):
-    """Flat disc (or annulus when r_in > 0) facing down, or up when up=True."""
+def disc(g, r, segs, y=0.0, m=IDENT, up=False, r_in=0.0, rings=1):
+    """Flat disc (or annulus when r_in > 0) facing down, or up when up=True; rings > 1 adds concentric rings of
+    vertices for the AO bake."""
     n_exp = (0.0, 1.0 if up else -1.0, 0.0)
-    if r_in > 0:
-        lathe(g, [[(r, y), (r_in, y)] if not up else [(r_in, y), (r, y)]], segs, m, smooth=False)
+    if r_in > 0 or rings > 1:
+        strip = [(r - (r - r_in) * i / rings, y) for i in range(rings + 1)]
+        lathe(g, [strip[::-1] if up else strip], segs, m, smooth=False)
         return
     pts = [(r * math.sin(TAU * j / segs), y, r * math.cos(TAU * j / segs)) for j in range(segs)]
     g.add(xf(m, pts), [orient_to(pts, range(segs), n_exp)], False)
 
 
-def cyl(g, r, y0, y1, segs, m=IDENT, top=True, bottom=True, r_top=None):
+def cyl(g, r, y0, y1, segs, m=IDENT, top=True, bottom=True, r_top=None, refine=2.0):
     """Vertical cylinder (optionally tapered) from y0 to y1 with flat caps."""
     rt = r if r_top is None else r_top
-    lathe(g, [[(rt, y1), (r, y0)]], segs, m)
+    lathe(g, [[(rt, y1), (r, y0)]], segs, m, refine=refine)
     if top:
         disc(g, rt, segs, y1, m, up=True)
     if bottom:
         disc(g, r, segs, y0, m)
 
 
-def ring_solid(g, r_in, r_out, y0, y1, segs, c=0.0, m=IDENT):
+def ring_solid(g, r_in, r_out, y0, y1, segs, c=0.0, m=IDENT, refine=None):
     """Solid annulus with optional chamfer on the two outer edges; each face is its own smoothing strip."""
     if c > 0:
         strips = [[(r_out - c, y1), (r_out, y1 - c)], [(r_out, y1 - c), (r_out, y0 + c)], [(r_out, y0 + c), (r_out - c, y0)],
                   [(r_out - c, y0), (r_in, y0)], [(r_in, y0), (r_in, y1)], [(r_in, y1), (r_out - c, y1)]]
     else:
         strips = [[(r_out, y1), (r_out, y0)], [(r_out, y0), (r_in, y0)], [(r_in, y0), (r_in, y1)], [(r_in, y1), (r_out, y1)]]
-    lathe(g, strips, segs, m)
+    lathe(g, strips, segs, m, refine=refine)
 
 
 def curved_panel(g, r0, r1, y0, y1, t0, t1, segs, m=IDENT):
@@ -465,7 +509,7 @@ def build_booster():
     # Aft skirt, heat shield and engine boots.
     lathe(G['soot'], [[(R + 0.01, BODY_BOTTOM + 0.05), (R + 0.06, SHIELD_Y + 0.15)],
                       [(R + 0.06, SHIELD_Y + 0.15), (R + 0.1, SHIELD_Y + 0.1), (R + 0.1, SHIELD_Y)]], 128)
-    disc(G['soot'], R + 0.1, 96, SHIELD_Y)
+    disc(G['soot'], R + 0.1, 96, SHIELD_Y, rings=16)
     for ex, ez in engine_layout():
         lathe(G['soot'], [[(0.43, SHIELD_Y), (0.43, SHIELD_Y - 0.22)], [(0.43, SHIELD_Y - 0.22), (0.31, SHIELD_Y - 0.22)]],
               16, T(ex, 0, ez))
@@ -481,6 +525,311 @@ def build_booster():
         lathe(G['bell'], [bell], 20, mm)
         ring_solid(G['bell'], 0.53, 0.57, ENGINE_Y, ENGINE_Y + 0.11, 20, m=mm)
         disc(G['throat'], 0.5, 18, ENGINE_Y + 0.04, mm)
+    return G
+
+
+# ---------------------------------------------------------------- ship (src/three/ship.js contract)
+
+SHIP_TIP = 15.5  # nose tip; the catch pins' undersides are at y = 0 like the booster's
+SHIP_NOSE_BASE = 1.9  # where the ogive meets the barrel
+SHIP_SKIRT = -32.9  # aft end of the barrel, the heat shield plane
+SHIP_ENGINE_Y = -35.0  # exit plane of all six bells (SHIP_ENGINE_Y in src/three/ship.js)
+SKIN_UV_M = BODY_TOP - BODY_BOTTOM  # meters per V of the booster skin texture, which the ship's steel shares
+TILE_UV_M = 64.0  # meters per UV unit on the heat-shield tiles (TILE_UV_M in src/three/ship.js)
+TILE_T = 0.04  # tile thickness above the steel
+# Lathe angle of the front flap hinges (the rear ones are opposite). Set off the camera axis so the flaps stand out
+# to both sides from the game's cameras; the catch pins stay on the +-Z arms regardless.
+SHIP_HINGE = rad(-72)
+SHIP_WIND = SHIP_HINGE + math.pi / 2  # windward centreline, the middle of the tiled side
+TILE_A0, TILE_A1 = SHIP_HINGE + rad(3), SHIP_HINGE + math.pi - rad(3)  # tiles stop just short of the hinges
+NOSE_CAP_S = 2.4  # the nose tip is tiled all around for this arc length
+
+
+class Profile:
+    """Meridian polyline [(r, y)] from the apex down, sampled by arc length s with interpolated outward normals."""
+
+    def __init__(self, pts):
+        self.pts = pts
+        self.s = [0.0]
+        for a, b in zip(pts, pts[1:]):
+            self.s.append(self.s[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+        self.length = self.s[-1]
+        seg_n = []
+        for a, b in zip(pts, pts[1:]):
+            d = math.hypot(b[0] - a[0], b[1] - a[1])
+            seg_n.append((-(b[1] - a[1]) / d, (b[0] - a[0]) / d))
+        self.n = [seg_n[0]] + [_unit2((p[0] + q[0], p[1] + q[1])) for p, q in zip(seg_n, seg_n[1:])] + [seg_n[-1]]
+
+    def at(self, s, off=0.0):
+        """(r, y) at arc length s, pushed off the surface along its normal by off."""
+        s = min(max(s, 0.0), self.length)
+        i = min(bisect.bisect_right(self.s, s) - 1, len(self.pts) - 2)
+        t = (s - self.s[i]) / max(1e-9, self.s[i + 1] - self.s[i])
+        a, b = self.pts[i], self.pts[i + 1]
+        nr, ny = self.normal(s)
+        return a[0] + (b[0] - a[0]) * t + nr * off, a[1] + (b[1] - a[1]) * t + ny * off
+
+    def normal(self, s):
+        """Outward unit normal (nr, ny) at arc length s."""
+        s = min(max(s, 0.0), self.length)
+        i = min(bisect.bisect_right(self.s, s) - 1, len(self.pts) - 2)
+        t = (s - self.s[i]) / max(1e-9, self.s[i + 1] - self.s[i])
+        na, nb = self.n[i], self.n[i + 1]
+        return _unit2((na[0] + (nb[0] - na[0]) * t, na[1] + (nb[1] - na[1]) * t))
+
+    def s_at_y(self, y):
+        """Arc length where the profile reaches height y (the profile descends monotonically)."""
+        for i in range(len(self.pts) - 1):
+            a, b = self.pts[i], self.pts[i + 1]
+            if b[1] <= y <= a[1]:
+                return self.s[i] + (self.s[i + 1] - self.s[i]) * (a[1] - y) / max(1e-9, a[1] - b[1])
+        return self.length
+
+
+def _unit2(v):
+    d = math.hypot(v[0], v[1])
+    return (v[0] / d, v[1] / d)
+
+
+def ship_profile():
+    """Spherically blunted tangent ogive nose on a straight barrel, apex to heat shield."""
+    nose_len, rn = SHIP_TIP - SHIP_NOSE_BASE, 0.9
+
+    def blunted(L):
+        rho = (R * R + L * L) / (2 * R)
+        return math.sqrt((rho - rn) ** 2 - (rho - R) ** 2) + rn
+
+    lo, hi = nose_len, 3 * nose_len
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if blunted(mid) < nose_len else (lo, mid)
+    L = (lo + hi) / 2
+    rho = (R * R + L * L) / (2 * R)
+    x0 = L - math.sqrt((rho - rn) ** 2 - (rho - R) ** 2)
+    yt = rn * (rho - R) / (rho - rn)
+    xt = x0 - math.sqrt(rn * rn - yt * yt)
+    xa = x0 - rn
+    pts = []
+    for i in range(40):  # spherical cap, by angle from the apex
+        phi = math.acos((x0 - xt) / rn) * i / 40
+        x = x0 - rn * math.cos(phi)
+        pts.append((rn * math.sin(phi), SHIP_NOSE_BASE + L - x))
+    for i in range(161):  # ogive
+        x = xt + (L - xt) * i / 160
+        pts.append((math.sqrt(max(0.0, rho * rho - (L - x) ** 2)) + R - rho, SHIP_NOSE_BASE + L - x))
+    pts[-1] = (R, SHIP_NOSE_BASE)
+    assert abs(SHIP_NOSE_BASE + L - xa - SHIP_TIP) < 1e-6
+    pts.append((R, SHIP_SKIRT))
+    return Profile(pts)
+
+
+def ship_rows(prof, s0, s1, nose_step=0.45, barrel_step=1.0):
+    """Arc-length rows from s0 to s1: dense where the nose curves, sparser on the barrel."""
+    s_barrel = prof.s_at_y(SHIP_NOSE_BASE)
+    rows, s = [s0], s0
+    while True:
+        step = 0.15 if s < 1.6 else nose_step if s < s_barrel - 0.05 else barrel_step
+        nxt = s + step
+        if s < s_barrel - 0.05 < nxt:
+            nxt = s_barrel
+        if nxt >= s1 - 0.5 * step:
+            break
+        rows.append(nxt)
+        s = nxt
+    rows.append(s1)
+    return rows
+
+
+def ship_engine_layout():
+    """(x, z, exit radius, kind) of the three sea-level engines at the center and the three vacuum engines."""
+    out = []
+    for i in range(3):
+        a = rad(30 + 120 * i)
+        out.append((math.cos(a) * 1.15, math.sin(a) * 1.15, 0.64, 'sl'))
+    for i in range(3):
+        a = rad(90 + 120 * i)
+        out.append((math.cos(a) * 2.95, math.sin(a) * 2.95, 1.2, 'vac'))
+    return out
+
+
+def surface_point(prof, s, t, off=0.0):
+    r, y = prof.at(s, off)
+    return Vector((r * math.sin(t), y, r * math.cos(t)))
+
+
+def meridian_fairing(g, prof, t, s0, s1, half_w, height):
+    """Raised strip that follows the hull along the meridian at lathe angle t, e.g. a flap hinge cover."""
+    rows = ship_rows(prof, s0, s1)
+    e = Vector((math.cos(t), 0.0, -math.sin(t)))
+    pts, faces = [], []
+    for s in rows:
+        base = surface_point(prof, s, t, -0.03)
+        top = surface_point(prof, s, t, height)
+        for p in (base - e * half_w, top - e * half_w * 0.6, top + e * half_w * 0.6, base + e * half_w):
+            pts.append(tuple(p))
+    for i in range(len(rows) - 1):
+        below = surface_point(prof, (rows[i] + rows[i + 1]) / 2, t, -0.5)
+        for j in range(3):
+            f = (4 * i + j, 4 * i + j + 1, 4 * i + j + 5, 4 * i + j + 4)
+            faces.append(orient_to(pts, f, centroid(pts, f) - below))
+    for k, sgn in ((0, -1.0), (len(rows) - 1, 1.0)):
+        r0, y0 = prof.at(rows[k])
+        r1, y1 = prof.at(rows[k] + 0.01 * sgn)
+        tang = Vector(((r1 - r0) * math.sin(t), y1 - y0, (r1 - r0) * math.cos(t)))
+        faces.append(orient_to(pts, range(4 * k, 4 * k + 4), tang))
+    g.add(pts, faces)
+
+
+def flap(G, prof, t, s_lo, s_hi, span, tip_lo, tip_hi, th_root, th_tip, deflect, cover):
+    """Flat, tapered control flap hinged along the meridian at lathe angle t between arc lengths s_lo..s_hi
+    (s_lo the upper end), swung toward the windward side by `deflect` (negative: back toward leeward). Its
+    windward face is tiled, the rest is steel. On the curved nose the straight hinge dips under the skin; the
+    plate comes out of it."""
+    a = surface_point(prof, s_lo, t, 0.12)
+    b = surface_point(prof, s_hi, t, 0.12)
+    u = (b - a).normalized()
+    radial = Vector((math.sin(t), 0.0, math.cos(t)))
+    wind = Vector((math.sin(SHIP_WIND), 0.0, math.cos(SHIP_WIND)))
+    w0 = (radial - u * radial.dot(u)).normalized()
+    side = (wind - u * wind.dot(u) - w0 * wind.dot(w0)).normalized()
+    w = (w0 * math.cos(deflect) + side * math.sin(deflect)).normalized()
+    n = u.cross(w)
+    if n.dot(wind) < 0:
+        n = -n
+    root = (b - a).length
+    P, Q = 10, 7
+    top, bot, uv = [], [], []
+    for qi in range(Q + 1):
+        q = qi / Q
+        lo, hi = tip_lo * q, root + (tip_hi - root) * q
+        wq = -0.15 + (span + 0.15) * q
+        th = (th_root + (th_tip - th_root) * q) * math.sqrt(max(0.0, 1 - q ** 6))
+        for pi_ in range(P + 1):
+            p = pi_ / P
+            uu = lo + (hi - lo) * p
+            half = 0.5 * th * math.sqrt(max(0.0, 1 - abs(2 * p - 1) ** 3))
+            c = a + u * uu + w * wq
+            top.append(tuple(c + n * half))
+            bot.append(tuple(c - n * half))
+            uv.append((0.2 + max(0.0, wq) / TILE_UV_M, 0.2 + uu / TILE_UV_M))
+    quads = [(qi * (P + 1) + pi_, qi * (P + 1) + pi_ + 1, (qi + 1) * (P + 1) + pi_ + 1, (qi + 1) * (P + 1) + pi_)
+             for qi in range(Q) for pi_ in range(P)]
+    G['tiles'].add(top, [orient_to(top, f, n) for f in quads], True, [[uv[i] for i in orient_to(top, f, n)] for f in quads])
+    G['dome'].add(bot, [orient_to(bot, f, -n) for f in quads], True)
+    # Root edge, inside the hinge cover.
+    edge = [top[i] for i in range(P + 1)] + [bot[i] for i in range(P + 1)]
+    G['dome'].add(edge, [orient_to(edge, (i, i + 1, P + 2 + i, P + 1 + i), -w) for i in range(P)])
+    meridian_fairing(G['dome'], prof, t, s_lo - 0.3, s_hi + 0.3, cover[0] / 2, cover[1])
+
+
+def build_ship():
+    G = roles('steel', 'tiles', 'darkSteel', 'soot', 'pin', 'dome', 'bell', 'throat', uv=('steel', 'tiles'))
+    prof = ship_profile()
+    s_end = prof.length
+    s_base = prof.s_at_y(SHIP_NOSE_BASE)
+
+    # Steel skin on the leeward side, in rolled rings with raised weld seams spaced like the booster's skin
+    # texture rows (v = arc length from the tip / SKIN_UV_M, so the seams meet the texture's ring joints).
+    # It runs a little under both tile edges.
+    sa0, sa1 = TILE_A1 - rad(2), TILE_A0 + TAU + rad(2)
+    steel_u = lambda t, r: (t - sa0) / TAU
+
+    def pt(s, off=0.0, uv_m=SKIN_UV_M):
+        r, y = prof.at(s, off)
+        return (0.0 if s <= 1e-9 else r, y, s / uv_m)
+
+    strips = []
+    k = 1
+    top = NOSE_CAP_S - 0.05
+    while (k * RING_H) < s_end - 0.4:
+        sk = k * RING_H
+        k += 1
+        if sk < top + 0.4:
+            continue
+        strips.append([pt(s) for s in ship_rows(prof, top, sk - 0.05)])
+        strips.append([pt(sk - 0.05), pt(sk, 0.018), pt(sk + 0.05)])
+        top = sk + 0.05
+    strips.append([pt(s) for s in ship_rows(prof, top, s_end)])
+    lathe(G['steel'], strips, 72, a0=sa0, a1=sa1, uv_u=steel_u)
+
+    # Heat-shield tiles: the windward half of the body, and the nose tip all the way round. UV in meters /
+    # TILE_UV_M around the windward centreline, so the hex texture keeps its size up the tapering nose.
+    tile_u = lambda t, r: 0.5 + (t - SHIP_WIND) * r / TILE_UV_M
+
+    def tpt(s):
+        return pt(s, TILE_T, TILE_UV_M)
+
+    lathe(G['tiles'], [[tpt(s) for s in ship_rows(prof, 0.0, NOSE_CAP_S, 0.3)]], 48,
+          a0=SHIP_WIND - math.pi, a1=SHIP_WIND + math.pi, uv_u=tile_u)
+    lathe(G['tiles'], [[tpt(s) for s in ship_rows(prof, NOSE_CAP_S, s_end, 0.45, 0.8)]], 56, a0=TILE_A0, a1=TILE_A1, uv_u=tile_u)
+    # Tile edges down to the steel: below the nose cap on the leeward side, along both sides, and at the base.
+    lathe(G['tiles'], [[tpt(NOSE_CAP_S), pt(NOSE_CAP_S, 0.0, TILE_UV_M)]], 72, a0=sa0, a1=sa1, uv_u=tile_u)
+    lathe(G['tiles'], [[tpt(s_end), pt(s_end, 0.0, TILE_UV_M)]], 56, a0=TILE_A0, a1=TILE_A1, uv_u=tile_u)
+    for t, side in ((TILE_A0, -1.0), (TILE_A1, 1.0)):
+        rows = ship_rows(prof, NOSE_CAP_S, s_end, 0.45, 0.8)
+        et = (math.cos(t) * side, 0.0, -math.sin(t) * side)
+        pts, uvs = [], []
+        for s in rows:
+            for off in (TILE_T, 0.0):
+                r, y = prof.at(s, off)
+                pts.append((r * math.sin(t), y, r * math.cos(t)))
+                uvs.append((tile_u(t, r), s / TILE_UV_M))
+        faces = [orient_to(pts, (2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2), et) for i in range(len(rows) - 1)]
+        G['tiles'].add(pts, faces, False, [[uvs[j] for j in f] for f in faces])
+
+    # Catch pins at 90/270 deg (toward -Z / +Z, onto the arms) below the forward flaps, each with a sloped
+    # fairing and a doubler plate that stands proud of the tiles on the windward one.
+    for deg in (90, 270):
+        m = RY(rad(deg))
+        box_at(G['pin'], (R - 0.2, 0.0, -0.65), (R + 1.3, 0.9, 0.65), m, c=0.07)
+        fair = [(R - 0.15, 0.9), (R + 1.2, 0.9), (R - 0.15, 1.75)]
+        pts3 = [(x, y, -0.5) for x, y in fair] + [(x, y, 0.5) for x, y in fair]
+        faces = [orient_to(pts3, (0, 1, 2), (0, 0, -1)), orient_to(pts3, (3, 4, 5), (0, 0, 1)),
+                 orient_to(pts3, (0, 1, 4, 3), (0, -1, 0)), orient_to(pts3, (1, 2, 5, 4), (0.85, 1.35, 0)),
+                 orient_to(pts3, (2, 0, 3, 5), (-1, 0, 0))]
+        G['pin'].add(xf(m, pts3), faces)
+        curved_panel(G['dome'], R - 0.02, R + 0.075, -0.7, 1.85, game_theta(deg) - 0.16, game_theta(deg) + 0.16, 8)
+
+    # Forward flaps on the nose and larger aft flaps on the barrel, at the edges of the tiles, swung a little
+    # back toward the leeward side.
+    for t in (SHIP_HINGE, SHIP_HINGE + math.pi):
+        flap(G, prof, t, prof.s_at_y(10.8), prof.s_at_y(2.9), 3.2, 3.3, 6.9, 0.5, 0.26, rad(-5), (0.75, 0.45))
+        flap(G, prof, t, prof.s_at_y(-20.6), prof.s_at_y(-31.9), 4.5, 2.6, 9.3, 0.6, 0.3, rad(-5), (0.95, 0.55))
+
+    # Leeward raceway with straps, and RCS pods on the nose and the aft skirt.
+    m = RY(rad(145))
+    prism(G['darkSteel'], [(R - 0.05, -0.36), (R + 0.3, -0.26), (R + 0.3, 0.26), (R - 0.05, 0.36)], -31.2, -0.8, m)
+    for i in range(11):
+        y = -30.0 + i * 2.9
+        box_at(G['darkSteel'], (R - 0.04, y - 0.14, -0.45), (R + 0.37, y + 0.14, 0.45), m, c=0.04)
+    for y in (4.2, -30.4):
+        r = prof.at(prof.s_at_y(y))[0]
+        for dz in (-1.1, 1.1):
+            box_at(G['darkSteel'], (r - 0.15, y - 0.35, dz - 0.4), (r + 0.32, y + 0.35, dz + 0.4), RY(rad(180)), c=0.08)
+
+    # Aft end: a soot lip, the heat shield with engine boots, and six bells. Three sea-level bells at the center
+    # (exit radius 0.64) and three vacuum bells on the outer ring (exit radius 1.2) all end at SHIP_ENGINE_Y; the
+    # sea-level bells carry the throat discs the game lights during the landing burn.
+    ring_solid(G['soot'], R - 0.1, R + TILE_T + 0.03, SHIP_SKIRT, SHIP_SKIRT + 0.3, 112, c=0.02)
+    disc(G['soot'], R - 0.1, 96, SHIP_SKIRT, rings=14)
+    for ex, ez, re, kind in ship_engine_layout():
+        mm = T(ex, 0, ez)
+        if kind == 'sl':
+            lathe(G['soot'], [[(0.44, SHIP_SKIRT), (0.44, SHIP_SKIRT - 0.2)], [(0.44, SHIP_SKIRT - 0.2), (0.33, SHIP_SKIRT - 0.2)]], 16, mm)
+            bell = [(0.32, SHIP_SKIRT - 0.1), (0.32, SHIP_SKIRT - 0.45), (0.26, SHIP_SKIRT - 0.62), (0.21, SHIP_SKIRT - 0.75)]
+            y0 = SHIP_SKIRT - 0.75
+            bell += [(0.21 + (re - 0.21) * (i / 8) ** 0.62, y0 + (SHIP_ENGINE_Y - y0) * i / 8) for i in range(1, 9)]
+            lathe(G['bell'], [bell], 20, mm)
+            ring_solid(G['bell'], re - 0.02, re + 0.03, SHIP_ENGINE_Y, SHIP_ENGINE_Y + 0.1, 20, m=mm)
+            disc(G['throat'], re - 0.06, 18, SHIP_ENGINE_Y + 0.04, mm)
+        else:
+            y0 = SHIP_SKIRT + 0.3
+            bell = [(0.62 + (re - 0.62) * (i / 10) ** 0.75, y0 + (SHIP_ENGINE_Y - y0) * i / 10) for i in range(11)]
+            lathe(G['bell'], [bell], 28, mm)
+            ring_solid(G['bell'], re - 0.02, re + 0.05, SHIP_ENGINE_Y, SHIP_ENGINE_Y + 0.14, 28, m=mm)
+            ym = SHIP_SKIRT - 0.9
+            rm = 0.62 + (re - 0.62) * ((ym - y0) / (SHIP_ENGINE_Y - y0)) ** 0.75
+            ring_solid(G['bell'], rm - 0.02, rm + 0.05, ym - 0.08, ym + 0.08, 28, m=mm)
     return G
 
 
@@ -509,8 +858,11 @@ def build_tower():
 
     lat = S['lattice']
     y_base = 4.0
+    levels = [y_base] + [(i + 1) * BAY for i in range(BAYS)]
+    # Column vertices at each girt and a metre either side of it, for the AO bake.
+    col_cuts = [y + d for y in levels for d in (-1.0, 0.0, 1.0)]
     for x, z in corners:
-        box_at(lat, (x - 0.75, y_base, z - 0.75), (x + 0.75, TOWER_H, z + 0.75), c=0.2)
+        box_at(lat, (x - 0.75, y_base, z - 0.75), (x + 0.75, TOWER_H, z + 0.75), c=0.2, cuts={1: col_cuts})
         # Bolted splice plates on every column face, half way between girts.
         for k in range(1, BAYS // 2):
             y = k * 2 * BAY + BAY / 2
@@ -518,7 +870,6 @@ def build_tower():
                 cx, cz = x + nx * 0.78, z + nz * 0.78
                 w = (0.06, 0.9, 1.15) if nx else (1.15, 0.9, 0.06)
                 box(lat, w, T(cx, y, cz))
-    levels = [y_base] + [(i + 1) * BAY for i in range(BAYS)]
     for li in range(len(levels) - 1):
         y = levels[li]
         for c in range(4):
@@ -740,7 +1091,7 @@ def build_props():
             phi = (math.pi / 2) * k / 6
             head.append((r * math.cos(phi), y1 + 0.35 * r * math.sin(phi)))
         head = head[::-1]
-        lathe(P['tankSteel'], [head + [(r, y0)]], 40, m)
+        lathe(P['tankSteel'], [head + [(r, y0 + 0.5), (r, y0)]], 40, m, refine=2.5)
         disc(P['tankSteel'], r, 40, y0, m)
         nb = max(2, int(hgt / 5.5))
         for k in range(1, nb + 1):
@@ -748,7 +1099,8 @@ def build_props():
             ring_solid(P['band'], r - 0.05, r + 0.09, y - 0.22, y + 0.22, 40, m=m)
         ring_solid(P['band'], r - 0.05, r + 0.12, y1 - 0.5, y1 - 0.05, 40, m=m)
         lathe(P['concrete'], [[(r * 0.97, y0), (r * 1.02, 0.0)]], 40, m)
-        disc(P['concrete'], r * 1.25, 24, 0.12, m, up=True)
+        # Plinth top as rings (the part under the tank is hidden) so the bake can shade the foot of the tank.
+        lathe(P['concrete'], [[(r * 0.9, 0.12), (r * 1.02, 0.12), (r * 1.1, 0.12), (r * 1.25, 0.12)]], 40, m, smooth=False)
         lathe(P['concrete'], [[(r * 1.25, 0.12), (r * 1.25, -0.2)]], 24, m)
         # Caged ladder up the side facing the site.
         a = rad(80)
@@ -768,7 +1120,7 @@ def build_props():
         for yy in (6.4, 8.9):
             box_at(P['band'], (xk - 0.16, yy - 0.16, -251.8), (xk + 0.16, yy + 0.16, -248.2))
     for yy, zz, rr in ((7.0, -250.7, 0.35), (7.0, -249.3, 0.35), (9.5, -250.0, 0.45)):
-        cyl(P['tankSteel'], rr, -75.0, 75.0, 12, T(-150, yy, zz) @ RZ(rad(90)))
+        cyl(P['tankSteel'], rr, -75.0, 75.0, 12, T(-150, yy, zz) @ RZ(rad(90)), refine=3.75)
 
     # Insulated spheres on eight legs with an equator girder and cross bracing.
     for i in range(3):
@@ -802,18 +1154,18 @@ def build_props():
         box_at(P['concrete'], (-1.6, 0.0, -1.6), (1.6, 1.0, 1.6), mm, c=0.1)
         prism(P['concrete'], [(-1.3, -1.3), (1.3, -1.3), (1.3, 1.3), (-1.3, 1.3)], 1.0, 16.6, mm)
         box_at(P['concrete'], (-1.75, 16.6, -1.75), (1.75, 17.75, 1.75), mm, c=0.12)
-    ring_solid(P['mountSteel'], 5.2, 14.0, 17.75, 22.25, 64, c=0.25, m=om)
+    ring_solid(P['mountSteel'], 5.2, 14.0, 17.75, 22.25, 64, c=0.25, m=om, refine=1.0)
     ring_solid(P['mountSteel'], 13.6, 14.25, 19.6, 20.4, 64, m=om)
     lathe(P['dark'], [[(5.18, 17.8), (5.18, 22.2)]], 32, om)
     for i in range(20):
         a = i / 20 * TAU
         box(P['mountSteel'], (1.2, 2.2, 2.0), om @ T(math.cos(a) * 6.2, 23.35, math.sin(a) * 6.2) @ RY(-a), c=0.12)
-    disc(P['dark'], 8.5, 48, 0.14, om, up=True)
+    disc(P['dark'], 8.5, 48, 0.14, om, up=True, rings=8)
     ring_solid(P['mountSteel'], 8.5, 9.2, 0.0, 0.55, 48, c=0.08, m=om)
     return P
 
 
-# ---------------------------------------------------------------- Blender scene, export, previews
+# ---------------------------------------------------------------- Blender scene, AO bake, export, previews
 
 PREVIEW = {
     'steel': ((0.62, 0.63, 0.65), 1.0, 0.3), 'darkSteel': ((0.05, 0.05, 0.055), 0.85, 0.55),
@@ -825,12 +1177,15 @@ PREVIEW = {
     'concrete': ((0.18, 0.17, 0.16), 0.0, 0.9), 'pad': ((0.012, 0.012, 0.013), 0.1, 0.7),
     'tankSteel': ((0.46, 0.48, 0.51), 1.0, 0.34), 'band': ((0.1, 0.11, 0.12), 0.9, 0.5),
     'insulated': ((0.26, 0.25, 0.24), 0.0, 0.82), 'mountSteel': ((0.27, 0.29, 0.31), 0.6, 0.5),
-    'dark': ((0.004, 0.004, 0.004), 0.0, 1.0),
+    'dark': ((0.004, 0.004, 0.004), 0.0, 1.0), 'tiles': ((0.025, 0.025, 0.027), 0.0, 0.7),
 }
+NO_AO = {'throat'}  # the game tints the throat discs every frame, so they keep a plain material
+AO = 'AO'
 _mats = {}
 
 
 def preview_material(role):
+    """Preview-render material for a role; its base color is multiplied by the baked AO."""
     if role in _mats:
         return _mats[role]
     color, metal, rough = PREVIEW[role]
@@ -839,13 +1194,24 @@ def preview_material(role):
         mat.use_nodes = True
     except AttributeError:
         pass
-    bsdf = mat.node_tree.nodes.get('Principled BSDF')
+    nt = mat.node_tree
+    bsdf = nt.nodes.get('Principled BSDF')
     bsdf.inputs['Base Color'].default_value = (*color, 1.0)
     bsdf.inputs['Metallic'].default_value = metal
     bsdf.inputs['Roughness'].default_value = rough
     if role == 'throat':
         bsdf.inputs['Emission Color'].default_value = (1.0, 0.45, 0.12, 1.0)
         bsdf.inputs['Emission Strength'].default_value = 3.0
+    else:
+        attr = nt.nodes.new('ShaderNodeAttribute')
+        attr.attribute_name = AO
+        mul = nt.nodes.new('ShaderNodeMix')
+        mul.data_type = 'RGBA'
+        mul.blend_type = 'MULTIPLY'
+        mul.inputs['Factor'].default_value = 1.0
+        mul.inputs['A'].default_value = (*color, 1.0)
+        nt.links.new(attr.outputs['Color'], mul.inputs['B'])
+        nt.links.new(mul.outputs['Result'], bsdf.inputs['Base Color'])
     if role in ('bell',):
         mat.use_backface_culling = False
     _mats[role] = mat
@@ -864,6 +1230,8 @@ def make_object(name, role, geo, coll, parent):
         layer = mesh.uv_layers.new(name='UVMap')
         flat = [c for face in geo.uvs for uv in face for c in uv]
         layer.data.foreach_set('uv', flat)
+    if role not in NO_AO:
+        mesh.color_attributes.active_color = mesh.color_attributes.new(AO, 'FLOAT_COLOR', 'POINT')
     mesh.update()
     mesh.materials.append(preview_material(role))
     obj = bpy.data.objects.new(name, mesh)
@@ -886,6 +1254,88 @@ def make_group(coll_name, groups):
     return coll
 
 
+def meshes_of(empty_name):
+    return [o for o in bpy.data.objects[empty_name].children if o.type == 'MESH' and o['role'] not in NO_AO]
+
+
+def profile_normals(obj, prof):
+    """Gives every vertex of the ship's steel the normal of the hull profile under it, so the raised weld seams
+    show in the silhouette and the AO without banding the reflections."""
+    me = obj.data
+    co = np.empty(len(me.vertices) * 3, dtype=np.float32)
+    me.vertices.foreach_get('co', co)
+    normals = []
+    for bx, by, bz in co.reshape(-1, 3):
+        x, y, z = bx, bz, -by  # Blender (x, -z, y) back to three.js axes
+        nr, ny = prof.normal(prof.s_at_y(y)) if y > SHIP_NOSE_BASE else (1.0, 0.0)
+        t = math.atan2(x, z)
+        normals.append(to_blender_coords((nr * math.sin(t), ny, nr * math.cos(t))))
+    me.normals_split_custom_set_from_vertices(normals)
+
+
+def occluder(name, lo, hi):
+    """Temporary box (three.js axes) that shades a bake and is never exported."""
+    g = Geo()
+    box_at(g, lo, hi, cuts={0: [], 1: [], 2: []})
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata([to_blender_coords(p) for p in g.verts], [], g.faces)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
+def bake_ao(objs, distance, occluders=(), samples=512, strength=0.85, white=0.92):
+    """Bakes Cycles ambient occlusion into the AO color attribute of objs with only objs and occluders in the
+    render, then maps it to ao' = 1 - strength * (1 - min(1, ao / white)): open surfaces, whose vertices still
+    see a few percent of occlusion from weld seams and bevels, come out white. Removes the occluders afterwards."""
+    scene = bpy.context.scene
+    scene.render.engine = 'CYCLES'
+    scene.cycles.device = 'CPU'
+    scene.cycles.samples = samples
+    scene.cycles.use_adaptive_sampling = False
+    if not scene.world:
+        scene.world = bpy.data.worlds.new('bake')
+    scene.world.light_settings.distance = distance
+    visible = set(objs) | set(occluders)
+    for o in scene.objects:
+        o.hide_render = o.type == 'MESH' and o not in visible
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in objs:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')
+    for o in objs:
+        attr = o.data.color_attributes[AO]
+        buf = np.empty(len(attr.data) * 4, dtype=np.float32)
+        attr.data.foreach_get('color', buf)
+        v = 1.0 - strength * (1.0 - np.clip(buf[0::4] / white, 0.0, 1.0))
+        buf[0::4] = v
+        buf[1::4] = v
+        buf[2::4] = v
+        buf[3::4] = 1.0
+        attr.data.foreach_set('color', buf)
+        print(f'  AO {o.name}: mean {v.mean():.3f}, min {v.min():.3f}')
+    for o in occluders:
+        bpy.data.objects.remove(o)
+    for o in scene.objects:
+        o.hide_render = False
+
+
+def bake_all():
+    ground = lambda: occluder('ground', (-600, -2.0, -600), (600, 0.0, 600))
+    bake_ao(meshes_of('booster'), 2.5)
+    bake_ao(meshes_of('ship'), 2.5)
+    bake_ao(meshes_of('towerStatic'), 4.0, [ground()])
+    # The carriage rides up and down the tower, so only the continuous columns and rails shade it.
+    cols = [occluder(f'col{i}', (x - 0.75, -60, z - 0.75), (x + 0.75, 60, z + 0.75))
+            for i, (x, z) in enumerate(((-HM, -HM), (HM, -HM), (HM, HM), (-HM, HM)))]
+    rails = [occluder(f'rail{z}', (-7.95, -60, z - 0.45), (-7.05, 60, z + 0.45)) for z in (-4.2, 4.2)]
+    bake_ao(meshes_of('carriage'), 3.0, cols + rails)
+    # The arm truss is open: a short reach keeps it to contact shadows at the joints.
+    bake_ao(meshes_of('arm'), 1.5, strength=0.75)
+    bake_ao(meshes_of('props'), 5.0, [ground()])
+
+
 def export_collection(coll, path):
     bpy.ops.object.select_all(action='DESELECT')
     for obj in coll.all_objects:
@@ -893,6 +1343,7 @@ def export_collection(coll, path):
     bpy.ops.export_scene.gltf(
         filepath=path, export_format='GLB', use_selection=True, export_yup=True, export_apply=False,
         export_materials='NONE', export_texcoords=True, export_normals=True, export_extras=True,
+        export_vertex_color='ACTIVE', export_all_vertex_colors=False,
         export_animations=False, export_cameras=False, export_lights=False,
     )
 
@@ -984,21 +1435,25 @@ def main():
     ap.add_argument('--render', default=None)
     ap.add_argument('--views', default='all')
     ap.add_argument('--blend', default=None)
+    ap.add_argument('--no-bake', action='store_true', help='skip the AO bake (fast geometry iterations)')
     args = ap.parse_args(argv)
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
     booster = [('booster', build_booster())]
+    ship = [('ship', build_ship())]
     s, c, a = build_tower()
     tower = [('towerStatic', s), ('carriage', c), ('arm', a)]
     props = [('props', build_props())]
-    report('booster', booster)
-    report('tower', tower)
-    report('props', props)
+    models = (('booster', booster), ('ship', ship), ('tower', tower), ('props', props))
+    for name, groups in models:
+        report(name, groups)
 
-    colls = {}
-    for name, groups in (('booster', booster), ('tower', tower), ('props', props)):
-        colls[name] = make_group(name, groups)
+    colls = {name: make_group(name, groups) for name, groups in models}
+    profile_normals(bpy.data.objects['ship_steel'], ship_profile())
+    if not args.no_bake:
+        bake_all()
+    for name in colls:
         export_collection(colls[name], f'{args.out}/{name}.glb')
 
     if args.blend:
@@ -1017,9 +1472,15 @@ def main():
             ('booster_top', 'booster', (16, 9, 20), (0, 5, 0), 50),
             ('booster_fins_below', 'booster', (10, -12, 14), (0, 3, 0), 40),
             ('booster_engines', 'booster', (9, -78, 12), (0, -66, 0), 40),
+            ('ship_side', 'ship', (-30, -6, 110), (0, -10, 0), 35),
+            ('ship_windward', 'ship', (110, -6, 30), (0, -10, 0), 35),
+            ('ship_nose', 'ship', (16, 12, 24), (0, 7, 0), 40),
+            ('ship_aft', 'ship', (22, -30, 26), (0, -27, 0), 40),
+            ('ship_engines', 'ship', (8, -45, 10), (0, -34, 0), 40),
             ('tower_full', 'tower', (60, 70, 330), (0, 80, 0), 35),
             ('tower_carriage', 'tower', (-30, 86, 34), (-14, 90, 0), 40),
             ('tower_top', 'tower', (30, 160, 40), (0, 150, 0), 35),
+            ('tower_base', 'tower', (-30, 12, 40), (0, 8, 0), 40),
             ('props_farm', 'props', (-140, 30, -150), (-160, 10, -270), 30),
             ('props_mount', 'props', (0, 18, -20), (-30, 14, -70), 35),
         ]
@@ -1030,3 +1491,5 @@ def main():
 
 
 main()
+
+

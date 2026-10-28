@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
+import { createShip, createShipMaterials, createShipPlume, SHIP_ENGINE_Y } from './ship.js';
 import { createTower, createTowerMaterials } from './tower.js';
 import { buildWorld, bakeSky } from './world.js';
 import { boosterSkin } from './textures.js';
@@ -7,10 +8,12 @@ import { instantiate } from './models.js';
 import { createPlume, createParticles } from './effects.js';
 import { createComposer } from './post.js';
 import { Director, toX, toY } from './director.js';
-import { BOOSTER, PX_PER_M, CATCH_TOL_X } from '../sim.js';
+import { VEHICLES, PX_PER_M, CATCH_TOL_X } from '../sim.js';
 
-const CENTER_M = BOOSTER.center / PX_PER_M;
-const GUIDE_R = BOOSTER.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
+const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
+const ENGINE_EXIT = { booster: ENGINE_Y, ship: SHIP_ENGINE_Y };
+// One slot (and engine light) per vehicle on screen; every lit pixel pays for each light, so keep it at three.
+const SLOT_KINDS = ['booster', 'booster', 'ship'];
 const COL_IDLE = new THREE.Color(0.25, 0.95, 1.5);
 const COL_READY = new THREE.Color(0.35, 2.6, 0.75);
 const COL_OFF = new THREE.Color(0.08, 0.25, 0.35);
@@ -52,14 +55,15 @@ export class View {
 
     const mats = createBoosterMaterials(boosterSkin(), 1.0);
     this.boosterMats = mats;
-    this.pool = [0, 1, 2].map(() => {
-      const b = createBooster(mats);
-      const plume = createPlume();
+    this.shipMats = createShipMaterials(mats);
+    this.pool = SLOT_KINDS.map((kind) => {
+      const b = kind === 'ship' ? createShip(this.shipMats) : createBooster(mats);
+      const plume = kind === 'ship' ? createShipPlume() : createPlume();
       b.root.add(plume.group);
       b.root.visible = false;
       const light = new THREE.PointLight(0xff8f45, 0, 0, 2);
       scene.add(b.root, light);
-      return { ...b, plume, light, id: null };
+      return { ...b, kind, plume, light, id: null };
     });
 
     this.particles = createParticles(toX, toY);
@@ -105,7 +109,9 @@ export class View {
         return null;
       }
     };
-    const boosters = build('booster', (m) => this.pool.map(() => createBooster(this.boosterMats, m)));
+    const make = { booster: (m) => createBooster(this.boosterMats, m), ship: (m) => createShip(this.shipMats, m) };
+    const vehicles = { booster: null, ship: null };
+    for (const kind in vehicles) vehicles[kind] = build(kind, (m) => this.pool.filter((s) => s.kind === kind).map(() => make[kind](m)));
     const towers = build('tower', (m) => [createTower(this.towerMats, -1, m), createTower(this.towerMats, 1, m)]);
     const props = build('props', (m) => instantiate(m, this.world.dressing.mats));
 
@@ -118,14 +124,17 @@ export class View {
         o.geometry?.dispose();
       });
     };
-    if (boosters) {
-      this.pool.forEach((slot, i) => {
-        const next = boosters[i];
-        next.root.add(slot.plume.group);
-        replace(slot.root, next.root);
-        slot.root = next.root;
-        slot.throatMat = next.throatMat;
-      });
+    for (const kind in vehicles) {
+      if (!vehicles[kind]) continue;
+      this.pool
+        .filter((s) => s.kind === kind)
+        .forEach((slot, i) => {
+          const next = vehicles[kind][i];
+          next.root.add(slot.plume.group);
+          replace(slot.root, next.root);
+          slot.root = next.root;
+          slot.throatMat = next.throatMat;
+        });
     }
     if (towers) {
       this.towers.forEach((old, i) => replace(old.root, towers[i].root));
@@ -190,7 +199,7 @@ export class View {
 
   hazeFor(b, uniform) {
     const ex = toX(b.x);
-    const ey = toY(b.y) - BOOSTER.bottom / PX_PER_M - 14;
+    const ey = toY(b.y) - VEHICLES[b.kind].bottom / PX_PER_M - 14;
     const p = this._v.set(ex, Math.max(ey, 4), 0).project(this.camera);
     const q = this._v2.set(ex + 12, Math.max(ey, 4), 0).project(this.camera);
     const r = Math.max(0.02, Math.abs(q.x - p.x) * 0.5 * this.aspect);
@@ -235,7 +244,7 @@ export class View {
       if (b.state === 'waiting') continue;
       let slot = this.pool.find((s) => s.id === b.id);
       if (!slot) {
-        slot = this.pool.find((s) => s.id === null);
+        slot = this.pool.find((s) => s.id === null && s.kind === b.kind);
         if (!slot) continue;
         slot.id = b.id;
       }
@@ -249,17 +258,19 @@ export class View {
       const Y = toY(b.y);
       if (b.state === 'tumbling' || b.state === 'crashed') {
         const a = -b.rot;
+        const c = VEHICLES[b.kind].center / PX_PER_M;
         root.rotation.set(0, 0, a);
-        root.position.set(X - Math.sin(a) * CENTER_M, Y - CENTER_M + Math.cos(a) * CENTER_M, 0);
+        root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);
       } else {
         root.rotation.set(0, 0, -b.tilt);
         root.position.set(X, Y, 0);
       }
       const thr = b.throttle;
-      const engineY = Y + ENGINE_Y * Math.cos(b.tilt);
+      const exitY = ENGINE_EXIT[b.kind];
+      const engineY = Y + exitY * Math.cos(b.tilt);
       slot.plume.update(thr, t, Math.max(0, engineY));
       slot.throatMat.color.setRGB(7 * thr + 0.02, 3 * thr, 0.9 * thr);
-      const ex = X + Math.sin(b.tilt) * ENGINE_Y;
+      const ex = X + Math.sin(b.tilt) * exitY;
       slot.light.position.set(ex, Math.max(2, engineY - 10), 6);
       slot.light.intensity = thr > 0.02 ? 650 * (0.25 + thr) : 0;
       if (thr > 0.02) {

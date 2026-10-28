@@ -97,6 +97,16 @@ export class UI {
     this.set('hudHidden', e.hud, 'class', showHud ? 'hud' : 'hud hidden');
     this.set('hudOpacity', e.hud, 'opacity', String(hudOpacity));
     if (showHud && this.safeDirty) this.measureSafe();
+    // Remember which vehicles a round lost, even after they leave the sim.
+    const roundKey = `${game.seed}:${game.round}`;
+    for (const x of game.boosters) {
+      if (x.state !== 'crashed' && x.state !== 'tumbling') continue;
+      if (this.lostRound !== roundKey) {
+        this.lostRound = roundKey;
+        this.lostKinds = new Set();
+      }
+      this.lostKinds.add(x.kind);
+    }
     if (showHud) {
       const b = h.booster;
       if (b) {
@@ -118,9 +128,9 @@ export class UI {
         for (const k of ['alt', 'vs', 'lat']) this.set(k, e[k], 'text', '—');
         this.set('vsC', e.vs, 'class', 'val');
         this.set('latC', e.lat, 'class', 'val');
-        if (game.boosters.some((x) => x.state === 'crashed' || x.state === 'tumbling')) this.lostRound = `${game.seed}:${game.round}`;
-        const lost = this.lostRound === `${game.seed}:${game.round}`;
-        this.set('eng', e.engine, 'text', game.phase === 'outro' ? (lost ? 'BOOSTER LOST' : 'SECURED') : 'STANDBY');
+        const lost = this.lostRound === roundKey;
+        const lostText = lost && this.lostKinds.size > 1 ? 'BOTH LOST' : lost && this.lostKinds.has('ship') ? 'SHIP LOST' : 'BOOSTER LOST';
+        this.set('eng', e.engine, 'text', game.phase === 'outro' ? (lost ? lostText : 'SECURED') : 'STANDBY');
         this.set('engC', e.engine, 'class', 'engine');
       }
       this.set('status', e.status, 'text', h.ready ? 'CATCH WINDOW' : '');
@@ -136,7 +146,7 @@ export class UI {
       this.set('round', e.round, 'text', String(Math.max(1, h.round)));
       const lives = '●'.repeat(h.lives) + '○'.repeat(Math.max(0, 3 - h.lives));
       this.set('livesT', e.lives, 'text', lives);
-      this.set('tower', e.tower, 'text', h.double ? (h.booster ? `DOUBLE CATCH · TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : 'DOUBLE CATCH') : '');
+      this.set('tower', e.tower, 'text', h.double ? (h.booster ? `DOUBLE CATCH · ${h.kind === 'ship' ? 'SHIP · ' : ''}TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : 'DOUBLE CATCH') : '');
     }
     this.updatePopups(game);
     this.updateBanner(game);
