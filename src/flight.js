@@ -3,7 +3,7 @@
 // reenters belly first and lands back on the mount. Planar physics around the planet center in the catch game's
 // world frame (meters, y up, the z = 0 plane), deterministic at the fixed step DT for a given input sequence with
 // the catch game's input shape. The catch game's Game runs the particles and popups near the ground.
-import { DT, PX_PER_M, GROUND_Y, NO_INPUT, ARM_REACH, TOWER_HALF, towerPositions, Game } from './sim.js';
+import { DT, PX_PER_M, GROUND_Y, NO_INPUT, ARM_REACH, TOWER_HALF, VEHICLES, towerPositions, Game } from './sim.js';
 
 const WORLD_W = 1280;
 const TOWER_PX = towerPositions(WORLD_W).a;
@@ -592,7 +592,7 @@ export class Flight {
       this.emit('catch');
       const p = this.fxPoint(SITE_X, ARM_Y);
       this.fx.spawnSparks(p.px, p.py, 34, 0, true);
-      this.fx.spawnClampVapor(p.px, p.py);
+      this.fx.spawnClampVapor(p.px, p.py, VEHICLES.booster.halfW);
       if (this.cut) this.popup('BOOSTER CAUGHT', 'the tower caught the booster');
     } else {
       b.state = 'landing';
@@ -902,15 +902,17 @@ export class Flight {
     return { px: WORLD_W / 2 + (rx * c - ry * s + SITE_X) * PX_PER_M, py: GROUND_Y - (rx * s + ry * c - R - this.anchorLift) * PX_PER_M };
   }
 
-  /** Feeds the catch game's exhaust and ground blast with an engine at (ex, ey) firing along -ang. */
-  exhaust(ex, ey, ang, vx, vy, throttle) {
+  /** Feeds the catch game's exhaust and ground blast with a `kind` vehicle's engines at (ex, ey) firing along -ang. */
+  exhaust(kind, ex, ey, ang, vx, vy, throttle) {
     const tilt = Math.PI / 2 - (ang + this.anchor);
     const p = this.fxPoint(ex, ey);
     const c = Math.cos(this.anchor);
     const s = Math.sin(this.anchor);
+    const bottom = VEHICLES[kind].bottom;
     const proxy = {
-      x: p.px + Math.sin(tilt) * 264,
-      y: p.py - Math.cos(tilt) * 264,
+      kind,
+      x: p.px + Math.sin(tilt) * bottom,
+      y: p.py - Math.cos(tilt) * bottom,
       tilt,
       throttle,
       vx: (vx * c - vy * s) * PX_PER_M,
@@ -931,13 +933,13 @@ export class Flight {
       if (s.mode === 'stacked' && b.throttle > 0) {
         const c = Math.cos(b.ang);
         const sn = Math.sin(b.ang);
-        this.exhaust(b.x - c * BOOSTER_BELLS, b.y - sn * BOOSTER_BELLS, b.ang, b.vx, b.vy, b.throttle);
+        this.exhaust('booster', b.x - c * BOOSTER_BELLS, b.y - sn * BOOSTER_BELLS, b.ang, b.vx, b.vy, b.throttle);
         if (this.t < 6) this.deluge();
       }
       if (b.throttle > 0 && b.state !== 'stacked' && local(b.x, b.y).alt < 400 && this.anchor === 0) {
         const c = Math.cos(b.ang);
         const sn = Math.sin(b.ang);
-        this.exhaust(b.x - c * BOOSTER_BELLS, b.y - sn * BOOSTER_BELLS, b.ang, b.vx, b.vy, b.throttle);
+        this.exhaust('booster', b.x - c * BOOSTER_BELLS, b.y - sn * BOOSTER_BELLS, b.ang, b.vx, b.vy, b.throttle);
       }
     }
     if (s.mode === 'landing' && s.throttle > 0) {
@@ -947,7 +949,7 @@ export class Flight {
           this.anchor = L.phi;
           this.anchorLift = groundAt(L.phi * R);
         }
-        this.exhaust(s.x, s.y, s.ang, s.vx, s.vy, s.throttle);
+        this.exhaust('ship', s.x, s.y, s.ang, s.vx, s.vy, s.throttle);
       }
     }
   }
