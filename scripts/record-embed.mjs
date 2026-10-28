@@ -92,12 +92,12 @@ watch(page);
 const t0 = Date.now();
 await page.goto(`${url}/__host/`);
 const frame = page.frameLocator('#player');
-await frame.locator('#quick-play').waitFor();
+await frame.locator('#play').waitFor();
 const embed = page.frames().find((f) => f.url().endsWith('/embed/'));
 await embed.waitForFunction(() => !!window.__game);
 await page.waitForTimeout(2500);
 const clickAt = (Date.now() - t0) / 1000;
-await frame.locator('#quick-play').click();
+await frame.locator('#play').click();
 await embed.evaluate(autopilot, { armMin: ARM_MIN, armMax: ARM_MAX });
 const samples = [];
 const end = Date.now() + (SECONDS - 3) * 1000;
@@ -125,8 +125,8 @@ async function shot(name, opts) {
   await p.goto(`${url}/embed/?quality=high`);
   await p.waitForFunction(() => !!window.__game);
   await p.waitForTimeout(1500);
-  if (opts.hasTouch) await p.tap('#quick-play');
-  else await p.click('#quick-play');
+  if (opts.hasTouch) await p.tap('#play');
+  else await p.click('#play');
   await p.evaluate(autopilot, { armMin: ARM_MIN, armMax: ARM_MAX });
   // Wait for the booster to be low and lit, close to the arms, so the shot shows the catch setup.
   await p.waitForFunction(() => {

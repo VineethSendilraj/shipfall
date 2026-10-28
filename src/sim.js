@@ -37,6 +37,8 @@ export const SHIP = VEHICLES.ship;
 export const BURN_ALT_M = 112;
 const burnAltM = (v) => BURN_ALT_M + (BOOSTER.bottom - v.bottom) / PX_PER_M;
 export const DOUBLE_UNLOCK_SCORE = 3000;
+/** What a single-catch round sends to tower A. Double-catch rounds always send a booster to A and a ship to B. */
+export const TARGETS = ['booster', 'ship', 'random'];
 export const START_LIVES = 3;
 export const CLOSE_TIME = 0.1;
 
@@ -87,13 +89,16 @@ function makeTower(idx, side, x) {
 }
 
 export class Game {
-  constructor({ width = 1280, seed = 1, maxRounds = Infinity, overrides = null } = {}) {
+  constructor({ width = 1280, seed = 1, maxRounds = Infinity, overrides = null, target = 'booster' } = {}) {
     this.W = width;
     this.seed = seed >>> 0;
     this.maxRounds = maxRounds;
     this.overrides = overrides || {};
+    this.target = target;
     this.rng = createRng(this.seed);
     this.fx = createRng((this.seed ^ 0x9e3779b9) >>> 0);
+    // Its own stream, so a seed flies the same rounds whatever the target.
+    this.picks = createRng((this.seed ^ 0x85ebca6b) >>> 0);
     this.frame = 0;
     this.t = 0;
     this.phase = 'ready';
@@ -183,15 +188,18 @@ export class Game {
       tw.reopenT = 0.25;
     }
     this.roundDouble = this.doubleUnlocked && this.towers.length > 1;
-    this.params = [{ ...this.makeBoosterParams(0, 0), kind: 'booster' }];
+    const pick = this.target === 'random' ? (this.picks.chance(0.5) ? 'ship' : 'booster') : this.target;
+    const kind = this.roundDouble ? 'booster' : pick;
+    this.params = [{ ...this.makeBoosterParams(0, 0), kind }];
     if (this.roundDouble) this.params.push({ ...this.makeBoosterParams(1, 1), kind: 'ship' });
     this.wind = this.makeWind();
     this.roundT = 0;
     this.roundCatches = 0;
     const windKt = Math.round((Math.abs(this.wind.base) / PX_PER_M) * 1.94 * 2);
+    const wind = `wind ${windKt} kt ${this.wind.base > 0 ? '→' : '←'}`;
     this.banner = {
       text: `ROUND ${this.round}`,
-      sub: this.roundDouble ? 'double catch · booster and ship inbound' : `wind ${windKt} kt ${this.wind.base > 0 ? '→' : '←'}`,
+      sub: this.roundDouble ? 'double catch · booster and ship inbound' : this.target === 'booster' ? wind : `${kind} inbound · ${wind}`,
       t: 0,
       dur: 1.6,
     };

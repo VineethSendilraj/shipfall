@@ -209,16 +209,23 @@ export class Director {
     return shot.fov * narrow ** 0.15;
   }
 
-  /** alpha: how far the frame is between the last two sim steps; establish: the map's establishing shot. */
-  apply(camera, game, { establish = null, alpha = 1 } = {}) {
+  /**
+   * alpha: how far the frame is between the last two sim steps; establish: the map's establishing shot;
+   * hero: a ready-made pose ({ pos, tgt, fov }) that takes the establishing shot's place as is.
+   */
+  apply(camera, game, { establish = null, hero = null, alpha = 1 } = {}) {
     const t = game.t;
     const sh = game.shake * 0.09;
     let pos = this.pos;
     let tgt = this.tgt;
     let fov = this.fov;
-    const w = establish ? this.establishWeight(game, t - (1 - alpha) * DT) : 0;
+    const w = establish || hero ? this.establishWeight(game, t - (1 - alpha) * DT) : 0;
     if (w > 0) {
-      const shotFov = this.establishPose(establish, this.clock - (1 - alpha) * DT);
+      let shotFov = hero?.fov;
+      if (hero) {
+        this._ep.copy(hero.pos);
+        this._et.copy(hero.tgt);
+      } else shotFov = this.establishPose(establish, this.clock - (1 - alpha) * DT);
       pos = this._ep.lerpVectors(pos, this._ep, w);
       tgt = this._et.lerpVectors(tgt, this._et, w);
       fov += (shotFov - fov) * w;
