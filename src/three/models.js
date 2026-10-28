@@ -34,6 +34,8 @@ export function instantiate(node, mats, castShadow = () => true) {
     const mat = mats[o.userData.role];
     if (!mat) throw new Error(`no material for model role "${o.userData.role}" (${o.name})`);
     o.material = mat;
+    // Without vertex tangents, anisotropy derives them per pixel, and MSAA edge pixels turn that into one-frame flashes.
+    if (mat.anisotropy > 0 && !o.geometry.attributes.tangent) o.geometry.computeTangents();
     o.castShadow = castShadow(o.userData.role);
     o.receiveShadow = true;
   });
