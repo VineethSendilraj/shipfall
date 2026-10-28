@@ -85,6 +85,16 @@ test('full throttle straight up never reaches orbit and comes back down', () => 
   assert.ok(f.stats.maxAlt > 100e3, `apex ${f.stats.maxAlt}`);
   assert.ok(local(f.ship.x, f.ship.y).alt < 100, 'the wreck is on the ground');
 });
+test('the stack climbs clear of the tower before it turns, so holding left from liftoff never hits it', () => {
+  const f = new Flight({ seed: 1 });
+  let first = true;
+  while (f.t < 10 && f.phase !== 'over') {
+    f.step({ ...NONE, left: f.t < 8, close: first });
+    first = false;
+  }
+  assert.equal(f.phase, 'flight', f.outcome?.reason);
+  assert.ok(f.tilt < -0.2, `tilt ${f.tilt}`);
+});
 test('a hands-off landing burn over the mount touches down softly', () => {
   const o = land(landing());
   assert.equal(o.ok, true, o.reason);

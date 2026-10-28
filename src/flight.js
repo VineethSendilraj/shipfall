@@ -368,7 +368,7 @@ export class Flight {
     const ud = (input.up ? 1 : 0) - (input.down ? 1 : 0);
     const mode = this.ship.mode;
     if (mode === 'stacked' || mode === 'free') {
-      this.tilt = wrap(this.tilt + lr * TURN_RATE * DT);
+      if (this.clearOfTower()) this.tilt = wrap(this.tilt + lr * TURN_RATE * DT);
       this.throttle = clamp(this.throttle + ud * THROTTLE_RATE * DT, 0, 1);
     } else if (mode === 'aero') {
       // Right always moves the landing point east: less angle of attack is more lift and a longer glide.
@@ -377,6 +377,12 @@ export class Flight {
       this.steer = lr;
       this.sink = -ud;
     }
+  }
+
+  /** The stack climbs straight until its engines are above the tower: a turn pivots it and swings them sideways. */
+  clearOfTower() {
+    const b = this.booster;
+    return this.ship.mode !== 'stacked' || local(b.x, b.y).alt - BOOSTER_BELLS > TOWER_TOP;
   }
 
   /** Time runs faster while the ship coasts in vacuum and nothing needs watching. */
@@ -595,7 +601,7 @@ export class Flight {
       const p = this.fxPoint(SITE_X, ARM_Y);
       this.fx.spawnSparks(p.px, p.py, 34, 0, true);
       this.fx.spawnClampVapor(p.px, p.py, VEHICLES.booster.halfW);
-      if (this.cut) this.popup('BOOSTER CAUGHT', 'the tower caught the booster');
+      if (this.cut) this.popup('BOOSTER CAUGHT', 'back on the tower, ready to fly again');
     } else {
       b.state = 'landing';
     }
