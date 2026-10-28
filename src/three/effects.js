@@ -75,8 +75,8 @@ const FLAME_LIT = new THREE.Color(1.5, 1.05, 0.7);
 export function createPlume() {
   const group = new THREE.Group();
   group.position.y = ENGINE_Y;
-  const outer = plumeLayer(5.2, 7.5, [2.4, 0.7, 0.12], [0.9, 0.22, 0.04], { pow: 1.1, cover: 1.3 });
-  const mid = plumeLayer(4.1, 2.6, [3.2, 1.4, 0.35], [1.8, 0.5, 0.08], { diamonds: 0.45, pow: 1.4, cover: 1.1 });
+  const outer = plumeLayer(5.2, 7.5, [2.4, 0.7, 0.12], [0.9, 0.22, 0.04], { pow: 0.7, cover: 1.6 });
+  const mid = plumeLayer(4.1, 2.6, [3.2, 1.4, 0.35], [1.8, 0.5, 0.08], { diamonds: 0.45, pow: 1.0, cover: 1.2 });
   const core = plumeLayer(2.9, 0.5, [4.0, 3.6, 4.2], [3.0, 1.6, 0.5], { diamonds: 0.9, pow: 2.0, cover: 1 });
   // Exhaust striking the ground: a squat dome of steam or dust, flipped so it is densest at the ground.
   const splash = plumeLayer(1, 0.4, [1, 1, 1], [1, 1, 1], { pow: 1.6, cover: 0.9 });
@@ -99,9 +99,9 @@ export function createPlume() {
       const on = throttle > 0.02;
       group.visible = on;
       if (!on) return;
-      const len = 10 + 46 * Math.min(1, throttle * 1.2);
-      const width = 0.5 + 0.5 * Math.min(1, throttle * 1.4);
-      const amp = Math.min(1, 0.35 + throttle * 1.2);
+      const len = 14 + 54 * Math.min(1, throttle * 1.2);
+      const width = 0.75 + 0.55 * Math.min(1, throttle * 1.4);
+      const amp = Math.min(1, 0.5 + throttle * 1.2);
       for (const L of layers) {
         L.mesh.scale.set(width, Math.min(len * L.len, alt + 6), width);
         L.mesh.material.uniforms.uAmp.value = L.amp * amp;
