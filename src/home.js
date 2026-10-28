@@ -3,9 +3,9 @@ import { TARGETS } from './sim.js';
 const MODE_KEY = 'catch-the-booster.mode';
 const TARGET_KEY = 'catch-the-booster.target';
 const TARGET_INFO = {
-  booster: { name: 'Booster', note: 'The tall one. Pins sit just under the grid fins' },
-  ship: { name: 'Ship', note: 'Shorter and lighter. Pins under the forward flaps' },
-  random: { name: 'Random', note: 'Booster or ship, drawn fresh every round' },
+  booster: { title: 'Catch the booster', blurb: 'Steer it into the tower arms and close them' },
+  ship: { title: 'Catch the ship', blurb: 'Shorter and lighter, caught under its forward flaps' },
+  random: { title: 'Catch either', blurb: 'Booster or ship, drawn fresh every round' },
 };
 const SWIPE_PX = 40;
 
@@ -29,7 +29,8 @@ function save(key, value) {
 /**
  * The home screen's pickers: the game mode (one tab per entry of `modes`, shown once there are two) and what
  * to catch (cycled with the arrows, the ← → keys or a swipe). The view holds the pick in the tower's arms;
- * a mode without `targets` shows the full stack. Each mode is { id, label, blurb, targets?, start() }.
+ * a mode without `targets` shows the full stack. Each mode is { id, label, title?, blurb?, targets?, start() };
+ * a mode with `targets` takes its title and blurb from the picked vehicle.
  */
 export function bindHome({ root, modes, view }) {
   let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null)) ?? modes[0];
@@ -39,7 +40,6 @@ export function bindHome({ root, modes, view }) {
   const pick = $('.pick');
   const name = $('.pick-name');
   const note = $('.pick-note');
-  const dots = TARGETS.map(() => $('.pick-dots').appendChild(document.createElement('i')));
   const help = $('.how');
   const helpBtn = $('.open-how');
 
@@ -60,10 +60,9 @@ export function bindHome({ root, modes, view }) {
   function show() {
     tabEls.forEach((b, i) => b.setAttribute('aria-pressed', String(modes[i] === mode)));
     pick.classList.toggle('fixed', !mode.targets);
-    const info = mode.targets ? TARGET_INFO[target] : { name: mode.label, note: mode.blurb };
-    name.textContent = info.name;
-    note.textContent = info.note;
-    dots.forEach((d, i) => d.classList.toggle('on', TARGETS[i] === target));
+    const info = mode.targets ? TARGET_INFO[target] : mode;
+    name.textContent = info.title;
+    note.textContent = info.blurb;
     view.setShowcase(mode.targets ? target : 'random');
     for (const el of help.querySelectorAll('[data-mode]')) el.hidden = el.dataset.mode !== mode.id;
   }

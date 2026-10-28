@@ -316,9 +316,9 @@ function runGame() {
 
   // Home screen modes, in picker order. `targets`: the player picks what to catch.
   const MODES = [
-    { id: 'catch', label: 'Catch', blurb: 'Bring it home in the tower arms', targets: true, start: startGame },
-    { id: 'flight', label: 'Free flight', blurb: 'Fly the stack to orbit and land the ship', start: startFlight },
-    { id: 'explore', label: 'Explore', blurb: 'Look round the full stack up close', start: () => startExplore() },
+    { id: 'catch', label: 'Booster catch', targets: true, start: startGame },
+    { id: 'flight', label: 'Mission', title: 'Fly a mission', blurb: 'Launch to orbit, then land the ship at the tower', start: startFlight },
+    { id: 'explore', label: 'Explore', title: 'Explore the stack', blurb: 'Walk round the full stack up close', start: () => startExplore() },
   ];
   const home = bindHome({ root: titleEl, modes: MODES, view });
 
