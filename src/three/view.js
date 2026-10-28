@@ -8,6 +8,7 @@ import { createExplosions } from './explosion.js';
 import { createComposer } from './post.js';
 import { SHIP_Y } from './stack.js';
 import { Director, toX, toY } from './director.js';
+import { Orbit } from './orbit.js';
 import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
 
 const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
@@ -91,7 +92,8 @@ export class View {
     this.lane = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 6), laneMat);
     scene.add(this.guide, this.lane);
 
-    this.director = new Director({ cinematic, titleTime });
+    this.orbit = new Orbit(canvas);
+    this.director = new Director({ cinematic, titleTime, orbit: this.orbit });
     /** While true, render() leaves the camera to its caller (Explore's orbit controls) instead of the director. */
     this.free = false;
     this.size = { w: 1280, h: 720 };

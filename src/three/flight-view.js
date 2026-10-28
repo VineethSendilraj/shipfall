@@ -17,6 +17,8 @@ const SPACE_ENV = 1;
 // flies belly first eastbound.
 const ROLL = 0;
 const ROLL_RATE = 0.8;
+// Lowest the player can orbit the camera to, in meters above the ground.
+const MIN_ALT = 7;
 const clamp = (x, lo, hi) => (x < lo ? lo : x > hi ? hi : x);
 const smooth = THREE.MathUtils.smoothstep;
 const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
@@ -53,6 +55,8 @@ export class FlightView {
     this._c = new THREE.Color();
     this._v = new THREE.Vector3();
     this._u = new THREE.Vector3();
+    this._cam = new THREE.Vector3();
+    this._w = new THREE.Vector3();
   }
 
   enter(f) {
@@ -296,12 +300,21 @@ export class FlightView {
     const t = f.real;
     const rumble = b.state === 'stacked' ? 0.4 * b.throttle * (1 - smooth(local(b.x, b.y).alt, 150, 2500)) : 0;
     const sh = f.fx.shake * 0.09 + rumble;
-    camera.position.set(d.pos.x + Math.sin(t * 37.1) * sh, d.pos.y + Math.sin(t * 41.7 + 2) * sh, d.pos.z + Math.sin(t * 29.3 + 4) * sh);
+    const orbit = v.orbit;
+    if (d.cuts !== this.cuts) {
+      this.cuts = d.cuts;
+      orbit.reset(true);
+    }
+    const T = local(d.tgt.x, d.tgt.y);
+    const pos = orbit.apply(this._cam.copy(d.pos), d.tgt, this._w.set(T.ux, T.uy, 0));
+    const lift = MIN_ALT - local(pos.x, pos.y).alt;
+    if (lift > 0) pos.addScaledVector(this._w, lift);
+    camera.position.set(pos.x + Math.sin(t * 37.1) * sh, pos.y + Math.sin(t * 41.7 + 2) * sh, pos.z + Math.sin(t * 29.3 + 4) * sh);
     const L = local(camera.position.x, camera.position.y);
     camera.up.set(L.ux, L.uy, 0);
     camera.lookAt(d.tgt);
     camera.fov = d.fov;
-    camera.near = clamp(Math.min(d.pos.distanceTo(d.tgt) * 0.1, L.alt * 0.5), 1, 50);
+    camera.near = clamp(Math.min(pos.distanceTo(d.tgt) * 0.1, L.alt * 0.5), 1, 50);
     camera.far = (L.r + AIR_TOP) * 1.05;
     camera.updateProjectionMatrix();
     v.particles.setScale((v.size.h * (1 + v.lift) * v.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))));

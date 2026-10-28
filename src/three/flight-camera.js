@@ -232,6 +232,7 @@ export class FlightDirector {
   }
 
   cut(shot, f) {
+    this.cuts = (this.cuts ?? 0) + 1;
     this.shot = shot;
     this.desired(f, shot);
     this.fo.set(0, 0, 0);
