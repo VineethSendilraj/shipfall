@@ -45,6 +45,7 @@ export class HudBar {
       flight: $('h-flight'),
       clock: $('h-clock'),
       mscore: $('h-mscore'),
+      engA: $('h-eng-a'),
       engB: $('h-eng-b'),
       align: $('h-align'),
       sil: document.querySelector('#h-align .sil'),
@@ -134,6 +135,7 @@ export class HudBar {
     const sim = game.activeBooster();
     const thr = b && !b.waiting && sim ? sim.throttle : 0;
     this.light('a', this.boosterDots, thr > 0.02 ? [3, thr > 0.55 ? 10 : 0, 0] : [0, 0, 0]);
+    this.set('boosterOn', game.params?.some((p) => p.kind === 'booster') ?? true, (v) => e.engA.classList.toggle('hidden', !v));
     const ship = game.boosters.find((x) => x.kind === 'ship' && x.state !== 'waiting');
     this.set('shipOn', !!ship, (v) => e.engB.classList.toggle('hidden', !v));
     if (ship) this.light('b', this.shipDots, ship.throttle > 0.02 ? [3, 0] : [0, 0]);
