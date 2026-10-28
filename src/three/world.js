@@ -132,6 +132,8 @@ const LIGHT = siteLighting(TIME_OF_DAY);
 
 /** Particle and explosion colours for the site at its time of day (the defaults in effects.js are the night ones). */
 export const STARBASE_FX = LIGHT.fx;
+/** Unit vector toward the sun at the site's time of day. */
+export const SUN_DIR = LIGHT.sun;
 
 // ---------------------------------------------------------------- sky
 

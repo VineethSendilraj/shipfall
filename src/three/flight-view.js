@@ -342,7 +342,10 @@ export class FlightView {
     this.site = [];
   }
 
-  /** The map's key light at the site and in the planet's shadow, sunlight elsewhere, with sky light and reflections to match. */
+  /**
+   * The map's key light at the site, sunlight elsewhere and, in the planet's shadow, a night site's key light or else
+   * the moon; with sky light and reflections to match.
+   */
   light(catchW) {
     const { scene } = this.view;
     const sv = this.saved;
@@ -354,12 +357,18 @@ export class FlightView {
     const top = Math.max(this.sun.r, this.sun.g, this.sun.b);
     const k = this.world.keyLight;
     k.target.position.lerpVectors(sv.keyTarget, focus, Math.max(smooth(L.alt, 100, 400), smooth(Math.abs(L.phi) * R, 300, 1000)));
-    if (look.siteSun) {
-      // The site's key light is this low sun already: it turns into the sunlight as the site fades out.
-      const w = 1 - catchW;
+    const w = 1 - catchW;
+    // Deep in the planet's shadow, away from a site lit by its sun, the key light is the moon. It fades out before it turns.
+    const moon = look.siteSun ? w * (1 - smooth(sun, 0, 0.3)) : 0;
+    if (moon > 0.5) {
+      k.color.copy(look.moonlight);
+      k.intensity = (2 * moon - 1) * smooth(look.moonDir.dot(U), -0.1, 0.1);
+      k.position.copy(look.moonDir);
+    } else if (look.siteSun) {
+      // The site's key light is this sun already: it turns into the sunlight as the site fades out.
       k.color.copy(sv.key);
       if (top > 0) k.color.lerp(this._c.copy(this.sun).multiplyScalar(1 / top), w);
-      k.intensity = sv.keyI * catchW + look.sunI * sun * w;
+      k.intensity = (sv.keyI * catchW + look.sunI * sun * w) * (1 - 2 * moon);
       k.position.copy(sv.keyDir).lerp(look.sunDir, w).normalize();
     } else if (sun < 0.5) {
       // One light: it fades out before it swaps between the key light's direction and the sun's.
@@ -372,16 +381,18 @@ export class FlightView {
       k.position.copy(look.sunDir);
     }
     k.position.multiplyScalar(sv.keyDist).add(k.target.position);
-    // The night side keeps the launch site's night sky light; the day side gets the sun's bounce off the planet.
-    const night = Math.max(catchW, 1 - sun);
+    // A night site's sky light stays on in the planet's shadow. A day site's fades out with the site, and the planet
+    // below takes over, lit by the sun or, in its shadow, by the moon.
+    const sky = look.siteSun ? catchW : Math.max(catchW, 1 - sun);
+    const shine = look.siteSun ? sun + ((1 - sun) * lum(look.moonlight)) / look.sunI : sun;
     this.hemi.position.copy(U);
-    this.hemi.color.copy(sv.sky).multiplyScalar(night);
-    this.hemi.groundColor.copy(sv.ground).multiplyScalar(night).add(this._c.copy(look.bounce).multiplyScalar((1 - catchW) * sun));
-    this.fill.intensity = sv.fill * night;
+    this.hemi.color.copy(sv.sky).multiplyScalar(sky);
+    this.hemi.groundColor.copy(sv.ground).multiplyScalar(sky).add(this._c.copy(look.bounce).multiplyScalar(w * shine));
+    this.fill.intensity = sv.fill * sky;
     // Both maps are the same PMREM size, so swapping them recompiles nothing; the intensity is 0 at the swap.
-    const site = night > 0.5;
+    const site = sky > 0.5;
     scene.environment = site ? sv.env : look.env;
-    scene.environmentIntensity = site ? sv.envI * (2 * night - 1) : SPACE_ENV * sun * (1 - 2 * night);
+    scene.environmentIntensity = site ? sv.envI * (2 * sky - 1) : SPACE_ENV * shine * (1 - 2 * sky);
     scene.environmentRotation.z = -L.phi;
   }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { bakeEnvironment } from './world.js';
+import { SUN_DIR as STARBASE_SUN_DIR, bakeEnvironment } from './world.js';
 import { SUN_DIR as MARS_SUN_DIR } from './mars.js';
 import { R, SITE_X } from '../flight.js';
 
@@ -63,23 +63,28 @@ vec3 nightSky(vec3 d, float h, float md, vec3 col) {
  * `phase`, the light the air scatters toward the eye per unit of extinction, from mu, the cosine of the angle to
  * the sun; ambient: GLSL colour the air glows with on its own; surface: the planet's fragment shader; sun: GLSL
  * for the sun in the space sky, from sd, the cosine of the angle to it; moonDir: the space sky's moon (zero: none);
- * env: GLSL colours of the planet and its limb in the reflections in orbit; bounce: sunlight off the planet onto
- * the vehicles; siteSun: the launch site's key light is this sun.
+ * moonlight: its light on the vehicles in the planet's shadow; env: GLSL colours of the planet and its limb in the
+ * reflections in orbit; bounce: sunlight off the planet onto the vehicles; siteSun: the launch site's key light is
+ * this sun.
  */
 const LOOKS = {
-  // Earth, its launch site at night with the sun below the eastern horizon.
+  // Earth under the launch site's sun, which by day is also the site's key light.
   starbase: {
-    sunDir: new THREE.Vector3(0.85, -0.25, 0.42).normalize(),
-    sunI: 9,
+    sunDir: STARBASE_SUN_DIR,
+    // The site's midday key light before the site's air dims it.
+    sunI: 3.5,
     sunCol: new THREE.Vector3(7, 6.8, 6.4),
     beta: [0.07 / AH, 0.18 / AH, 0.42 / AH],
     phase: 'float phase = 0.0597 * (1.0 + mu * mu) + 0.03 * pow(max(mu, 0.0), 12.0);',
     ambient: 'vec3(0.004, 0.007, 0.016)',
     surface: earthFrag,
     moonDir: MOON_DIR,
+    // The site's key light after dark.
+    moonlight: new THREE.Color(0.6, 0.66, 0.82),
     sun: 'smoothstep(0.99985, 0.99992, sd) * 30.0 + pow(max(sd, 0.0), 900.0) * 0.8',
     env: ['vec3(0.13, 0.17, 0.24)', 'vec3(0.2, 0.36, 0.75)'],
     bounce: new THREE.Color(0.25, 0.32, 0.45),
+    siteSun: STARBASE_SUN_DIR.y > 0,
   },
   // Mars under the catch game's low dusk sun, which is also its launch site's key light: a rust desert below a thin,
   // dusty air that glows blue around the sun.
@@ -93,6 +98,7 @@ const LOOKS = {
     ambient: 'vec3(0.003, 0.0018, 0.001)',
     surface: marsFrag,
     moonDir: new THREE.Vector3(),
+    moonlight: new THREE.Color(0, 0, 0),
     sun: 'smoothstep(0.999983, 0.999989, sd) * 12.0 + pow(max(sd, 0.0), 3000.0) * 0.6',
     env: ['vec3(0.08, 0.036, 0.016)', 'vec3(0.17, 0.1, 0.056)'],
     bounce: new THREE.Color(0.17, 0.09, 0.04),
@@ -401,6 +407,8 @@ export function createLook(map, renderer) {
     env: buildSpaceEnv(renderer, k),
     sunDir: k.sunDir,
     sunI: k.sunI,
+    moonDir: k.moonDir,
+    moonlight: k.moonlight,
     bounce: k.bounce,
     siteSun: !!k.siteSun,
     sunlight: (p, out) => sunlight(p, out, k),
