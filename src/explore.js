@@ -33,7 +33,7 @@ const AIM_MS = 150;
 // The inspection lights fade in from LIGHT_FAR meters off the stack and are full from LIGHT_NEAR.
 const LIGHT_FAR = 40;
 const LIGHT_NEAR = 25;
-const LAMP_LUX = 4.5; // what the camera lamp puts on the nearest part of the stack
+const LAMP_LUX = 4.5; // what the camera lamp puts on the nearest part of the model
 const FILL_CD = 800;
 
 /** Focus presets in chip and key (1-9) order. Positions are relative to the foot of the stack unless `world`. */
@@ -542,13 +542,18 @@ export class Explore {
     return d;
   }
 
-  /** Scales the inspection lights to the camera's distance from the stack, so the wide views keep the night. */
+  /**
+   * Scales the inspection lights to the camera's distance from the stack, so the wide views keep the night. The lamp
+   * is sized to the nearest part of the model, so a girder or the mount beside the camera doesn't burn out.
+   */
   light() {
     const { camera } = this.view;
-    const near = Math.max(1, Math.min(...this.hull.map((h) => h(camera.position))));
-    const fade = 1 - THREE.MathUtils.smoothstep(near, LIGHT_NEAR, LIGHT_FAR);
+    const p = camera.position;
+    const stack = Math.min(...this.hull.map((h) => h(p)));
+    const fade = 1 - THREE.MathUtils.smoothstep(stack, LIGHT_NEAR, LIGHT_FAR);
+    const near = Math.min(stack, this.toModel(p));
     // Up and to the right of the camera, so the light shapes the surface instead of flattening it.
-    this.lamp.position.set(0.2 * near, 0.3 * near, 0).applyQuaternion(camera.quaternion).add(camera.position);
+    this.lamp.position.set(0.2 * near, 0.3 * near, 0).applyQuaternion(camera.quaternion).add(p);
     this.lamp.intensity = LAMP_LUX * near * near * fade;
     this.fill.intensity = FILL_CD * fade;
   }
