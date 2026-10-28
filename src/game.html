@@ -8,16 +8,29 @@
   </div>
 
   <div id="hud" class="hud hidden">
-    <div class="panel telemetry">
-      <div class="row"><span class="lbl">ALT</span><span class="val" id="h-alt">—</span><span class="unit">m</span></div>
-      <div class="row"><span class="lbl">V/S</span><span class="val" id="h-vs">—</span><span class="unit">m/s</span></div>
-      <div class="row"><span class="lbl">LAT</span><span class="val" id="h-lat">—</span><span class="unit">m</span></div>
-      <div class="row fuel">
-        <span class="lbl">FUEL</span>
-        <div class="bar"><i id="h-fuel"></i></div>
-        <span class="val small" id="h-fuel-num">100</span>
+    <div class="panel hud-bar">
+      <div class="cluster left">
+        <figure class="engines" id="h-eng-a"><svg viewBox="0 0 64 64" aria-hidden="true"></svg><figcaption>BOOSTER</figcaption></figure>
+        <div class="gauge" id="g-alt"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">ALTITUDE</span><b class="g-val">—</b><span class="g-unit">M</span></div>
+        <div class="gauge" id="g-spd"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">SPEED</span><b class="g-val">—</b><span class="g-unit">M/S</span></div>
       </div>
-      <div class="engine" id="h-engine">COAST</div>
+      <div class="mission">
+        <svg id="h-timeline" class="timeline" viewBox="0 0 600 70" aria-hidden="true">
+          <path class="tl-track" d="M10,66 Q300,-6 590,66" />
+          <path class="tl-done" d="M10,66 Q300,-6 590,66" />
+          <circle class="mark m-burn" r="3.6" /><text class="l-burn">LANDING BURN</text>
+          <circle class="mark m-catch" r="3.6" /><text class="l-catch">CATCH</text>
+          <circle class="tl-now" r="4.6" cx="10" cy="66" />
+        </svg>
+        <div class="clock"><span class="tplus">T+</span><span id="h-clock">00:00:00</span></div>
+        <div class="mscore" id="h-mscore">0</div>
+        <div class="flight" id="h-flight"></div>
+      </div>
+      <div class="cluster right">
+        <div class="gauge" id="g-fuel"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">FUEL</span><b class="g-val">—</b><span class="g-unit">%</span></div>
+        <figure class="align" id="h-align"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="rim" cx="32" cy="32" r="30.5" /><line class="axis" x1="32" y1="6" x2="32" y2="58" /><line class="arm" x1="9" y1="32" x2="21" y2="32" /><line class="arm" x1="43" y1="32" x2="55" y2="32" /><clipPath id="align-clip"><circle cx="32" cy="32" r="29.5" /></clipPath><g clip-path="url(#align-clip)"><g class="sil"><rect x="-3" y="-14" width="6" height="27" rx="3" /><rect class="pins" x="-6" y="-12.6" width="12" height="2.2" rx="1" /></g></g></svg><figcaption>ALIGN</figcaption></figure>
+        <figure class="engines ship hidden" id="h-eng-b"><svg viewBox="0 0 64 64" aria-hidden="true"></svg><figcaption>SHIP</figcaption></figure>
+      </div>
     </div>
     <div class="coach" id="h-coach" aria-live="polite"></div>
     <div class="status-stack">

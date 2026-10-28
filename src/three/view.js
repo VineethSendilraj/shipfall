@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
 import { createTower, createTowerMaterials } from './tower.js';
 import { buildWorld, bakeSky } from './world.js';
-import { boosterSkin } from './textures.js';
 import { instantiate } from './models.js';
 import { createPlume, createParticles } from './effects.js';
 import { createComposer } from './post.js';
@@ -50,7 +49,7 @@ export class View {
     for (const t of this.towers) scene.add(t.root);
     this.towers[1].root.visible = false;
 
-    const mats = createBoosterMaterials(boosterSkin(), 1.0);
+    const mats = createBoosterMaterials(1.0);
     this.boosterMats = mats;
     this.pool = [0, 1, 2].map(() => {
       const b = createBooster(mats);
@@ -182,6 +181,65 @@ export class View {
     this.director.step(game, this.size.w / (this.size.h * (1 + this.lift)));
   }
 
+  /** Call before each sim step: what that step started from, so frames drawn between steps can be interpolated. */
+  snapshot(game) {
+    const p = (this.prev ??= { boosters: new Map(), towers: [], pos: new THREE.Vector3(), tgt: new THREE.Vector3(), fov: 0 });
+    p.boosters.clear();
+    for (const b of game.boosters) p.boosters.set(b.id, { x: b.x, y: b.y, tilt: b.tilt, rot: b.rot, state: b.state });
+    p.towers = game.towers.map((tw) => tw && { armY: tw.armY, bounce: tw.bounce, open: tw.open, rise: tw.rise });
+    p.pos.copy(this.director.pos);
+    p.tgt.copy(this.director.tgt);
+    p.fov = this.director.fov;
+  }
+
+  /** Blends the drawn state alpha of the way from the last snapshot to the current step; returns an undo. */
+  interpolate(game, alpha) {
+    const p = this.prev;
+    const saved = [];
+    // A bigger change than this in one step is a teleport (respawn, round reset): draw it as is.
+    const blend = (o, k, from, maxJump) => {
+      const to = o[k];
+      if (typeof to !== 'number' || typeof from !== 'number' || Math.abs(to - from) > maxJump) return;
+      saved.push([o, k, to]);
+      o[k] = from + (to - from) * alpha;
+    };
+    for (const b of game.boosters) {
+      const q = p.boosters.get(b.id);
+      if (!q || q.state === 'waiting') continue;
+      blend(b, 'x', q.x, 40);
+      blend(b, 'y', q.y, 40);
+      blend(b, 'tilt', q.tilt, Math.PI / 2);
+      blend(b, 'rot', q.rot, Math.PI / 2);
+    }
+    game.towers.forEach((tw, i) => {
+      const q = p.towers[i];
+      if (tw && q) for (const k of ['armY', 'bounce', 'open', 'rise']) blend(tw, k, q[k], 40);
+    });
+    const d = this.director;
+    const pos = d.pos.clone();
+    const tgt = d.tgt.clone();
+    const fov = d.fov;
+    d.pos.lerpVectors(p.pos, pos, alpha);
+    d.tgt.lerpVectors(p.tgt, tgt, alpha);
+    d.fov = p.fov + (fov - p.fov) * alpha;
+    return () => {
+      for (const [o, k, v] of saved) o[k] = v;
+      d.pos.copy(pos);
+      d.tgt.copy(tgt);
+      d.fov = fov;
+    };
+  }
+
+  /** alpha: how far the frame is between the last two sim steps (1 = exactly the latest step). */
+  render(game, { dip = null, alpha = 1 } = {}) {
+    const undo = alpha < 1 && this.prev ? this.interpolate(game, alpha) : null;
+    try {
+      this.draw(game, dip);
+    } finally {
+      undo?.();
+    }
+  }
+
   /** Sim pixel coordinates -> CSS pixel position on screen. */
   project(xpx, ypx) {
     const v = this._v.set(toX(xpx), toY(ypx), 0).project(this.camera);
@@ -197,7 +255,7 @@ export class View {
     uniform.value.set(p.x * 0.5 + 0.5, p.y * 0.5 + 0.5, p.z < 1 ? Math.min(1, b.throttle * 1.6) : 0, r);
   }
 
-  render(game, { dip = null } = {}) {
+  draw(game, dip) {
     const t = game.t;
     const blink = (k) => (Math.sin(t * 2.6 + k) > 0.35 ? 1 : 0.12);
 
