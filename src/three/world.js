@@ -5,7 +5,7 @@ import { createRng } from '../rng.js';
 export const MOON_DIR = new THREE.Vector3(-0.42, 0.36, -0.83).normalize();
 const GLOW_DIR = new THREE.Vector3(0.55, 0, -0.84).normalize();
 
-const NOISE_GLSL = /* glsl */ `
+export const NOISE_GLSL = /* glsl */ `
 float hash13(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
 float vnoise(vec3 p) {
   vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -13,6 +13,43 @@ float vnoise(vec3 p) {
              mix(mix(hash13(i + vec3(0,0,1)), hash13(i + vec3(1,0,1)), f.x), mix(hash13(i + vec3(0,1,1)), hash13(i + vec3(1,1,1)), f.x), f.y), f.z);
 }
 float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * vnoise(p); p *= 2.07; a *= 0.5; } return s; }
+`;
+
+/**
+ * Milky way, stars and the moon over `col` for a world-space view direction d, h above the horizon, with
+ * md = dot(d, uMoonDir). Needs NOISE_GLSL and the uTime and uMoonDir uniforms.
+ */
+export const NIGHT_SKY_GLSL = /* glsl */ `
+vec3 starLayer(vec3 d, float scale, float density, float radius) {
+  vec3 p = d * scale; vec3 id = floor(p); vec3 f = fract(p) - 0.5;
+  float h = hash13(id);
+  if (h < 1.0 - density) return vec3(0.0);
+  vec3 off = vec3(hash13(id + 1.7), hash13(id + 3.1), hash13(id + 5.3)) - 0.5;
+  float dist = length(f - off * 0.5);
+  float b = (h - (1.0 - density)) / density;
+  float tw = 0.8 + 0.2 * sin(uTime * (1.3 + b * 3.0) + h * 91.0);
+  float s = smoothstep(radius, 0.0, dist) * (0.35 + 2.6 * b * b * b) * tw;
+  vec3 tint = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.86, 0.72), hash13(id + 9.0));
+  return tint * s;
+}
+vec3 nightSky(vec3 d, float h, float md, vec3 col) {
+  vec3 n = normalize(vec3(0.35, 0.55, 0.76));
+  float band = exp(-pow(dot(d, n) / 0.2, 2.0));
+  float clouds = fbm(d * 5.0) * fbm(d * 11.0 + 3.0);
+  float dust = smoothstep(0.35, 0.65, fbm(d * 9.0 + 7.0));
+  col += vec3(0.05, 0.05, 0.075) * band * clouds * 1.6 * (1.0 - 0.7 * dust) * smoothstep(0.0, 0.25, h);
+  float fade = smoothstep(0.0, 0.18, h) * (1.0 - 0.85 * pow(max(md, 0.0), 6.0));
+  col += (starLayer(d, 170.0, 0.035, 0.2) + starLayer(d, 330.0, 0.05, 0.16) * 0.6 + band * starLayer(d, 520.0, 0.12, 0.14) * 0.5) * fade;
+  float r = acos(clamp(md, -1.0, 1.0));
+  float disc = smoothstep(0.0235, 0.0215, r);
+  vec3 lp = d - uMoonDir * md;
+  float maria = fbm(lp * 190.0) * 0.6 + fbm(lp * 520.0) * 0.4;
+  float limb = sqrt(max(0.0, 1.0 - pow(r / 0.0235, 2.0)));
+  vec3 moon = vec3(2.3, 2.25, 2.1) * (0.55 + 0.45 * limb) * (0.72 + 0.4 * smoothstep(0.35, 0.7, maria));
+  col = mix(col, moon, disc);
+  col += vec3(0.30, 0.34, 0.42) * pow(max(md, 0.0), 2200.0) + vec3(0.06, 0.07, 0.09) * pow(max(md, 0.0), 260.0);
+  return col;
+}
 `;
 
 function skyMaterial({ withStars }) {
@@ -30,18 +67,7 @@ function skyMaterial({ withStars }) {
       uniform float uTime; uniform vec3 uMoonDir; uniform vec3 uGlowDir;
       varying vec3 vDir;
       ${NOISE_GLSL}
-      vec3 starLayer(vec3 d, float scale, float density, float radius) {
-        vec3 p = d * scale; vec3 id = floor(p); vec3 f = fract(p) - 0.5;
-        float h = hash13(id);
-        if (h < 1.0 - density) return vec3(0.0);
-        vec3 off = vec3(hash13(id + 1.7), hash13(id + 3.1), hash13(id + 5.3)) - 0.5;
-        float dist = length(f - off * 0.5);
-        float b = (h - (1.0 - density)) / density;
-        float tw = 0.8 + 0.2 * sin(uTime * (1.3 + b * 3.0) + h * 91.0);
-        float s = smoothstep(radius, 0.0, dist) * (0.35 + 2.6 * b * b * b) * tw;
-        vec3 tint = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.86, 0.72), hash13(id + 9.0));
-        return tint * s;
-      }
+      ${NIGHT_SKY_GLSL}
       void main() {
         vec3 d = normalize(vDir);
         float h = d.y;
@@ -57,23 +83,7 @@ function skyMaterial({ withStars }) {
         float md = dot(d, uMoonDir);
         col += vec3(0.05, 0.065, 0.10) * pow(max(md, 0.0), 24.0);
         ${withStars ? `
-        if (h > -0.02) {
-          vec3 n = normalize(vec3(0.35, 0.55, 0.76));
-          float band = exp(-pow(dot(d, n) / 0.2, 2.0));
-          float clouds = fbm(d * 5.0) * fbm(d * 11.0 + 3.0);
-          float dust = smoothstep(0.35, 0.65, fbm(d * 9.0 + 7.0));
-          col += vec3(0.05, 0.05, 0.075) * band * clouds * 1.6 * (1.0 - 0.7 * dust) * smoothstep(0.0, 0.25, h);
-          float fade = smoothstep(0.0, 0.18, h) * (1.0 - 0.85 * pow(max(md, 0.0), 6.0));
-          col += (starLayer(d, 170.0, 0.035, 0.2) + starLayer(d, 330.0, 0.05, 0.16) * 0.6 + band * starLayer(d, 520.0, 0.12, 0.14) * 0.5) * fade;
-          float r = acos(clamp(md, -1.0, 1.0));
-          float disc = smoothstep(0.0235, 0.0215, r);
-          vec3 lp = d - uMoonDir * md;
-          float maria = fbm(lp * 190.0) * 0.6 + fbm(lp * 520.0) * 0.4;
-          float limb = sqrt(max(0.0, 1.0 - pow(r / 0.0235, 2.0)));
-          vec3 moon = vec3(2.3, 2.25, 2.1) * (0.55 + 0.45 * limb) * (0.72 + 0.4 * smoothstep(0.35, 0.7, maria));
-          col = mix(col, moon, disc);
-          col += vec3(0.30, 0.34, 0.42) * pow(max(md, 0.0), 2200.0) + vec3(0.06, 0.07, 0.09) * pow(max(md, 0.0), 260.0);
-        }` : `
+        if (h > -0.02) col = nightSky(d, h, md, col);` : `
         col += vec3(1.2, 1.2, 1.25) * smoothstep(0.995, 0.999, md);
         `}
         if (h < 0.0) col = mix(col, vec3(0.012, 0.011, 0.012), smoothstep(0.0, -0.06, h));
@@ -437,5 +447,5 @@ export function buildWorld(scene, renderer, towerMats) {
   haze.position.y = 45;
   haze.renderOrder = 2;
   scene.add(haze);
-  return { sky, skyMat, floods, moon, dressing };
+  return { sky, skyMat, floods, moon, dressing, outer, haze };
 }
