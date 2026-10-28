@@ -301,6 +301,8 @@ body.tall .overlay.quick { align-content: center; padding-bottom: 30%; }
 body.tall #gameover, body.tall #leaderboard { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 body.tall #gameover .card, body.tall #leaderboard .card { max-height: 100%; }
 body.tall #sound { bottom: auto; top: 104px; }
+/* These cards sit at the top, over the sound button's spot, and end above the bottom 30%. */
+body.tall:has(#gameover:not(.hidden), #leaderboard:not(.hidden)) #sound { top: auto; bottom: 10px; }
 
 .demo-card { padding-left: max(24px, 6%); padding-right: max(24px, 6%); }
 .demo-card .tag { max-width: 100%; text-wrap: balance; }
