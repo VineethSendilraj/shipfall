@@ -15,7 +15,7 @@ A 3D browser game: a rocket booster is falling back to the launch site at night.
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
-| Lateral thrusters (limited fuel) | `←` `→` or `A` `D` | ◀ ▶ |
+| Lateral thrusters (use landing fuel) | `←` `→` or `A` `D` | ◀ ▶ |
 | Move catch arms | `↑` `↓` or `W` `S` | ▲ ▼ |
 | Close arms | `Space` | CATCH |
 | Start / restart | `Enter` | Start button |
@@ -24,7 +24,7 @@ A 3D browser game: a rocket booster is falling back to the launch site at night.
 
 ### Rules
 
-The landing burn ignites automatically below 112 m and slows the booster into a brief, slow descent before engine cutoff. A catch succeeds if, at the moment the arms finish closing:
+The landing burn ignites automatically below 112 m and slows the booster into a brief, slow descent before engine cutoff. The burn and the thrusters share one tank: steering shortens the hover, and an empty tank cuts the engine early. A catch succeeds if, at the moment the arms finish closing:
 
 - the catch pins (just below the grid fins) are within **±12 px (±3 m)** of the arms vertically,
 - the lateral offset from the catch centerline is **under 15 px (3.75 m)**, and
@@ -32,7 +32,7 @@ The landing burn ignites automatically below 112 m and slows the booster into a 
 
 Otherwise it's a miss: the arms clang off the booster, or it slides past and hits the pad. You have 3 boosters.
 
-Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (3 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises and two boosters come in per round (+500 for catching both). Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
+Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (6.5 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises and two boosters come in per round (+500 for catching both). Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
 
 ## Run locally
 

@@ -146,7 +146,7 @@ export class HudBar {
       const vs = Math.abs(b.vs);
       this.gauge('alt', this.altMax > 0 ? alt / this.altMax : 1, alt >= 100 ? alt.toFixed(0) : alt.toFixed(1));
       this.gauge('spd', vs / 80, b.waiting ? '—' : vs.toFixed(1), b.waiting ? '' : vs < 3 ? 'ok' : vs < 10 ? 'warn' : '');
-      this.gauge('fuel', b.fuel / 100, b.fuel.toFixed(0), b.fuel < 25 ? 'bad' : '');
+      this.gauge('fuel', b.fuel / 100, b.fuel.toFixed(0), b.fuel < 10 ? 'bad' : b.fuel < 25 ? 'warn' : '');
       const tilt = sim ? (sim.tilt * 180) / Math.PI : 0;
       const lx = clamp(b.lat * 2.4, -22, 22);
       const ly = clamp(-b.armDy * 1.2, -20, 20);
