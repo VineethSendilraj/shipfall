@@ -169,9 +169,14 @@ export function createParticles(toX, toY) {
   streaks.frustumCulled = false;
   const group = new THREE.Group();
   group.add(smoke, glow, streaks);
+  // Base colours of vapor (k 3), ground dust (k 4) and smoke; the map can swap them (Mars dust is red).
+  let pal = { vapor: [0.55, 0.58, 0.62], dust: [0.34, 0.3, 0.26], smoke: [0.085, 0.085, 0.09] };
 
   return {
     group,
+    setPalette({ vapor, dust, smoke: smokeCol }) {
+      pal = { vapor, dust, smoke: smokeCol };
+    },
     setScale(s) {
       glow.material.uniforms.uScale.value = s;
       smoke.material.uniforms.uScale.value = s;
@@ -240,13 +245,13 @@ export function createParticles(toX, toY) {
           let base;
           if (p.k === 3) {
             a = (1 - u) * 0.45;
-            base = [0.55, 0.58, 0.62];
+            base = pal.vapor;
           } else if (p.k === 4) {
             a = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 0.6;
-            base = [0.34, 0.3, 0.26];
+            base = pal.dust;
           } else {
             a = Math.sin(Math.PI * Math.min(1, u * 1.15)) * 0.3;
-            base = [0.085, 0.085, 0.09];
+            base = pal.smoke;
           }
           let glowAmt = 0;
           for (const e of engines) {

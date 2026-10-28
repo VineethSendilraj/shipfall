@@ -10,6 +10,14 @@ export const CARD = {
   title: 'Catch the Booster',
   description: "Line up a falling rocket booster with the tower's arms and close them gently. Not affiliated with SpaceX.",
   imageAlt: "A stainless rocket booster held in a launch tower's catch arms at night",
+  site: '@VineethSendil',
+  // X shows this image in place of the frame until the game loads, so it has the frame's square shape.
+  playerImage: '/player.jpg',
+  playerImageSize: 1080,
+  player: '/embed/',
+  playerWidth: 480,
+  playerHeight: 480,
+  // og:image, for sites that show a wide link preview.
   image: '/share.jpg',
   imageWidth: 1200,
   imageHeight: 630,
@@ -43,13 +51,17 @@ export function resolveSiteUrl(env = process.env) {
 /** All share-card meta tags, as [attribute, key, value] triples, in output order. */
 export function cardMeta(site, env = process.env) {
   const abs = (p) => site + p;
-  // X no longer draws player cards for new domains, so a link posts as a large image card.
-  const tags = [
-    ['name', 'twitter:card', 'summary_large_image'],
+  const handle = env.VITE_TWITTER_SITE || CARD.site;
+  return [
+    ['name', 'twitter:card', 'player'],
+    ['name', 'twitter:site', handle.startsWith('@') ? handle : `@${handle}`],
     ['name', 'twitter:title', CARD.title],
     ['name', 'twitter:description', CARD.description],
-    ['name', 'twitter:image', abs(CARD.image)],
+    ['name', 'twitter:image', abs(CARD.playerImage)],
     ['name', 'twitter:image:alt', CARD.imageAlt],
+    ['name', 'twitter:player', abs(CARD.player)],
+    ['name', 'twitter:player:width', String(CARD.playerWidth)],
+    ['name', 'twitter:player:height', String(CARD.playerHeight)],
     ['property', 'og:type', 'website'],
     ['property', 'og:site_name', CARD.title],
     ['property', 'og:title', CARD.title],
@@ -61,9 +73,6 @@ export function cardMeta(site, env = process.env) {
     ['property', 'og:image:height', String(CARD.imageHeight)],
     ['property', 'og:image:alt', CARD.imageAlt],
   ];
-  const handle = env.VITE_TWITTER_SITE;
-  if (handle) tags.splice(1, 0, ['name', 'twitter:site', handle.startsWith('@') ? handle : `@${handle}`]);
-  return tags;
 }
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');

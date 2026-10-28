@@ -62,14 +62,18 @@ try {
     check(!res.headers.has('x-frame-options'), `GET ${path}: no X-Frame-Options`);
     const m = metaTags(html);
     const expect = {
-      'twitter:card': 'summary_large_image',
+      'twitter:card': 'player',
       'twitter:title': CARD.title,
-      'twitter:image': `${site.url}${CARD.image}`,
+      'twitter:player': `${site.url}${CARD.player}`,
+      'twitter:player:width': String(CARD.playerWidth),
+      'twitter:player:height': String(CARD.playerHeight),
+      'twitter:image': `${site.url}${CARD.playerImage}`,
       'og:title': CARD.title,
       'og:image': `${site.url}${CARD.image}`,
       'og:url': `${site.url}/`,
     };
     for (const [k, v] of Object.entries(expect)) check(m.get(k) === v, `${path} meta ${k}`, m.get(k) ?? '(missing)');
+    check(/^@\w{1,15}$/.test(m.get('twitter:site') || ''), `${path} meta twitter:site is an @handle`, m.get('twitter:site') ?? '(missing)');
     for (const k of ['twitter:description', 'og:description']) {
       const d = m.get(k) || '';
       check(d.length > 0 && d.length <= 200, `${path} meta ${k} present (≤ 200 chars)`, `${d.length} chars`);
@@ -87,13 +91,20 @@ try {
   const anchors = [...embed.matchAll(/<a\b[^>]*>/g)].map((a) => a[0]);
   check(anchors.length > 0 && anchors.every((a) => /target="_blank"/.test(a) && /rel="noopener"/.test(a)), '/embed/ links open in a new tab', `${anchors.length} links`);
 
-  const img = await fetch(`${url}${CARD.image}`, { redirect: 'manual' });
-  const buf = Buffer.from(await img.arrayBuffer());
-  const dim = jpegSize(buf);
-  check(img.status === 200 && img.headers.get('content-type') === 'image/jpeg', `GET ${CARD.image} is a JPEG (200)`, `status ${img.status}, ${img.headers.get('content-type')}`);
-  check(dim && dim.width >= 300 && dim.height >= 157, `${CARD.image} is at least 300x157 (X's large image card minimum)`, dim ? `${dim.width}x${dim.height}` : 'unreadable');
-  check(dim && dim.width === CARD.imageWidth && dim.height === CARD.imageHeight, `${CARD.image} matches og:image size ${CARD.imageWidth}x${CARD.imageHeight}`);
-  check(buf.length < 5 * 1024 * 1024, `${CARD.image} under 5 MB`, `${(buf.length / 1024).toFixed(0)} KB`);
+  const images = [
+    [CARD.playerImage, CARD.playerImageSize, CARD.playerImageSize],
+    [CARD.image, CARD.imageWidth, CARD.imageHeight],
+  ];
+  for (const [file, w, h] of images) {
+    const img = await fetch(`${url}${file}`, { redirect: 'manual' });
+    const buf = Buffer.from(await img.arrayBuffer());
+    const dim = jpegSize(buf);
+    check(img.status === 200 && img.headers.get('content-type') === 'image/jpeg', `GET ${file} is a JPEG (200)`, `status ${img.status}, ${img.headers.get('content-type')}`);
+    check(dim && dim.width === w && dim.height === h, `${file} is ${w}x${h}`, dim ? `${dim.width}x${dim.height}` : 'unreadable');
+    check(buf.length < 5 * 1024 * 1024, `${file} under 5 MB`, `${(buf.length / 1024).toFixed(0)} KB`);
+  }
+  // X does not render a player card whose image is under 68,600 px, and asks for the frame's shape.
+  check(CARD.playerImageSize ** 2 >= 68_600 && CARD.playerWidth === CARD.playerHeight, `${CARD.playerImage} has 68,600 px or more and the frame's square shape`);
 } finally {
   server.close();
 }

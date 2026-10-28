@@ -3,11 +3,11 @@ import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
 import { createShip, createShipMaterials, createShipPlume, SHIP_ENGINE_Y } from './ship.js';
 import { createTower, createTowerMaterials } from './tower.js';
 import { buildWorld, bakeSky } from './world.js';
-import { instantiate } from './models.js';
 import { createPlume, createParticles } from './effects.js';
+import { createExplosions } from './explosion.js';
 import { createComposer } from './post.js';
 import { Director, toX, toY } from './director.js';
-import { VEHICLES, PX_PER_M, CATCH_TOL_X } from '../sim.js';
+import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
 
 const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
 const ENGINE_EXIT = { booster: ENGINE_Y, ship: SHIP_ENGINE_Y };
@@ -30,7 +30,7 @@ const TALL_ASPECT = 0.8;
 const TALL_LIFT = 0.35;
 
 export class View {
-  constructor(canvas, { pixelRatio = 1, cinematic = false, samples = 4, preserve = false } = {}) {
+  constructor(canvas, { pixelRatio = 1, cinematic = false, samples = 4, preserve = false, map = 'starbase' } = {}) {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
     renderer.setPixelRatio(pixelRatio);
     renderer.toneMapping = THREE.AgXToneMapping;
@@ -47,7 +47,7 @@ export class View {
 
     const towerMats = createTowerMaterials();
     this.towerMats = towerMats;
-    this.world = buildWorld(scene, renderer, towerMats);
+    this.world = buildWorld(scene, renderer, towerMats, map);
     this.towers = [createTower(towerMats, -1), createTower(towerMats, 1)];
     for (const t of this.towers) scene.add(t.root);
     this.towers[1].root.visible = false;
@@ -66,12 +66,13 @@ export class View {
     });
 
     this.particles = createParticles(toX, toY);
+    this.particles.setPalette(this.world.fx);
     scene.add(this.particles.group);
-    // Fireball light for crashes; the wreck itself vanishes almost instantly.
-    this.crashLight = new THREE.PointLight(0xff8a3c, 0, 0, 2);
-    scene.add(this.crashLight);
-    this.crashFx = null;
-    this.crashSeen = new Set();
+    // Crash explosions (fireball, shockwave, debris, smoke column, scorch, light pulse).
+    this.explosions = createExplosions();
+    this.explosions.setPalette(this.world.fx);
+    scene.add(this.explosions.group);
+    this.crashSeen = new WeakSet();
 
     const guideMat = new THREE.MeshBasicMaterial({ color: COL_IDLE.clone(), toneMapped: false, transparent: true, opacity: 0.55, depthWrite: false });
     this.guide = new THREE.Mesh(new THREE.TorusGeometry(GUIDE_R, 0.06, 6, 128), guideMat);
@@ -99,6 +100,7 @@ export class View {
    */
   useModels(models) {
     if (!models) return;
+    this.models = models;
     const build = (name, fn) => {
       if (!models[name]) return null;
       try {
@@ -112,7 +114,7 @@ export class View {
     const vehicles = { booster: null, ship: null };
     for (const kind in vehicles) vehicles[kind] = build(kind, (m) => this.pool.filter((s) => s.kind === kind).map(() => make[kind](m)));
     const towers = build('tower', (m) => [createTower(this.towerMats, -1, m), createTower(this.towerMats, 1, m)]);
-    const props = build('props', (m) => instantiate(m, this.world.dressing.mats));
+    build('props', (m) => this.world.useProps(m));
 
     const replace = (oldRoot, newRoot) => {
       newRoot.visible = oldRoot.visible;
@@ -139,12 +141,28 @@ export class View {
       this.towers.forEach((old, i) => replace(old.root, towers[i].root));
       this.towers = towers;
     }
-    if (props) {
-      const { mount, tanks } = this.world.dressing;
-      mount.visible = false;
-      tanks.visible = false;
-      this.scene.add(props);
+  }
+
+  /**
+   * Swaps the launch site for another map ('starbase' or 'mars') between two frames, without a reload.
+   * The old world's geometry, materials, textures and render targets are freed first.
+   */
+  setMap(map) {
+    if (map === this.world.map) return;
+    this.world.dispose();
+    this.skyCube?.dispose();
+    this.skyCube = null;
+    this.world = buildWorld(this.scene, this.renderer, this.towerMats, map);
+    if (this.models?.props) {
+      try {
+        this.world.useProps(this.models.props);
+      } catch (err) {
+        console.error('props model unusable; keeping the procedural one', err);
+      }
     }
+    this.particles.setPalette(this.world.fx);
+    this.explosions.setPalette(this.world.fx);
+    if (this.quality) this.setQuality(this.quality);
   }
 
   setQuality(q) {
@@ -153,7 +171,7 @@ export class View {
     this.pixelRatio = dpr;
     this.renderer.setPixelRatio(dpr);
     this.composer.setPixelRatio(dpr);
-    this.world.moon.castShadow = q.shadows;
+    this.world.keyLight.castShadow = q.shadows;
     if (q.bakedSky && !this.skyCube) this.skyCube = bakeSky(this.renderer, this.world.sky);
     this.world.sky.visible = !q.bakedSky;
     this.scene.background = q.bakedSky ? this.skyCube.texture : null;
@@ -243,7 +261,7 @@ export class View {
   render(game, { dip = null, alpha = 1 } = {}) {
     const undo = alpha < 1 && this.prev ? this.interpolate(game, alpha) : null;
     try {
-      this.draw(game, dip);
+      this.draw(game, dip, alpha);
     } finally {
       undo?.();
     }
@@ -264,7 +282,7 @@ export class View {
     uniform.value.set(p.x * 0.5 + 0.5, p.y * 0.5 + 0.5, p.z < 1 ? Math.min(1, b.throttle * 1.6) : 0, r);
   }
 
-  draw(game, dip) {
+  draw(game, dip, alpha = 1) {
     const t = game.t;
     const blink = (k) => (Math.sin(t * 2.6 + k) > 0.35 ? 1 : 0.12);
 
@@ -308,10 +326,6 @@ export class View {
       }
       const root = slot.root;
       root.visible = !(b.state === 'crashed' && b.alpha < 0.88);
-      if (b.state === 'crashed' && !this.crashSeen.has(b.id)) {
-        this.crashSeen.add(b.id);
-        this.crashFx = { x: toX(b.x), t: t };
-      }
       const X = toX(b.x);
       const Y = toY(b.y);
       if (b.state === 'tumbling' || b.state === 'crashed') {
@@ -322,6 +336,18 @@ export class View {
       } else {
         root.rotation.set(0, 0, -b.tilt);
         root.position.set(X, Y, 0);
+      }
+      if (b.state === 'crashed' && b.boom && !this.crashSeen.has(b.boom)) {
+        this.crashSeen.add(b.boom);
+        const up = this._v.set(0, 1, 0).applyEuler(root.rotation);
+        this.explosions.spawn({
+          t: b.boom.t,
+          seed: b.boom.seed,
+          x: toX(b.boom.x),
+          bottom: root.position.clone().addScaledVector(up, ENGINE_EXIT[b.kind]),
+          top: root.position.clone().addScaledVector(up, -VEHICLES[b.kind].top / PX_PER_M),
+          drift: b.boom.wind,
+        });
       }
       const thr = b.throttle;
       const exitY = ENGINE_EXIT[b.kind];
@@ -343,12 +369,9 @@ export class View {
       }
     }
 
-    if (this.crashFx && t < this.crashFx.t) this.crashFx = null;
-    const ct = this.crashFx ? t - this.crashFx.t : 9;
-    this.crashLight.intensity = ct < 4 ? 14000 * Math.exp(-ct * 1.4) * (0.85 + 0.15 * Math.sin(t * 31)) : 0;
-    if (this.crashFx) this.crashLight.position.set(this.crashFx.x, 9, 8);
-
     this.director.apply(this.camera, game);
+    // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
+    this.explosions.update(t - (1 - alpha) * DT, this.camera);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
     this.particles.setScale(scale);
     this.particles.update(game.particles, engines);

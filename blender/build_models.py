@@ -1052,7 +1052,7 @@ def build_tower():
     return S, C, A
 
 
-# ---------------------------------------------------------------- props (src/three/world.js setDressing layout)
+# ---------------------------------------------------------------- props (src/three/world.js siteDressing layout)
 
 
 def mulberry32(seed):

@@ -10,6 +10,7 @@ import { Flight } from './flight.js';
 import { createFlightPilot } from './flight-pilot.js';
 import { FlightView } from './three/flight-view.js';
 import { FlightHud, report } from './flight-hud.js';
+import { initialMap, bindMapPicker } from './maps.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
@@ -72,7 +73,7 @@ async function loadFonts() {
 
 async function runDemo() {
   document.body.classList.add('demo');
-  view = createView({ pixelRatio: 1, cinematic: true, samples: 4, preserve: CAPTURE });
+  view = createView({ pixelRatio: 1, cinematic: true, samples: 4, preserve: CAPTURE, map: initialMap(params, { remember: false }) });
   if (!view) return;
   ui = new UI(view);
   fit();
@@ -133,7 +134,7 @@ async function runDemo() {
 // ------------------------------------------------------------------ play
 
 function runGame() {
-  view = createView({ pixelRatio: 1, cinematic: false, samples: 4, preserve: CAPTURE });
+  view = createView({ pixelRatio: 1, cinematic: false, samples: 4, preserve: CAPTURE, map: initialMap(params) });
   if (!view) return;
   ui = new UI(view);
   const quality = new AutoQuality(view, { forced: params.get('quality') });
@@ -147,6 +148,8 @@ function runGame() {
   const sound = new Sound();
   let game = new Game({ width: WORLD_W, seed: 1 });
   let state = 'title';
+  // Map picker on the title and quick-start cards: applied at once on the title screen, and at takeoff.
+  const mapPicker = bindMapPicker(view, view.world.map, () => state === 'title');
   let overTimer = -1;
   let paused = false;
   const held = { left: false, right: false, up: false, down: false };
@@ -227,6 +230,7 @@ function runGame() {
   Object.defineProperty(window, '__quality', { get: () => ({ level: quality.name, fps: quality.fps, dpr: view.pixelRatio }) });
 
   function startGame() {
+    mapPicker.apply();
     game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0 });
     game.start();
     view.director.reset();
@@ -332,7 +336,8 @@ function runGame() {
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
   }
 
-  form.addEventListener('submit', async (ev) => {
+  // X frames the embed without allow-forms, so a submit event never fires there. Enter in the field still clicks this button.
+  form.querySelector('button[type=submit]').addEventListener('click', async (ev) => {
     ev.preventDefault();
     const handle = normalizeHandle(handleInput.value);
     if (!handle) {
