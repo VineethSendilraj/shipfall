@@ -116,7 +116,10 @@ function outward(shape, p, n) {
   return n.normalize();
 }
 
-/** Splits a mesh's triangles into those within r meters (horizontally) of p and the rest, sharing its vertex buffers. */
+/**
+ * Splits a mesh's triangles into those within r meters (horizontally) of p and the rest. The parts get copies of the
+ * vertex buffers, since freeing a geometry also frees the buffers of its attributes.
+ */
 function splitNear(mesh, p, r) {
   const g = mesh.geometry;
   const v = new THREE.Vector3();
@@ -129,13 +132,14 @@ function splitNear(mesh, p, r) {
   return parts.map((index) => {
     const part = new THREE.BufferGeometry();
     for (const name in g.attributes) part.setAttribute(name, g.attributes[name]);
-    return part.setIndex(index);
+    return part.setIndex(index).toNonIndexed();
   });
 }
 
 /**
  * Returns move(on), which puts the launch mount under the stack or back behind the lane. The props model bakes
- * the mount into world space, and its legs share one mesh with the tank plinths, so the legs are split off.
+ * the mount into world space, and its legs share one mesh with the tank plinths, so the legs are split off. The
+ * parts stay in the world's tree, so a map change frees them with the rest of the world.
  */
 function mountMover(view, foot) {
   const home = view.world.dressing.mount.position.clone();
@@ -146,17 +150,14 @@ function mountMover(view, foot) {
     return (on) => mount.position.copy(home).addScaledVector(shift, on ? 1 : 0);
   }
   const concrete = view.scene.getObjectByName('props_concrete');
-  const whole = concrete.geometry;
-  const [legGeo, restGeo] = splitNear(concrete, home, 20);
-  const legs = concrete.clone();
-  legs.geometry = legGeo;
+  const [legs, rest] = splitNear(concrete, home, 20).map((geometry) => Object.assign(concrete.clone(), { geometry }));
   legs.position.add(shift);
-  concrete.parent.add(legs);
+  concrete.parent.add(legs, rest);
   const moved = [steel, view.scene.getObjectByName('props_dark')].map((m) => [m, m.position.clone()]);
   return (on) => {
     for (const [m, p] of moved) m.position.copy(p).addScaledVector(shift, on ? 1 : 0);
-    concrete.geometry = on ? restGeo : whole;
-    legs.visible = on;
+    concrete.visible = !on;
+    legs.visible = rest.visible = on;
   };
 }
 
@@ -251,11 +252,16 @@ export class Explore {
     this.fill.target.position.set(this.foot.x, BOOSTER_Y, this.foot.z);
     this.lights = new THREE.Group().add(this.lamp, this.fill, this.fill.target);
     view.scene.add(this.lights);
-    this.moveMount = mountMover(view, this.foot);
-    this.pickables = [this.stack.root, view.towers[0].root, view.scene.getObjectByName('props') ?? view.world.dressing.mount];
   }
 
   stage(on) {
+    const { view } = this;
+    // The title's map picker can swap in another world, with its own mount, between visits.
+    if (this.world !== view.world) {
+      this.world = view.world;
+      this.moveMount = mountMover(view, this.foot);
+      this.pickables = [this.stack.root, view.towers[0].root, view.scene.getObjectByName('props') ?? view.world.dressing.mount];
+    }
     this.stack.root.visible = on;
     this.lights.visible = on;
     this.moveMount(on);
@@ -308,7 +314,8 @@ export class Explore {
     const rect = renderer.domElement.getBoundingClientRect();
     this.raycaster.setFromCamera(new THREE.Vector2(((x - rect.left) / rect.width) * 2 - 1, 1 - ((y - rect.top) / rect.height) * 2), camera);
     const { ray } = this.raycaster;
-    let d = this.raycaster.intersectObjects(this.pickables)[0]?.distance ?? Infinity;
+    // The raycaster also hits hidden meshes, such as the mount's legs back behind the lane.
+    let d = this.raycaster.intersectObjects(this.pickables).find((h) => h.object.visible)?.distance ?? Infinity;
     if (ray.direction.y < 0) d = Math.min(d, -ray.origin.y / ray.direction.y);
     if (d === Infinity) return;
     this.controls.target.copy(camera.position).addScaledVector(camera.getWorldDirection(this.dir), d);
