@@ -29,6 +29,16 @@ export const QUALITY = [
 const TALL_ASPECT = 0.8;
 const TALL_LIFT = 0.35;
 
+// The ship's catch pins above the booster's when stacked on its hot-stage ring (blender/build_models.py:
+// the ring's top flange, BODY_TOP + 4 = 12 m, minus the ship's aft end, SHIP_SKIRT = -32.9 m).
+const STACK_SHIP_Y = 44.9;
+// Home screen hero shot, per screen shape: the share of the screen height the vehicle fills and where its
+// middle sits from the top. The home screen's arrows follow `y` (--hero-y in styles.css).
+const HERO_LAYOUT = { wide: { fill: 0.5, y: 0.43 }, square: { fill: 0.4, y: 0.36 }, tall: { fill: 0.34, y: 0.26 } };
+// Seconds a new pick takes to drop into the arms.
+const HERO_SETTLE = 0.55;
+const heroParts = (kind) => (kind === 'random' ? [['booster', 0], ['ship', STACK_SHIP_Y]] : [[kind, 0]]);
+
 export class View {
   constructor(canvas, { pixelRatio = 1, cinematic = false, titleTime = 0, samples = 4, preserve = false, map = 'starbase' } = {}) {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
@@ -91,6 +101,82 @@ export class View {
     this.lift = 0;
     this._v = new THREE.Vector3();
     this._v2 = new THREE.Vector3();
+    this.showcase = null;
+    this.heroT = 0;
+    this.heroSpan = null;
+    this.hero = { pos: new THREE.Vector3(), tgt: new THREE.Vector3(), fov: 34 };
+  }
+
+  /**
+   * The home screen's hero shot: 'booster', 'ship' or 'random' (the full stack) held in tower A's arms
+   * while the sim waits on its title screen; null for the map's establishing shot. A game started from it
+   * pulls the camera away from this shot instead.
+   */
+  setShowcase(kind) {
+    if (kind === this.showcase) return;
+    this.showcase = kind;
+    this.heroT = 0;
+  }
+
+  /** Bottom and top (m) of the showcased vehicle held at the arms of tower A. */
+  heroBounds(game) {
+    const pins = toY(game.towers[0].armY);
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const [kind, dy] of heroParts(this.showcase)) {
+      lo = Math.min(lo, pins + dy - VEHICLES[kind].bottom / PX_PER_M);
+      hi = Math.max(hi, pins + dy - VEHICLES[kind].top / PX_PER_M);
+    }
+    return { lo, hi };
+  }
+
+  stepHero(game) {
+    this.heroT += DT;
+    const b = this.heroBounds(game);
+    const s = (this.heroSpan ??= b);
+    s.lo += (b.lo - s.lo) * 0.06;
+    s.hi += (b.hi - s.hi) * 0.06;
+  }
+
+  /** A slow sway round the front of the vehicle, framed so it fills the same share of the screen at any size. */
+  heroPose(game, clock) {
+    const { lo, hi } = this.heroSpan;
+    const h = hi - lo;
+    const mid = (lo + hi) / 2;
+    const layout = this.lift > 0 ? HERO_LAYOUT.tall : this.aspect < 1.25 ? HERO_LAYOUT.square : HERO_LAYOUT.wide;
+    // The visible screen is the lower part of a frame (1 + lift) tall; fill and y are in visible screens.
+    const frame = 1 + this.lift;
+    const fill = layout.fill / frame;
+    const above = 0.5 - (layout.y + this.lift) / frame;
+    const span = h / fill;
+    const dist = span / (2 * Math.tan(THREE.MathUtils.degToRad(this.hero.fov / 2)));
+    const x = toX(game.towers[0].cx);
+    const a = -0.42 + 0.36 * Math.sin(clock * 0.06);
+    this.hero.pos.set(x + Math.sin(a) * dist, Math.max(4, mid - 0.12 * h), Math.cos(a) * dist);
+    this.hero.tgt.set(x, mid - above * span, 0);
+    return this.hero;
+  }
+
+  /** Puts the showcased vehicle in tower A's arms, dropping a new pick in from just above as the arms close on it. */
+  drawHero(game) {
+    const tw = game.towers[0];
+    const u = Math.min(1, this.heroT / HERO_SETTLE);
+    const drop = 7 * (1 - u) ** 3;
+    for (const [kind, dy] of heroParts(this.showcase)) {
+      const slot = this.pool.find((s) => s.id === null && s.kind === kind);
+      slot.id = 'hero';
+      slot.root.visible = true;
+      slot.root.rotation.set(0, 0, 0);
+      slot.root.position.set(toX(tw.cx), toY(tw.armY) + dy + drop, 0);
+      slot.plume.update(0, game.t, 0);
+      slot.throatMat.color.setRGB(0.02, 0, 0);
+      slot.light.intensity = 0;
+    }
+  }
+
+  heroArms() {
+    const u = this.heroT / HERO_SETTLE;
+    return u < 0.2 ? u / 0.2 : u < 0.6 ? 1 : Math.max(0, 1 - (u - 0.6) / 0.4);
   }
 
   /**
@@ -206,6 +292,7 @@ export class View {
 
   stepCamera(game) {
     this.director.step(game, this.size.w / (this.size.h * (1 + this.lift)));
+    if (this.showcase) this.stepHero(game);
   }
 
   /** Call before each sim step: what that step started from, so frames drawn between steps can be interpolated. */
@@ -287,12 +374,13 @@ export class View {
     const blink = (k) => (Math.sin(t * 2.6 + k) > 0.35 ? 1 : 0.12);
 
     const active = game.activeTower();
+    const hero = this.showcase && game.phase === 'ready' && this.heroSpan;
     this.towers.forEach((view, i) => {
       const tw = game.towers[i];
       view.root.visible = !!tw;
       if (!tw) return;
       view.root.position.set(toX(tw.x), -(1 - tw.rise) * 158, 0);
-      view.setArms(tw.open, toY(tw.armY + tw.bounce));
+      view.setArms(hero && i === 0 ? this.heroArms() : tw.open, toY(tw.armY + tw.bounce));
       const isActive = tw === active && game.phase === 'live';
       view.glowMat.color.copy(tw.ready ? COL_READY : isActive || tw.holding ? COL_IDLE : COL_OFF);
       view.lightMat.color.setRGB(4 * blink(i * 1.7), 0.25 * blink(i * 1.7), 0.15);
@@ -362,6 +450,7 @@ export class View {
         if (hazeIdx < 2) this.hazeFor(b, hazeIdx++ === 0 ? this.final.uniforms.uHaze : this.final.uniforms.uHaze2);
       }
     }
+    if (hero) this.drawHero(game);
     for (const slot of this.pool) {
       if (slot.id === null) {
         slot.root.visible = false;
@@ -369,7 +458,8 @@ export class View {
       }
     }
 
-    this.director.apply(this.camera, game, { establish: this.world.establish, alpha });
+    const shot = this.showcase && this.heroSpan ? { hero: this.heroPose(game, this.director.clock - (1 - alpha) * DT) } : { establish: this.world.establish };
+    this.director.apply(this.camera, game, { ...shot, alpha });
     // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
     this.explosions.update(t - (1 - alpha) * DT, this.camera);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
