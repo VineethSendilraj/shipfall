@@ -13,8 +13,8 @@ const SITE = new THREE.Vector3(SITE_X, 0, 0);
 // Farther than this the flat launch site would z-fight the planet under it, and it is a few pixels anyway.
 const SITE_FAR = 20000;
 const SPACE_ENV = 1;
-// Roll that keeps the ship's tiles on the right of its axis (toward the tower on the pad): into the airflow when it
-// flies belly first eastbound.
+// Roll that keeps the ship's tiles on the left of its axis, away from the tower on the pad. Belly first, the ship rolls
+// half a turn when eastbound so the tiles meet the airflow.
 const ROLL = 0;
 const ROLL_RATE = 0.8;
 // Lowest the player can orbit the camera to, in meters above the ground.
@@ -162,7 +162,7 @@ export class FlightView {
     const v = this.view;
     this.director.step(f, v.size.w / (v.size.h * (1 + v.lift)));
     const s = f.ship;
-    const want = s.mode === 'stacked' || s.mode === 'free' || s.dir > 0 ? ROLL : ROLL + Math.PI;
+    const want = s.mode === 'stacked' || s.mode === 'free' || s.dir < 0 ? ROLL : ROLL + Math.PI;
     this.roll += clamp(want - this.roll, -ROLL_RATE * DT, ROLL_RATE * DT);
     this.crash(f);
   }
