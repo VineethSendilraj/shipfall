@@ -17,7 +17,7 @@ const TOWER_DX = ARM_REACH / PX_PER_M;
 const SITE = new THREE.Vector3(0, 0, -60);
 const SITE_R = 560;
 const PIVOT_R = 330;
-const FLOOR_Y = 1.5; // low enough to look up at the engines from under the mount, above its ground plate
+const FLOOR_Y = 1.5; // over the ground: low enough to look up at the engines from under the mount, above its ground plate
 // The camera's near plane is 1 m out and its corners about 1.4 m, so this keeps the model out of the picture.
 const CLEAR = 1.6;
 const ROUTE_N = 200; // samples per glide when bending it around the model
@@ -484,11 +484,11 @@ export class Explore {
 
   /** Keeps the camera above the ground, inside the site and clear of the model, and the pivot above the ground. */
   clamp() {
-    const { camera } = this.view;
+    const { camera, world } = this.view;
     const p = camera.position;
     const t = this.controls.target;
-    t.y = Math.max(0, t.y);
-    p.y = Math.max(FLOOR_Y, p.y);
+    t.y = Math.max(world.groundHeight(t.x, t.z), t.y);
+    p.y = Math.max(world.groundHeight(p.x, p.z) + FLOOR_Y, p.y);
     const dx = p.x - SITE.x;
     const dz = p.z - SITE.z;
     const k = SITE_R / Math.hypot(dx, dz);

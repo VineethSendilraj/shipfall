@@ -940,8 +940,9 @@ export function bakeSky(renderer, sky, size = 1024) {
 /**
  * Builds the launch site for `map` ('starbase' or 'mars') under one group that sits first in the scene,
  * and sets the scene's fog and environment. Returns the parts the view drives, plus:
- *   useProps(model)  swaps the props.glb model in for the procedural dressing it replaces (throws if unusable)
- *   dispose()        removes the world and frees its GPU memory (shared tower materials are kept)
+ *   groundHeight(x, z)  the ground's height in meters at (x, z)
+ *   useProps(model)     swaps the props.glb model in for the procedural dressing it replaces (throws if unusable)
+ *   dispose()           removes the world and frees its GPU memory (shared tower materials are kept)
  */
 export function buildWorld(scene, renderer, towerMats, map = 'starbase') {
   const root = new THREE.Group();
@@ -1083,6 +1084,7 @@ function buildStarbase(root, scene, renderer, towerMats) {
   haze.position.y = 60;
   haze.renderOrder = 2;
   root.add(haze);
+  const sample = {};
   return {
     sky: skyMesh,
     skyMat,
@@ -1094,6 +1096,10 @@ function buildStarbase(root, scene, renderer, towerMats) {
     keep: [beamMat],
     outer,
     haze,
+    groundHeight(x, z) {
+      siteSample(x, z, sample, false);
+      return sample.h;
+    },
     makeProps(model) {
       const props = instantiate(model, dressing.mats);
       dressing.mount.visible = false;
