@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
 
 const FinalShader = {
   uniforms: {
@@ -57,5 +58,9 @@ export function createComposer(renderer, scene, camera, w, h, samples) {
   const final = new ShaderPass(FinalShader);
   composer.addPass(final);
   composer.addPass(new OutputPass());
-  return { composer, bloom, final };
+  // Only used by the reduced-quality levels, which render without MSAA.
+  const fxaa = new FXAAPass();
+  fxaa.enabled = false;
+  composer.addPass(fxaa);
+  return { composer, bloom, final, fxaa };
 }

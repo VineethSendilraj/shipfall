@@ -32,10 +32,19 @@ export class UI {
     this.shownScore = 0;
     this.cache = {};
     this.scale = 1;
+    this.safe = null;
+    this.safeDirty = true;
+    this.cut = new Set();
+    this.popupMax = 0;
+    this.popupExit = 1;
+    this.bannerRef = null;
+    this.bannerIn = 0;
+    this.bannerT = 0;
   }
 
   setScale(s) {
     this.scale = s;
+    this.safeDirty = true;
     document.documentElement.style.setProperty('--ui', s.toFixed(3));
   }
 
@@ -58,6 +67,7 @@ export class UI {
     const showHud = game.phase !== 'ready' && hudOpacity > 0;
     this.set('hudHidden', e.hud, 'class', showHud ? 'hud' : 'hud hidden');
     this.set('hudOpacity', e.hud, 'opacity', String(hudOpacity));
+    if (showHud && this.safeDirty) this.measureSafe();
     if (showHud) {
       const b = h.booster;
       if (b) {
@@ -98,8 +108,31 @@ export class UI {
     this.updateBanner(game);
   }
 
+  /** Screen band between the HUD panels and the on-screen buttons; only used where they crowd the popups. */
+  measureSafe() {
+    this.safeDirty = false;
+    if (!document.body.classList.contains('compact')) {
+      this.safe = null;
+      return;
+    }
+    const panels = [...this.el.hud.querySelectorAll('.panel')].map((p) => p.getBoundingClientRect().bottom);
+    const touch = document.getElementById('touch');
+    const controlsTop = touch.classList.contains('hidden') ? this.view.size.h - 26 : touch.getBoundingClientRect().top;
+    this.safe = { top: Math.max(0, ...panels) + 8, bottom: controlsTop - 8 };
+  }
+
+  popupShift(sy) {
+    if (!this.safe) return 0;
+    const h = this.view.size.h;
+    const s = this.scale;
+    // Shift each group as a block so the lines inside it keep their spacing.
+    if (sy < 0.5) return Math.max(0, this.safe.top - (0.17 * h - 52 * s * 1.2 * 0.6));
+    return Math.min(0, this.safe.bottom - (0.905 * h + 26 * s * 0.6));
+  }
+
   updatePopups(game) {
     const live = new Set();
+    let maxO = 0;
     const { w, h } = this.view.size;
     for (const p of game.popups) {
       if (p.t < 0) continue;
@@ -122,21 +155,28 @@ export class UI {
       let y;
       if (p.sy !== null) {
         x = w / 2;
-        y = p.sy * h - p.t * 10 * this.scale;
+        y = p.sy * h + this.popupShift(p.sy) - p.t * 10 * this.scale;
       } else {
         const q = this.view.project(p.x, p.y);
         x = q.x;
         y = q.y - p.t * 24 * this.scale;
       }
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) scale(${s.toFixed(3)})`;
-      el.style.opacity = Math.max(0, fade * (1 - this.dip)).toFixed(3);
+      // A fade-to-black or the end card ends a popup for good, so it can't linger into the next shot.
+      if (this.dip >= 0.25 || this.popupExit <= 0) this.cut.add(p.id);
+      const exit = this.cut.has(p.id) ? 0 : Math.min(1 - this.dip * 4, this.popupExit);
+      const o = Math.max(0, fade * exit);
+      if (o > maxO) maxO = o;
+      el.style.opacity = o.toFixed(3);
     }
     for (const [id, el] of this.popupEls) {
       if (!live.has(id)) {
         el.remove();
         this.popupEls.delete(id);
+        this.cut.delete(id);
       }
     }
+    this.popupMax = maxO;
   }
 
   updateBanner(game) {
@@ -144,12 +184,21 @@ export class UI {
     const e = this.el;
     if (!b) {
       e.banner.style.opacity = '0';
+      this.bannerRef = null;
       return;
     }
+    if (b !== this.bannerRef) {
+      this.bannerRef = b;
+      this.bannerIn = 0;
+      this.bannerT = game.t;
+    }
+    // The banner only starts fading in once no popup is visible, so the two never share the screen.
+    if (this.popupMax < 0.02) this.bannerIn += Math.max(0, game.t - this.bannerT);
+    this.bannerT = game.t;
     this.set('bannerT', e.bannerTitle, 'text', b.text);
     this.set('bannerS', e.bannerSub, 'text', b.sub || '');
     this.set('bannerC', e.banner, 'class', b.gold ? 'banner gold' : 'banner');
-    const fin = Math.min(1, b.t / 0.25);
+    const fin = Math.min(1, this.bannerIn / 0.25);
     const fout = Math.min(1, (b.dur - b.t) / 0.45);
     const o = Math.max(0, Math.min(fin, fout)) * (1 - this.dip);
     e.banner.style.opacity = o.toFixed(3);
@@ -167,15 +216,17 @@ export class UI {
     } else {
       e.demoTitle.classList.add('hidden');
     }
+    // Popups clear within 8 frames of game over; the end card only starts fading in after that.
+    this.popupExit = overAt >= 0 ? Math.max(0, 1 - (frame - overAt) / 8) : 1;
     if (overAt >= 0) {
-      const u = (frame - overAt) / 26;
+      const u = (frame - overAt - 10) / 26;
       e.demoEnd.classList.remove('hidden');
       document.body.classList.add('demo-end');
       e.demoEnd.style.opacity = Math.min(1, Math.max(0, u)).toFixed(3);
       e.demoScore.textContent = game.score.toLocaleString('en-US');
       const s = game.stats;
       e.demoStats.textContent = `${game.round} rounds · ${s.catches} catches · ${s.perfects} perfect · ${s.doubles} double`;
-      return Math.max(0, 1 - u);
+      return Math.min(1, Math.max(0, 1 - u));
     }
     e.demoEnd.classList.add('hidden');
     return 1;

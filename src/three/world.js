@@ -216,6 +216,18 @@ function lightMast(scene, x, z, target, intensity) {
   return spot;
 }
 
+/**
+ * Renders the procedural sky once into a cube map. Sampling it costs one texture read per pixel instead of
+ * dozens of noise evaluations, which matters on software GPUs; only the star twinkle is lost.
+ */
+export function bakeSky(renderer, sky, size = 1024) {
+  const rt = new THREE.WebGLCubeRenderTarget(size, { type: THREE.HalfFloatType });
+  const skyScene = new THREE.Scene();
+  skyScene.add(new THREE.Mesh(sky.geometry, sky.material));
+  new THREE.CubeCamera(1, 5000, rt).update(renderer, skyScene);
+  return rt;
+}
+
 export function buildWorld(scene, renderer, towerMats) {
   const rng = createRng(4242);
   scene.fog = new THREE.FogExp2(0x0a0d18, 0.0011);

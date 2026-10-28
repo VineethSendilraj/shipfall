@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createBooster, createBoosterMaterials, ENGINE_Y } from './booster.js';
 import { createTower, createTowerMaterials } from './tower.js';
-import { buildWorld } from './world.js';
+import { buildWorld, bakeSky } from './world.js';
 import { boosterSkin } from './textures.js';
 import { createPlume, createParticles } from './effects.js';
 import { createComposer } from './post.js';
@@ -13,6 +13,18 @@ const GUIDE_R = BOOSTER.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
 const COL_IDLE = new THREE.Color(0.25, 0.95, 1.5);
 const COL_READY = new THREE.Color(0.35, 2.6, 0.75);
 const COL_OFF = new THREE.Color(0.08, 0.25, 0.35);
+
+/** Render quality levels, best first. The auto-quality monitor steps down this list when frames run slow. */
+export const QUALITY = [
+  { name: 'high', maxDpr: 1.5, shadows: true, bloom: 1, msaa: 4, bakedSky: false },
+  { name: 'medium', maxDpr: 1, shadows: true, bloom: 0.5, msaa: 0, bakedSky: true },
+  { name: 'low', maxDpr: 0.75, shadows: false, bloom: 0.5, msaa: 0, bakedSky: true },
+  { name: 'minimal', maxDpr: 0.5, shadows: false, bloom: 0, msaa: 0, bakedSky: true },
+];
+
+// Phone apps can cover the bottom ~30% of a tall embed, so the camera's aim point is lifted toward the top.
+const TALL_ASPECT = 0.8;
+const TALL_LIFT = 0.35;
 
 export class View {
   constructor(canvas, { pixelRatio = 1, cinematic = false, samples = 4, preserve = false } = {}) {
@@ -61,16 +73,46 @@ export class View {
     this.size = { w: 1280, h: 720 };
     const post = createComposer(renderer, scene, this.camera, 1280 * pixelRatio, 720 * pixelRatio, samples);
     Object.assign(this, post);
+    this.bloomScale = 1;
+    const bloomSetSize = this.bloom.setSize.bind(this.bloom);
+    this.bloom.setSize = (bw, bh) => bloomSetSize(Math.max(2, Math.round(bw * this.bloomScale)), Math.max(2, Math.round(bh * this.bloomScale)));
+    this.lift = 0;
     this._v = new THREE.Vector3();
     this._v2 = new THREE.Vector3();
+  }
+
+  setQuality(q) {
+    const dpr = Math.min(window.devicePixelRatio || 1, q.maxDpr);
+    this.quality = q;
+    this.pixelRatio = dpr;
+    this.renderer.setPixelRatio(dpr);
+    this.composer.setPixelRatio(dpr);
+    this.world.moon.castShadow = q.shadows;
+    if (q.bakedSky && !this.skyCube) this.skyCube = bakeSky(this.renderer, this.world.sky);
+    this.world.sky.visible = !q.bakedSky;
+    this.scene.background = q.bakedSky ? this.skyCube.texture : null;
+    this.bloom.enabled = q.bloom > 0;
+    this.fxaa.enabled = q.msaa === 0;
+    this.bloomScale = q.bloom || 1;
+    for (const rt of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+      if (rt.samples !== q.msaa) {
+        rt.samples = q.msaa;
+        rt.dispose();
+      }
+    }
+    this.resize(this.size.w, this.size.h);
   }
 
   resize(w, h) {
     this.size = { w, h };
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h);
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    const cam = this.camera;
+    cam.aspect = w / h;
+    this.lift = w / h < TALL_ASPECT ? TALL_LIFT : 0;
+    if (this.lift > 0) cam.setViewOffset(w, h * (1 + this.lift), 0, h * this.lift, w, h);
+    else cam.clearViewOffset();
+    cam.updateProjectionMatrix();
     this.final.uniforms.uAspect.value = w / h;
   }
 
@@ -79,7 +121,7 @@ export class View {
   }
 
   stepCamera(game) {
-    this.director.step(game, this.aspect);
+    this.director.step(game, this.size.w / (this.size.h * (1 + this.lift)));
   }
 
   /** Sim pixel coordinates -> CSS pixel position on screen. */
@@ -171,7 +213,7 @@ export class View {
     }
 
     this.director.apply(this.camera, game);
-    const scale = (this.size.h * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
+    const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
     this.particles.setScale(scale);
     this.particles.update(game.particles, engines);
 

@@ -1,14 +1,15 @@
 # Catch the Booster
 
-A fan-made 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
+A 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
 
-**fan-made, not affiliated with SpaceX.** This is an unofficial tribute inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: every model, texture, the sky and the effects are generated procedurally at runtime.
+**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: every model, texture, the sky and the effects are generated procedurally at runtime.
 
-- Real-time 3D with [three.js](https://threejs.org) (vendored, served locally): PBR brushed-stainless booster with four lattice grid fins, a hot-stage ring, catch pins and 33 engine bells; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
+- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): PBR brushed-stainless booster with four lattice grid fins, a hot-stage ring, catch pins and 33 engine bells; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
 - Moonlit night sky (procedural stars, milky way, textured moon), moon-cast shadows, inverse-square floodlights, warm engine light on the booster and tower.
 - HDR post-processing: bloom on the plume and lights, heat haze under the engines, vignette and a subtle lens fringe.
 - A cinematic camera: low-angle tracking during descent, a close-up on each catch, and a wide shot when the second tower comes online.
 - Static site only: no backend, no API keys, no analytics, no runtime network calls (no CDNs).
+- Playable inline in an X post through a player card: `/` is the share page, `/embed/` is the game-only page X iframes (see [X player card](#x-player-card)).
 
 ## Controls
 
@@ -18,7 +19,7 @@ A fan-made 3D browser game: a rocket booster is falling back to the launch site 
 | Move catch arms | `↑` `↓` or `W` `S` | ▲ ▼ |
 | Close arms | `Space` | CATCH |
 | Start / restart | `Enter` | Start button |
-| Sound on/off (muted by default) | `M` | speaker button |
+| Sound on/off (starts on your first click or key press) | `M` | speaker button |
 | Pause | `P` / `Esc` | — |
 
 ### Rules
@@ -31,21 +32,19 @@ The landing burn ignites automatically below 112 m and slows the booster into a 
 
 Otherwise it's a miss: the arms clang off the booster, or it slides past and hits the pad. You have 3 boosters.
 
-Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (3 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises and two boosters come in per round (+500 for catching both). Top 5 scores are stored in `localStorage`, and **Share score** copies `i caught the booster: 4,210 pts — <page url>` to the clipboard (with fallbacks).
+Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (3 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises and two boosters come in per round (+500 for catching both). Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
 
 ## Run locally
 
-Any static file server works; there is no build step. three.js is vendored in `vendor/three/` and loaded through an import map.
-
 ```bash
-npm start                 # built-in zero-dependency server → http://127.0.0.1:41730/
-# or
-npx http-server . -p 41730
+npm install
+npm run dev               # Vite dev server → http://127.0.0.1:41730/  (embed: /embed/)
+npm run build             # static site → dist/
+npm start                 # serve dist/ with the _headers rules applied → http://127.0.0.1:41730/
+npm test                  # simulation tests
 ```
 
-Open `http://127.0.0.1:41730/?demo=1` for the scripted showcase.
-
-To update three.js: `npm install three@latest && node scripts/vendor.mjs` (copies `three.module.js`, `three.core.js` and only the addon files the game imports).
+Open `/?demo=1` for the scripted showcase (also works on `/embed/?demo=1`; it is off by default). Add `?quality=high|medium|low|minimal` to pin a render quality level.
 
 ## Deterministic demo (`?demo=1`)
 
@@ -64,9 +63,9 @@ npx playwright install chromium        # once; on bare Linux also: npx playwrigh
 npm run record
 ```
 
-`scripts/record.mjs` starts a local static server and opens `/?demo=1&capture=1` in headless Chromium (1280×720, WebGL through ANGLE/SwiftShader, so no GPU is required). Real-time screen capture would drop frames on a software GPU, so it drives the demo frame by frame instead. Each video frame advances the fixed-step simulation by two 1/60 s steps, renders, and is screenshotted, then the frames are piped into `ffmpeg-static`. The result plays at real speed with no dropped or duplicated frames, and it is identical on every run. A full capture takes several minutes on a CPU.
+`npm run record` builds the site, then `scripts/record.mjs` serves `dist/` and opens `/?demo=1&capture=1` in headless Chromium (1280×720, WebGL through ANGLE/SwiftShader, so no GPU is required). Real-time screen capture would drop frames on a software GPU, so it drives the demo frame by frame instead. Each video frame advances the fixed-step simulation by two 1/60 s steps, renders, and is screenshotted, then the frames are piped into `ffmpeg-static`. The result plays at real speed with no dropped or duplicated frames, and it is identical on every run. A full capture takes several minutes on a CPU.
 
-Outputs (default directory `/opt/cursor/artifacts`, override with `-- --out <dir>`):
+Outputs (default directory `artifacts/`, git-ignored; override with `-- --out <dir>`):
 
 - `booster-demo.mp4`: 1280×720, H.264, yuv420p, 30 fps
 - `booster-demo.gif`: 640 px wide, 12 fps, palettegen/paletteuse, under 15 MB
@@ -75,21 +74,51 @@ Outputs (default directory `/opt/cursor/artifacts`, override with `-- --out <dir
 
 With a real GPU you can pass different Chromium flags, e.g. `CHROMIUM_ARGS="--use-gl=egl" npm run record`.
 
+## X player card
+
+X renders a `twitter:card=player` post by iframing the `twitter:player` URL: desktop web plays it inline, the phone apps open it in a sheet that can cover the bottom ~30%.
+
+- **`/`** (share page): the full game with title screen, rules and leaderboard, plus all card meta tags. Share this URL.
+- **`/embed/`** (player): the game only, full-bleed at any frame size (designed for 480×480), no scrollbars. One tap on **Play** starts it, and audio stays off until that first gesture. The big on-screen buttons work with mouse and touch, the keyboard works once the frame has focus, and on tall viewports the buttons, start card and game-over card stay above the bottom 30%. Links open in a new tab. It doesn't depend on the parent page and works standalone.
+- **Meta tags** (both pages): `twitter:card=player`, `twitter:player=<SITE_URL>/embed/` at 480×480, `twitter:image=<SITE_URL>/card.jpg`, `twitter:title`/`twitter:description`, and `og:title`/`og:description`/`og:image`/`og:url`. Set `VITE_TWITTER_SITE=@handle` to add `twitter:site` as well.
+- **Card image**: `public/card.jpg`, 1080×1080, a frame of the real 3D scene (round-1 chopstick catch) rendered by `npm run card`.
+- **Performance**: about 170 KB of gzipped JS. An auto-quality monitor measures real frame times and steps down from high to medium, low and then minimal (pixel ratio 1.5, 1, 0.75 then 0.5; MSAA replaced by FXAA; shadows and bloom off at the bottom levels; a baked sky cube map instead of the procedural sky shader) whenever it can't hold about 33 fps. Software renderers such as SwiftShader start at `low`.
+- **Headers**: `vercel.json` and `public/_headers` (Cloudflare Pages) send `Content-Security-Policy: frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com` on every route and no `X-Frame-Options`. `vercel.json` sets `trailingSlash: true`, so `/embed/` returns 200 directly (only `/embed` redirects).
+
+```bash
+npm run check:card        # build, serve dist/, verify meta tags, card.jpg, HTML size, headers, JS budget
+npm run card              # re-render public/card.jpg from the demo scene
+npm run record:embed      # Playwright video of /embed/ inside a 480×480 iframe host page + screenshots
+```
+
 ## Deploy
 
-The repo root is the site. Upload it to any static host (GitHub Pages, Netlify, Cloudflare Pages, S3, …) as-is, keeping `index.html`, `styles.css`, `src/`, `vendor/` and `assets/`. `node_modules/`, `scripts/` and `.dev/` are not needed at runtime. WebGL 2 is required (all current desktop and mobile browsers).
+All absolute URLs in the meta tags come from one build-time value, **`VITE_SITE_URL`**: the public https origin, with no path and no trailing slash. `SITE_URL` works as an alias.
+
+- **Vercel**: Project → Settings → Environment Variables → `VITE_SITE_URL=https://your-domain`. `vercel.json` already sets the build command (`npm run build`), the output directory (`dist`), the headers and `trailingSlash`. If it's unset, the build falls back to `https://$VERCEL_PROJECT_PRODUCTION_URL`.
+- **Cloudflare Pages**: build command `npm run build`, output directory `dist`, and the environment variable `VITE_SITE_URL=https://your-domain`. `dist/_headers` is applied automatically. If it's unset, the build falls back to `CF_PAGES_URL`, which is the per-deployment URL.
+- **Locally**: `VITE_SITE_URL=https://your-domain npm run check:card`, or put it in a `.env` file.
+
+Without any of these, the build uses the placeholder `https://catch-the-booster.example` and prints a warning. The build rejects non-https values. After deploying, paste the `/` URL into a post (or X's card validator) to check the card. GitHub Pages can't send the required headers, so it isn't supported.
 
 ## Project layout
 
 ```
-index.html, styles.css     page shell, HUD, overlays, import map
+index.html                 share page (meta tags + full game)
+embed/index.html           player page for the X card (game only)
+src/game.html              shared game markup, injected into both pages at build time
+site.config.mjs            SITE_URL resolution + card meta tags (used by the build and check:card)
+vite.config.mjs            multi-page build, meta/markup injection
+styles.css                 HUD, overlays, embed + compact + tall layouts
 src/sim.js                 fixed-step physics, catch rules, scoring, rounds (DOM-free)
 src/demo.js                demo config + runner; src/demo-script.js frame-keyed inputs
 src/three/                 3D view: booster, tower, world/sky, effects, camera director, post-processing
+src/quality.js             automatic render-quality fallback
 src/ui.js                  DOM HUD, popups, banners, demo cards
-src/main.js                game loop, input (keyboard/touch), leaderboard, share, sound
-scripts/                   serve, record, vendor, author-demo
-assets/fonts/              Space Grotesk + JetBrains Mono (SIL OFL)
+src/main.js                game loop, input (keyboard/mouse/touch), leaderboard, sound
+public/                    card.jpg, _headers, font licenses (copied to dist/ as-is)
+vercel.json                Vercel build + headers
+scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
 ```
 
-Fonts: Space Grotesk and JetBrains Mono, SIL Open Font License (licenses in `assets/fonts/`). three.js: MIT (`vendor/three/LICENSE`).
+Fonts: Space Grotesk and JetBrains Mono, SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm).
