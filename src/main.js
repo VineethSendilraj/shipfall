@@ -240,6 +240,7 @@ function runGame() {
   }
 
   function startFlight() {
+    mapPicker.apply();
     flightView ??= new FlightView(view);
     flightHud ??= new FlightHud(ui);
     flight = new Flight({ seed: 1 });

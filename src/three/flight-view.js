@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { ENGINE_Y } from './booster.js';
 import { SHIP_ENGINE_Y, SKIRT, WIND } from './ship.js';
-import { MOON_DIR } from './world.js';
 import { COL_IDLE, COL_READY, COL_OFF } from './view.js';
 import { createPlanet, createAir, createSpaceSky, buildSpaceEnv, setAirCamera, sunlight, SUN_DIR, CENTER, AIR_TOP } from './flight-world.js';
 import { Craft } from './flight-craft.js';
@@ -36,11 +35,11 @@ export class FlightView {
     this.space = createSpaceSky();
     this.spaceEnv = buildSpaceEnv(view.renderer);
     this.craft = new Craft(view.shipMats);
-    this.mount = view.world.dressing.mount.clone();
-    this.mount.position.set(SITE_X, 0, 0);
+    // Holds a copy of the current map's launch mount, on the flight's pad.
+    this.mount = new THREE.Group();
+    this.mount.position.copy(SITE);
     this.objects = [this.planet, this.air, this.space, this.mount, ...this.craft.objects];
-    this.hemi = view.scene.children.find((o) => o.isHemisphereLight);
-    this.fill = view.scene.children.find((o) => o.isDirectionalLight && o !== view.world.moon);
+    this.world = null;
     this.site = [];
     this.kids = [];
     this.director = new FlightDirector();
@@ -52,25 +51,11 @@ export class FlightView {
 
   enter(f) {
     const v = this.view;
-    const { scene, world } = v;
-    const m = world.moon;
-    this.saved = {
-      env: scene.environment,
-      envI: scene.environmentIntensity,
-      fog: scene.fog.density,
-      sky: this.hemi.color.clone(),
-      ground: this.hemi.groundColor.clone(),
-      fill: this.fill.intensity,
-      moon: m.color.clone(),
-      moonI: m.intensity,
-      moonTarget: m.target.position.clone(),
-      plumes: v.pool.map((s) => s.plume.group.scale.clone()),
-    };
-    scene.add(...this.objects);
-    this.mount.visible = true;
+    this.plumes = v.pool.map((s) => s.plume.group.scale.clone());
+    v.scene.add(...this.objects);
+    this.bind();
     this.director = new FlightDirector();
     this.prev = null;
-    this.crash = null;
     this.roll = ROLL;
     // The director's first step only cuts to the opening shot. Without it, a frame drawn before the first sim step
     // looks out from the world's origin.
@@ -78,39 +63,75 @@ export class FlightView {
     v.guide.visible = v.lane.visible = false;
     this.craft.attach(v.pool[2].root, v.pool[0].root);
     this.craft.showAll(true);
-    v.renderer.compile(scene, v.camera);
+    v.renderer.compile(v.scene, v.camera);
     this.craft.showAll(false);
+  }
+
+  /** Takes over the current map's lights, fog, reflections and launch mount; again whenever the map changes. */
+  bind() {
+    const v = this.view;
+    const { scene, world } = v;
+    this.restoreSite();
+    this.kids = [];
+    this.world = world;
+    const mount = world.dressing.mount.clone();
+    mount.position.set(0, 0, 0);
+    mount.visible = true;
+    this.mount.clear().add(mount);
+    const lights = world.root.children;
+    this.hemi = lights.find((o) => o.isHemisphereLight);
+    this.fill = lights.find((o) => o.isDirectionalLight && o !== world.keyLight);
+    const k = world.keyLight;
+    const keyOff = k.position.clone().sub(k.target.position);
+    this.saved = {
+      env: scene.environment,
+      envI: scene.environmentIntensity,
+      fog: scene.fog.density,
+      sky: this.hemi.color.clone(),
+      ground: this.hemi.groundColor.clone(),
+      fill: this.fill.intensity,
+      key: k.color.clone(),
+      keyI: k.intensity,
+      keyPos: k.position.clone(),
+      keyTarget: k.target.position.clone(),
+      // Where the key light shines from, kept while free flight moves its target.
+      keyDir: keyOff.clone().normalize(),
+      keyDist: keyOff.length(),
+    };
   }
 
   exit() {
     const v = this.view;
-    const { scene, camera, world } = v;
-    const sv = this.saved;
+    const { scene, camera } = v;
     scene.remove(...this.objects);
     this.craft.detach();
     this.restoreSite();
     this.kids = [];
     v.pool[2].root.rotation.set(0, 0, 0, 'XYZ');
-    v.pool.forEach((s, i) => s.plume.group.scale.copy(sv.plumes[i]));
+    v.pool.forEach((s, i) => s.plume.group.scale.copy(this.plumes[i]));
     v.particles.group.position.set(0, 0, 0);
     v.particles.group.rotation.set(0, 0, 0);
     camera.near = 1;
     camera.far = 6000;
     camera.up.set(0, 1, 0);
     camera.updateProjectionMatrix();
-    scene.fog.density = sv.fog;
-    scene.environment = sv.env;
-    scene.environmentIntensity = sv.envI;
     scene.environmentRotation.set(0, 0, 0);
-    this.hemi.position.set(0, 1, 0);
-    this.hemi.color.copy(sv.sky);
-    this.hemi.groundColor.copy(sv.ground);
-    this.fill.intensity = sv.fill;
-    const m = world.moon;
-    m.color.copy(sv.moon);
-    m.intensity = sv.moonI;
-    m.target.position.copy(sv.moonTarget);
-    m.position.copy(MOON_DIR).multiplyScalar(420).add(sv.moonTarget);
+    // A map switched since the last frame brought its own lights and fog, which free flight has not touched.
+    if (v.world === this.world) {
+      const sv = this.saved;
+      const k = this.world.keyLight;
+      scene.fog.density = sv.fog;
+      scene.environment = sv.env;
+      scene.environmentIntensity = sv.envI;
+      this.hemi.position.set(0, 1, 0);
+      this.hemi.color.copy(sv.sky);
+      this.hemi.groundColor.copy(sv.ground);
+      this.fill.intensity = sv.fill;
+      k.color.copy(sv.key);
+      k.intensity = sv.keyI;
+      k.target.position.copy(sv.keyTarget);
+      k.position.copy(sv.keyPos);
+    }
     this.skyOn(true);
   }
 
@@ -118,9 +139,6 @@ export class FlightView {
   step(f) {
     const v = this.view;
     this.director.step(f, v.size.w / (v.size.h * (1 + v.lift)));
-    for (const e of f.events) {
-      if (e.type === 'boosterLost' || (e.type === 'over' && f.ship.mode === 'crashed')) this.crash = { t: f.real, phi: f.anchor, lift: f.anchorLift };
-    }
     const s = f.ship;
     const want = s.mode === 'stacked' || s.mode === 'free' || s.dir > 0 ? ROLL : ROLL + Math.PI;
     this.roll += clamp(want - this.roll, -ROLL_RATE * DT, ROLL_RATE * DT);
@@ -192,6 +210,7 @@ export class FlightView {
 
   draw(f) {
     const v = this.view;
+    if (v.world !== this.world) this.bind();
     const { scene, camera, world } = v;
     const cam = this.placeCamera(f);
     // 1 at the launch site, 0 high up or far away: how much of the catch game's night scene to keep.
@@ -252,14 +271,16 @@ export class FlightView {
     v.scene.background = on && baked ? v.skyCube.texture : null;
   }
 
-  /** Launch-site meshes and their own visibility, collected again whenever a model swap changes the scene. */
+  /** Launch-site meshes and their own visibility, collected again whenever a model swap changes the scene or the world. */
   syncSite() {
     const v = this.view;
-    const kids = v.scene.children;
-    if (kids.length === this.kids.length && kids.every((k, i) => k === this.kids[i])) return;
+    const a = v.scene.children;
+    const b = v.world.root.children;
+    const k = this.kids;
+    if (a.length + b.length === k.length && a.every((o, i) => o === k[i]) && b.every((o, i) => o === k[a.length + i])) return;
     this.restoreSite();
-    this.kids = kids.slice();
-    const skip = new Set([v.world.sky, v.particles.group, v.guide, v.lane, ...v.pool.map((s) => s.root), this.planet, this.air, this.space, ...this.craft.objects]);
+    this.kids = [...a, ...b];
+    const skip = new Set([v.world.sky, v.particles.group, v.explosions.group, v.guide, v.lane, ...v.pool.map((s) => s.root), this.planet, this.air, this.space, ...this.craft.objects]);
     const kinds = new Map([
       [v.world.outer, 'disc'],
       [v.world.haze, 'haze'],
@@ -279,27 +300,27 @@ export class FlightView {
     this.site = [];
   }
 
-  /** Moonlight at the site and in the planet's shadow, sunlight elsewhere, with sky light and reflections to match. */
+  /** The map's key light at the site and in the planet's shadow, sunlight elsewhere, with sky light and reflections to match. */
   light(catchW) {
-    const { scene, world } = this.view;
+    const { scene } = this.view;
     const sv = this.saved;
     const focus = this.director.tgt;
     const L = local(focus.x, focus.y);
     const U = this._u.set(L.ux, L.uy, 0);
     const sun = lum(sunlight(focus, this.sun));
-    const m = world.moon;
-    m.target.position.lerpVectors(sv.moonTarget, focus, Math.max(smooth(L.alt, 100, 400), smooth(Math.abs(L.phi) * R, 300, 1000)));
-    // One light: it fades out before it swaps between the moon's direction and the sun's.
+    const k = this.world.keyLight;
+    k.target.position.lerpVectors(sv.keyTarget, focus, Math.max(smooth(L.alt, 100, 400), smooth(Math.abs(L.phi) * R, 300, 1000)));
+    // One light: it fades out before it swaps between the key light's direction and the sun's.
     if (sun < 0.5) {
-      m.color.copy(sv.moon);
-      m.intensity = sv.moonI * (1 - 2 * sun) * smooth(MOON_DIR.dot(U), -0.1, 0.1);
-      m.position.copy(MOON_DIR);
+      k.color.copy(sv.key);
+      k.intensity = sv.keyI * (1 - 2 * sun) * smooth(sv.keyDir.dot(U), -0.1, 0.1);
+      k.position.copy(sv.keyDir);
     } else {
-      m.color.copy(this.sun).multiplyScalar(1 / Math.max(this.sun.r, this.sun.g, this.sun.b));
-      m.intensity = SUN_I * (2 * sun - 1);
-      m.position.copy(SUN_DIR);
+      k.color.copy(this.sun).multiplyScalar(1 / Math.max(this.sun.r, this.sun.g, this.sun.b));
+      k.intensity = SUN_I * (2 * sun - 1);
+      k.position.copy(SUN_DIR);
     }
-    m.position.multiplyScalar(420).add(m.target.position);
+    k.position.multiplyScalar(sv.keyDist).add(k.target.position);
     // The night side keeps the launch site's night sky light; the day side gets the sun's bounce off the planet.
     const night = Math.max(catchW, 1 - sun);
     this.hemi.position.copy(U);
@@ -369,7 +390,7 @@ export class FlightView {
     const alt = local(ex, ey).alt;
     // Exhaust spreads wide in near vacuum.
     const vac = smooth(alt, 2000, 9000);
-    const base = this.saved.plumes[i];
+    const base = this.plumes[i];
     const w = wide * (1 + 1.5 * vac);
     slot.plume.group.scale.set(base.x * w, base.y * (1 + 0.4 * vac), base.z * w);
     slot.plume.update(thr, f.real, Math.max(0, Math.min(alt, reach)));
@@ -395,7 +416,7 @@ export class FlightView {
     return { x: rx * c - ry * s + SITE_X, y: rx * s + ry * c - R - f.anchorLift };
   }
 
-  /** The catch game's particles turned onto the effects anchor, the crash fireball light and the post uniforms. */
+  /** The catch game's particles turned onto the effects anchor, and the post uniforms. */
   effects(f, engines) {
     const v = this.view;
     const c = Math.cos(f.anchor);
@@ -404,11 +425,6 @@ export class FlightView {
     v.particles.group.rotation.set(0, 0, -f.anchor);
     v.particles.group.position.set(CENTER.x - c * SITE_X + s * lift, CENTER.y + s * SITE_X + c * lift, 0);
     v.particles.update(f.fx.particles, engines);
-
-    const k = this.crash;
-    const ct = k ? f.real - k.t : 9;
-    v.crashLight.intensity = ct < 4 ? 14000 * Math.exp(-ct * 1.4) * (0.85 + 0.15 * Math.sin(f.real * 31)) : 0;
-    if (k) v.crashLight.position.set(CENTER.x + Math.sin(k.phi) * (R + k.lift + 9), CENTER.y + Math.cos(k.phi) * (R + k.lift + 9), 8);
 
     const fx = f.fx;
     const [r, g, b] = fx.flashColor.split(',').map(Number);
