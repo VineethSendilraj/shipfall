@@ -48,10 +48,16 @@
     </div>
   </div>
 
-  <button id="sound" class="icon-btn" type="button" aria-pressed="false" title="Toggle sound (M)">
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="mute" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l6 6M22 9l-6 6"/></svg>
-    <span class="sr">Sound</span>
-  </button>
+  <div id="corner" class="corner">
+    <button id="pause-btn" class="icon-btn" type="button" title="Pause (Esc)">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+      <span class="sr">Pause</span>
+    </button>
+    <button id="sound" class="icon-btn" type="button" aria-pressed="false" title="Toggle sound (M)">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="mute" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l6 6M22 9l-6 6"/></svg>
+      <span class="sr">Sound</span>
+    </button>
+  </div>
 
   <section id="title-screen" class="overlay">
     <div class="card">
@@ -123,6 +129,19 @@
     </div>
   </section>
 
+  <section id="pause" class="overlay hidden">
+    <div class="card">
+      <p class="kicker">paused</p>
+      <h1 class="go-score"><span id="pause-score">0</span><small>pts</small></h1>
+      <p class="lede" id="pause-stats"></p>
+      <div class="actions pause-actions">
+        <button id="resume" class="btn primary" type="button">Resume</button>
+        <button id="restart" class="btn" type="button">Restart</button>
+        <button id="home" class="btn" type="button">Home</button>
+      </div>
+    </div>
+  </section>
+
   <section id="leaderboard" class="overlay hidden">
     <div class="card">
       <div class="board">
@@ -158,7 +177,6 @@
     </div>
   </div>
 
-  <div id="toast" class="toast" role="status"></div>
   <div id="error" class="overlay hidden"><div class="card"><h1>WebGL unavailable</h1><p class="lede">This game needs WebGL 2. Try a recent Chrome, Edge, Firefox or Safari.</p></div></div>
   <footer class="disclaimer">not affiliated with SpaceX</footer>
 </div>

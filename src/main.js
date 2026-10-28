@@ -154,6 +154,7 @@ function runGame() {
   const handleInput = $('initials');
   const formNote = $('initials-note');
   const boardEl = $('leaderboard');
+  const pauseEl = $('pause');
 
   // At most this many rows. Under the game over score the board stays short, and in small embeds it clears the sound button.
   const compact = () => document.body.classList.contains('compact');
@@ -212,7 +213,24 @@ function runGame() {
   window.__view = view;
   Object.defineProperty(window, '__quality', { get: () => ({ level: quality.name, fps: quality.fps, dpr: view.pixelRatio }) });
 
+  function setPaused(on) {
+    paused = on;
+    pauseEl.classList.toggle('hidden', !on);
+    document.body.classList.toggle('paused', on);
+    for (const k in held) held[k] = false;
+    closeLatch = false;
+    if (!on) {
+      if (pauseEl.contains(document.activeElement)) document.activeElement.blur();
+      return;
+    }
+    const s = game.stats;
+    $('pause-score').textContent = game.score.toLocaleString('en-US');
+    $('pause-stats').textContent = `Round ${game.round} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${game.lives} booster${game.lives === 1 ? '' : 's'} left`;
+    $('resume').focus({ preventScroll: true });
+  }
+
   function startGame() {
+    setPaused(false);
     mapPicker.apply();
     game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0 });
     game.start();
@@ -232,6 +250,7 @@ function runGame() {
   }
 
   function showTitle() {
+    setPaused(false);
     state = 'title';
     game = new Game({ width: WORLD_W, seed: 1 });
     view.director.reset();
@@ -311,15 +330,6 @@ function runGame() {
     $('again').focus({ preventScroll: true });
   });
 
-  let toastTimer = 0;
-  function toast(msg) {
-    const t = $('toast');
-    t.textContent = msg;
-    t.classList.add('on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
-  }
-
   function setSound(on, remember = true) {
     sound.setEnabled(on);
     soundBtn.setAttribute('aria-pressed', String(on));
@@ -341,6 +351,13 @@ function runGame() {
   $('again').addEventListener('click', showTitle);
   for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
   $('board-back').addEventListener('click', closeBoard);
+  $('pause-btn').addEventListener('click', () => state === 'playing' && setPaused(true));
+  $('resume').addEventListener('click', () => setPaused(false));
+  $('restart').addEventListener('click', startGame);
+  $('home').addEventListener('click', showTitle);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && state === 'playing') setPaused(true);
+  });
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);
@@ -351,6 +368,11 @@ function runGame() {
     if (ev.target instanceof HTMLInputElement) return;
     if (!boardEl.classList.contains('hidden')) {
       if (ev.code === 'Escape') closeBoard();
+      return;
+    }
+    if (paused) {
+      if (ev.code === 'Escape' || ev.code === 'KeyP') setPaused(false);
+      else if (ev.code === 'KeyM') setSound(!sound.enabled);
       return;
     }
     const k = KEYMAP[ev.code];
@@ -376,10 +398,7 @@ function runGame() {
       unlocked = true;
       setSound(!sound.enabled);
     }
-    if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing') {
-      paused = !paused;
-      toast(paused ? 'Paused — press P to resume' : 'Resumed');
-    }
+    if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing') setPaused(true);
   });
   window.addEventListener('keyup', (ev) => {
     const k = KEYMAP[ev.code];
@@ -450,7 +469,7 @@ function runGame() {
       n++;
     }
     const b = game.activeBooster();
-    sound.update(Math.max(0, ...game.boosters.map((x) => x.throttle)), state === 'playing' && b && b.rcs !== 0);
+    sound.update(paused ? 0 : Math.max(0, ...game.boosters.map((x) => x.throttle)), !paused && state === 'playing' && b && b.rcs !== 0);
     ui.update(game, { dip: view.director.dip });
     view.render(game, { alpha: Math.min(1, acc / DT) });
     requestAnimationFrame(frame);
