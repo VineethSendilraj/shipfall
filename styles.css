@@ -313,6 +313,17 @@ body.compact .demo-card .disclaim { font-size: 10.5px; bottom: 22px; letter-spac
 #demo-title { justify-content: flex-end; padding-bottom: 15vh; background: linear-gradient(180deg, rgba(2, 4, 10, 0) 35%, rgba(2, 4, 10, 0.55)); }
 body.touch-ui #sound { bottom: auto; top: calc(18px * var(--ui) + 112px); right: calc(18px * var(--ui)); }
 
+/* ------------------------------------------------- map picker (src/maps.js) */
+.map-pick { display: flex; gap: 2px; padding: 3px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(6, 7, 9, 0.5); }
+.map-pick button { flex: 1; font: 600 14px var(--display); letter-spacing: 0.04em; color: var(--muted); background: none; border: 0; border-radius: 5px; padding: 8px 14px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.map-pick button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
+.map-pick button[aria-pressed='true'] { color: var(--ink); background: rgba(255, 255, 255, 0.16); }
+.map-pick button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.card .map-pick { margin: 0 0 12px; }
+.quick-card .map-pick { width: 200px; margin: -2px 0 2px; }
+.quick-card .map-pick button { font-size: 12.5px; padding: 6px 10px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+body.compact .quick-card .map-pick button { padding: 5px 10px; }
+
 /* -------------------------------------------------------------- explore */
 .explore { position: absolute; inset: 0; pointer-events: none; }
 .explore-bar { position: absolute; top: 16px; left: 20px; right: 18px; display: flex; align-items: center; gap: 8px; }

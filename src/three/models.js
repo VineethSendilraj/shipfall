@@ -31,6 +31,8 @@ function withVertexColors(mat) {
   if (!twin) {
     twin = mat.clone();
     twin.vertexColors = true;
+    // clone() does not copy onBeforeCompile.
+    twin.onBeforeCompile = mat.onBeforeCompile;
     aoMaterials.set(mat, twin);
   }
   return twin;

@@ -42,6 +42,8 @@ export const CLOSE_TIME = 0.1;
 
 const A_BURN = 85;
 const A_MAX = 135;
+// The burn lights early once stopping by the catch height would take this deceleration, just under A_MAX.
+const A_IGNITE = 130;
 const THRUST_ACC = 85;
 const FUEL_RATE = 6;
 // Per second at full throttle: a landing burn with no steering always fits in the tank, with 2% to spare at worst.
@@ -147,8 +149,9 @@ export class Game {
     const towardTower = r.chance(0.3);
     const p = {
       vy0: (44 + d * 3.5) * PX_PER_M + r.range(-8, 8),
-      vHover: Math.min(2.6, 1.3 + d * 0.17) * PX_PER_M,
-      hoverLen: Math.max(7, 22 - d * 2.2),
+      // The hover speed cap and length floor keep every round's catch window at 1.2 s or more without steering.
+      vHover: Math.min(2.5, 1.3 + d * 0.17) * PX_PER_M,
+      hoverLen: Math.max(11, 22 - d * 2.2),
       zeroY: r.range(ARM_MIN + 30, ARM_MAX - 15),
       spawnDx: towardTower ? toward * r.range(15, 42) : -toward * r.range(60 + d * 10, 110 + d * 16),
       vx0: r.range(-12 - d * 4, 12 + d * 4),
@@ -468,7 +471,7 @@ export class Game {
     const alt = this.altitudeM(b);
     let ay = G;
 
-    if (!b.burning && !b.cutoff && alt <= burnAltM(V)) {
+    if (!b.burning && !b.cutoff && (alt <= burnAltM(V) || b.vy * b.vy >= 2 * A_IGNITE * (b.zeroY - b.y))) {
       b.burning = true;
       this.emit('ignite');
     }
@@ -662,15 +665,24 @@ export class Game {
     b.burning = false;
     b.vy = 0;
     const gx = b.x + (b.rot ? Math.sin(-b.rot) * 60 : 0);
-    this.spawnSparks(gx, GROUND_Y - 6, 70, 0);
-    for (let i = 0; i < 52; i++) this.spawnFire(gx + this.fx.range(-50, 50), GROUND_Y - this.fx.range(4, 90), this.fx.range(-200, 200), this.fx.range(-330, -40), 1.25);
-    for (let i = 0; i < 22; i++) {
-      this.pushParticle({ k: 1, x: gx + this.fx.range(-40, 40), y: GROUND_Y - this.fx.range(10, 70), vx: this.fx.range(-40, 40), vy: this.fx.range(-120, -40), t: 0, life: this.fx.range(2.2, 3.6), size: this.fx.range(26, 46), grow: 60 });
+    const f = this.fx;
+    // The 3D explosion (src/three/explosion.js) is a pure function of this seed and the time since impact,
+    // so it comes from the fx stream like every other effect. It ramps its own light in, so no screen flash.
+    b.boom = { x: gx, t: this.t, seed: Math.floor(f.next() * 4294967296), wind: this.wind.base / PX_PER_M };
+    const first = this.particles.length;
+    this.spawnSparks(gx, GROUND_Y - 6, 56, 0);
+    // Sparks born on one point add up to one bright frame, so each starts up to 3 frames along its path.
+    for (let i = first; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      const age = (((i - first) * 0.618034) % 1) * 0.05;
+      p.x += p.vx * age;
+      p.y += p.vy * age;
+      p.t = age;
     }
-    this.spawnDust(gx, 24);
+    // A burning splash thrown low across the pad, and dust kicked up at the impact.
+    for (let i = 0; i < 20; i++) this.spawnFire(gx + f.range(-30, 30), GROUND_Y - f.range(2, 24), f.range(-320, 320), f.range(-150, -20), 0.9);
+    this.spawnDust(gx, 18);
     this.shake = Math.max(this.shake, 18);
-    this.flash = 0.6;
-    this.flashColor = '255,150,80';
     if (wasFalling) {
       this.loseLife(b);
       const lx = clamp(gx, 170, this.W - 170);
