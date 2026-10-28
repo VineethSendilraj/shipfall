@@ -247,6 +247,67 @@ test('an unattended ship crashes into the pad and costs a life', () => {
   assert.ok(ship.y + SHIP.bottom >= 690 - 1);
   assert.equal(g.lives, 2);
 });
+/** The vehicle and catch height tower A gets in each of the first n single-catch rounds. */
+function roundsFor(target, seed = 7, n = 24) {
+  const g = new Game({ width: 1280, seed, target });
+  g.start();
+  const out = [];
+  while (out.length < n) {
+    out.push({ kind: g.params[0].kind, zeroY: g.params[0].zeroY });
+    g.boosters.length = 0;
+    g.setPhase('outro');
+    const r = g.round;
+    while (g.round === r) g.step(NO_INPUT);
+  }
+  return out;
+}
+test('the ship target flies a ship to tower A every single-catch round', () => {
+  const g = new Game({ width: 1280, seed: 7, target: 'ship' });
+  g.start();
+  while (g.phase !== 'live') g.step(NO_INPUT);
+  assert.deepEqual(g.boosters.map((b) => [b.kind, b.tower]), [['ship', 0]]);
+  assert.match(g.banner.sub, /^ship inbound/);
+  assert.ok(roundsFor('ship').every((r) => r.kind === 'ship'));
+});
+test('a ship at tower A is caught with the same tolerances and crashes when left alone', () => {
+  const g = new Game({ width: 1280, seed: 7, target: 'ship' });
+  g.start();
+  while (g.phase !== 'live') g.step(NO_INPUT);
+  const [ship] = g.boosters;
+  const tw = g.towers[0];
+  place(g, ship, tw, { dy: CATCH_TOL_Y, dx: 0, vy: 1 });
+  g.evaluateCatch(tw);
+  assert.equal(ship.state, 'caught');
+  const h = new Game({ width: 1280, seed: 5, target: 'ship' });
+  h.start();
+  let guard = 0;
+  while (h.boosters[0]?.state !== 'crashed' && guard++ < 6000) h.step(NO_INPUT);
+  assert.equal(h.boosters[0].state, 'crashed');
+  assert.equal(h.lives, 2);
+});
+test('the random target picks booster or ship per round, the same way for the same seed', () => {
+  const kinds = (seed) => roundsFor('random', seed).map((r) => r.kind).join();
+  assert.equal(kinds(7), kinds(7));
+  assert.notEqual(kinds(7), kinds(8));
+  const picked = roundsFor('random').map((r) => r.kind);
+  assert.ok(picked.includes('booster') && picked.includes('ship'), picked.join());
+});
+test('the target only changes the vehicle: a seed flies the same rounds for every target', () => {
+  const heights = (target) => roundsFor(target).map((r) => r.zeroY);
+  assert.deepEqual(heights('ship'), heights('booster'));
+  assert.deepEqual(heights('random'), heights('booster'));
+});
+test('double-catch rounds send a booster to tower A and a ship to tower B whatever the target', () => {
+  for (const target of ['ship', 'random']) {
+    const g = new Game({ width: 1280, seed: 7, target });
+    g.start();
+    g.score = DOUBLE_UNLOCK_SCORE;
+    g.boosters.length = 0;
+    g.setPhase('outro');
+    while (!(g.phase === 'live' && g.roundDouble)) g.step(NO_INPUT);
+    assert.deepEqual(g.boosters.map((b) => [b.kind, b.tower]), [['booster', 0], ['ship', 1]]);
+  }
+});
 test('demo is deterministic and catches everything, the ship last', () => {
   const runs = [0, 1].map(() => {
     const r = createDemoRunner();
