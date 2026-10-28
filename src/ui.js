@@ -1,3 +1,5 @@
+import { HudBar } from './hud-bar.js';
+
 const $ = (id) => document.getElementById(id);
 const easeOutBack = (x) => 1 + 2.4 * (x - 1) ** 3 + 1.4 * (x - 1) ** 2;
 
@@ -7,12 +9,6 @@ export class UI {
     this.view = view;
     this.el = {
       hud: $('hud'),
-      alt: $('h-alt'),
-      vs: $('h-vs'),
-      lat: $('h-lat'),
-      fuel: $('h-fuel'),
-      fuelNum: $('h-fuel-num'),
-      engine: $('h-engine'),
       status: $('h-status'),
       gust: $('h-gust'),
       score: $('h-score'),
@@ -29,6 +25,7 @@ export class UI {
       demoScore: $('demo-score'),
       demoStats: $('demo-stats'),
     };
+    this.bar = new HudBar();
     this.popupEls = new Map();
     this.shownScore = 0;
     this.cache = {};
@@ -97,32 +94,11 @@ export class UI {
     this.set('hudHidden', e.hud, 'class', showHud ? 'hud' : 'hud hidden');
     this.set('hudOpacity', e.hud, 'opacity', String(hudOpacity));
     if (showHud && this.safeDirty) this.measureSafe();
+    this.bar.track(game, h);
     if (showHud) {
-      const b = h.booster;
-      if (b) {
-        const alt = Math.max(0, b.alt);
-        this.set('alt', e.alt, 'text', alt >= 100 ? alt.toFixed(0) : alt.toFixed(1));
-        this.set('vs', e.vs, 'text', b.waiting ? '—' : b.vs.toFixed(1));
-        this.set('vsC', e.vs, 'class', `val ${b.waiting ? '' : b.vs < 3 ? 'ok' : b.vs < 10 ? 'warn' : ''}`);
-        const lat = b.lat;
-        this.set('lat', e.lat, 'text', `${lat > 0.05 ? '+' : lat < -0.05 ? '−' : ''}${Math.abs(lat).toFixed(1)}`);
-        const lp = Math.abs(b.latPx);
-        this.set('latC', e.lat, 'class', `val ${lp < 15 ? 'ok' : lp < 40 ? 'warn' : 'bad'}`);
-        this.set('fuel', e.fuel, 'width', `${b.fuel.toFixed(1)}%`);
-        this.set('fuelC', e.fuel, 'class', b.fuel < 25 ? 'low' : '');
-        this.set('fuelN', e.fuelNum, 'text', b.fuel.toFixed(0));
-        const eng = b.waiting ? 'INBOUND' : b.burning ? 'LANDING BURN' : b.cutoff ? 'ENGINE CUTOFF' : 'COAST';
-        this.set('eng', e.engine, 'text', eng);
-        this.set('engC', e.engine, 'class', `engine ${b.burning ? 'burn' : ''}`);
-      } else {
-        for (const k of ['alt', 'vs', 'lat']) this.set(k, e[k], 'text', '—');
-        this.set('vsC', e.vs, 'class', 'val');
-        this.set('latC', e.lat, 'class', 'val');
-        if (game.boosters.some((x) => x.state === 'crashed' || x.state === 'tumbling')) this.lostRound = `${game.seed}:${game.round}`;
-        const lost = this.lostRound === `${game.seed}:${game.round}`;
-        this.set('eng', e.engine, 'text', game.phase === 'outro' ? (lost ? 'BOOSTER LOST' : 'SECURED') : 'STANDBY');
-        this.set('engC', e.engine, 'class', 'engine');
-      }
+      if (game.boosters.some((x) => x.state === 'crashed' || x.state === 'tumbling')) this.lostRound = `${game.seed}:${game.round}`;
+      const lost = !h.booster && this.lostRound === `${game.seed}:${game.round}`;
+      this.bar.update(game, h, { lost, compact: document.body.classList.contains('compact') });
       this.set('status', e.status, 'text', h.ready ? 'CATCH WINDOW' : '');
       this.set('statusC', e.status, 'class', h.ready ? 'status on' : 'status');
       this.set('gust', e.gust, 'text', h.gust ? `WIND GUST ${h.gust > 0 ? '→' : '←'}` : '');
@@ -145,14 +121,16 @@ export class UI {
   /** Screen band between the HUD panels and the on-screen buttons; only used where they crowd the popups. */
   measureSafe() {
     this.safeDirty = false;
-    if (!document.body.classList.contains('compact')) {
-      this.safe = null;
-      return;
-    }
-    const panels = [...this.el.hud.querySelectorAll('.panel')].map((p) => p.getBoundingClientRect().bottom);
+    const { w, h } = this.view.size;
+    // Popups are centred, so only panels over the middle of the screen can collide with them.
+    const rects = [...this.el.hud.querySelectorAll('.panel')]
+      .map((p) => p.getBoundingClientRect())
+      .filter((r) => r.height > 0 && r.left < w * 0.65 && r.right > w * 0.35);
+    const tops = rects.filter((r) => r.top < h / 2).map((r) => r.bottom);
+    const bottoms = rects.filter((r) => r.top >= h / 2).map((r) => r.top);
     const touch = document.getElementById('touch');
-    const controlsTop = touch.classList.contains('hidden') ? this.view.size.h - 26 : touch.getBoundingClientRect().top;
-    this.safe = { top: Math.max(0, ...panels) + 8, bottom: controlsTop - 8 };
+    if (!touch.classList.contains('hidden')) bottoms.push(touch.getBoundingClientRect().top);
+    this.safe = { top: Math.max(0, ...tops) + 8, bottom: Math.min(h - 26, ...bottoms) - 8 };
   }
 
   popupShift(sy) {

@@ -57,7 +57,7 @@ function createView(opts) {
 }
 
 async function loadFonts() {
-  await Promise.all([document.fonts.load('500 40px "Barlow"'), document.fonts.load('600 20px "Barlow"')]).catch(() => {});
+  await Promise.all([document.fonts.load('400 40px "D-DIN"'), document.fonts.load('700 20px "D-DIN"')]).catch(() => {});
 }
 
 // ------------------------------------------------------------------ demo
