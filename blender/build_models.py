@@ -394,13 +394,14 @@ def build_booster():
         dome_prof.append((rs * math.sin(phi), y_apex - rs * (1 - math.cos(phi))))
     lathe(G['dome'], [dome_prof], 64)
 
-    # Grid fins at 45/135/225/315 deg: steerable lattice panels that stick straight out, cells along the
-    # booster's axis like a deployed Falcon-style fin, with an actuator housing on the skin.
+    # Grid fins at 45/135/225/315 deg: lattice panels that stick straight out with their cells along the
+    # booster's axis, each turned 12 deg about its torque tube as when steering, on an actuator housing.
     fin_x0, fin_x1, fin_hw = 4.88, 8.9, 1.75
     fy0, fy1 = 3.6 - 0.45, 3.6 + 0.45
     fr = 0.08
     for deg in (45, 135, 225, 315):
-        m = RY(rad(deg))
+        mh = RY(rad(deg))
+        m = mh @ T(0, 3.6, 0) @ RX(rad(12)) @ T(0, -3.6, 0)
         g = G['fin']
         box_at(g, (fin_x0, fy0, -fin_hw), (fin_x0 + fr, fy1, fin_hw), m, c=0.02)
         box_at(g, (fin_x1 - fr, fy0, -fin_hw), (fin_x1, fy1, fin_hw), m, c=0.02)
@@ -422,15 +423,12 @@ def build_booster():
                     continue
                 mm, length = basis((ax, 3.6, az), (bx, 3.6, bz), up=(0.0, 1.0, 0.0))
                 box(g, (0.07, length + 0.04, fy1 - fy0 - 0.05), m @ mm)
-        # Root yoke: torque tube into the housing plus two tapered cheeks.
-        box_at(g, (R - 0.1, 3.32, -0.32), (fin_x0 + 0.02, 3.88, 0.32), m, c=0.05)
-        for s in (-1, 1):
-            poly = [(R + 0.3, s * 0.3), (fin_x0 + 0.04, s * 0.3), (fin_x0 + 0.04, s * 1.05)]
-            prism(g, poly, 3.18, 4.02, m)
+        # Torque tube from the housing into the fin's root frame.
+        lathe(g, [[(0.3, fin_x0 + 0.02), (0.3, R + 0.2)]], 16, mh @ T(0, 3.6, 0) @ RZ(rad(-90)))
         # Actuator housing on the skin (doubler plate, rounded motor box, actuator cap below it).
         curved_panel(G['dome'], R - 0.02, R + 0.035, 1.9, 5.3, game_theta(deg) - 0.23, game_theta(deg) + 0.23, 8)
-        box_at(G['dome'], (R - 0.3, 2.3, -0.8), (R + 0.34, 4.9, 0.8), m, c=0.16)
-        box_at(G['darkSteel'], (R - 0.1, 1.6, -0.45), (R + 0.28, 2.32, 0.45), m, c=0.05)
+        box_at(G['dome'], (R - 0.3, 2.3, -0.8), (R + 0.34, 4.9, 0.8), mh, c=0.16)
+        box_at(G['darkSteel'], (R - 0.1, 1.6, -0.45), (R + 0.28, 2.32, 0.45), mh, c=0.05)
 
     # Catch pins (hardpoints) at 90/270 deg: the flat underside at y = 0 is the catch point the arms meet.
     for deg in (90, 270):

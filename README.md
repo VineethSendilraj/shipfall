@@ -107,7 +107,7 @@ The booster, the tower (structure, carriage and catch arm) and the site props (t
 
 | File | Triangles | Size |
 | --- | --- | --- |
-| `booster.glb` | 70,858 | 463 KB |
+| `booster.glb` | 70,746 | 466 KB |
 | `tower.glb` (structure, carriage, one arm drawn twice) | 24,984 | 260 KB |
 | `props.glb` | 32,810 | 194 KB |
 
