@@ -24,7 +24,7 @@ A 3D browser game: a rocket booster is falling back to the launch site at night.
 
 ### Rules
 
-The landing burn ignites automatically below 112 m (143 m for the ship, which lights up with its pins at the same height) and slows the vehicle into a brief, slow descent before engine cutoff. The burn and the thrusters share one tank: steering shortens the hover, and an empty tank cuts the engine early. A catch succeeds if, at the moment the arms finish closing:
+The landing burn ignites automatically below 112 m (143 m for the ship, which lights up with its pins at the same height), or higher if the vehicle is too fast to stop in time, and slows the vehicle into a brief, slow descent before engine cutoff. The burn and the thrusters share one tank: steering shortens the hover, and an empty tank cuts the engine early. A catch succeeds if, at the moment the arms finish closing:
 
 - the catch pins (just below the booster's grid fins, or the ship's forward flaps) are within **±12 px (±3 m)** of the arms vertically,
 - the lateral offset from the catch centerline is **under 15 px (3.75 m)**, and

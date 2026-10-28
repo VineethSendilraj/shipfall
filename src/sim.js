@@ -42,6 +42,8 @@ export const CLOSE_TIME = 0.1;
 
 const A_BURN = 85;
 const A_MAX = 135;
+// The burn lights early once stopping by the catch height would take this deceleration, just under A_MAX.
+const A_IGNITE = 130;
 const THRUST_ACC = 85;
 const FUEL_RATE = 6;
 // Per second at full throttle: a landing burn with no steering always fits in the tank, with 2% to spare at worst.
@@ -147,8 +149,9 @@ export class Game {
     const towardTower = r.chance(0.3);
     const p = {
       vy0: (44 + d * 3.5) * PX_PER_M + r.range(-8, 8),
-      vHover: Math.min(2.6, 1.3 + d * 0.17) * PX_PER_M,
-      hoverLen: Math.max(7, 22 - d * 2.2),
+      // The hover speed cap and length floor keep every round's catch window at 1.2 s or more without steering.
+      vHover: Math.min(2.5, 1.3 + d * 0.17) * PX_PER_M,
+      hoverLen: Math.max(11, 22 - d * 2.2),
       zeroY: r.range(ARM_MIN + 30, ARM_MAX - 15),
       spawnDx: towardTower ? toward * r.range(15, 42) : -toward * r.range(60 + d * 10, 110 + d * 16),
       vx0: r.range(-12 - d * 4, 12 + d * 4),
@@ -468,7 +471,7 @@ export class Game {
     const alt = this.altitudeM(b);
     let ay = G;
 
-    if (!b.burning && !b.cutoff && alt <= burnAltM(V)) {
+    if (!b.burning && !b.cutoff && (alt <= burnAltM(V) || b.vy * b.vy >= 2 * A_IGNITE * (b.zeroY - b.y))) {
       b.burning = true;
       this.emit('ignite');
     }
