@@ -96,8 +96,16 @@ async function runDemo() {
     window.__demoReady = true;
     return;
   }
-  const tick = () => {
-    advance();
+  // Fixed step, so the showcase plays at the same speed at any refresh rate.
+  let last = performance.now();
+  let acc = 0;
+  const tick = (now) => {
+    acc += Math.min(0.1, (now - last) / 1000);
+    last = now;
+    for (let n = 0; acc >= DT && n < 6; n++) {
+      advance();
+      acc -= DT;
+    }
     draw();
     if (!runner.done) requestAnimationFrame(tick);
   };
