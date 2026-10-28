@@ -13,7 +13,7 @@ const SHIP_RINGS = [
 ];
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-function svg(tag, attrs, parent) {
+export function svg(tag, attrs, parent) {
   const el = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   parent?.append(el);
@@ -32,7 +32,7 @@ function engineIcon(host, rings) {
   );
 }
 
-function clock(t) {
+export function clock(t) {
   const s = Math.max(0, Math.floor(t));
   const pad = (v) => String(v).padStart(2, '0');
   return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
@@ -158,17 +158,39 @@ export class HudBar {
     }
     this.set('sil', sil, (v) => e.sil.setAttribute('transform', v));
     this.set('ready', h.ready ? 'align ready' : 'align', (v) => (e.align.className = v));
-    this.set('progress', progress.toFixed(3), (v) => {
-      e.done.style.strokeDasharray = `${(v * this.len).toFixed(1)} ${this.len.toFixed(1)}`;
-      const p = e.track.getPointAtLength(v * this.len);
-      e.now.setAttribute('cx', p.x.toFixed(1));
-      e.now.setAttribute('cy', p.y.toFixed(1));
-    });
+    this.setProgress(progress);
     const burnLabel = b?.cutoff ? 'ENGINE CUTOFF' : 'LANDING BURN';
     this.set('burnL', burnLabel, (v) => (this.marks.burn.label.textContent = v));
     this.set('burnC', b?.burning ? 'on' : this.burnF >= 0 ? 'past' : '', (v) => this.marks.burn.label.setAttribute('class', `l-burn ${v}`));
     const catchState = lost ? [lost, 'bad'] : h.ready ? ['CATCH', 'ok'] : game.phase === 'outro' ? ['SECURED', 'ok'] : ['CATCH', ''];
     this.set('catchL', catchState[0], (v) => (this.marks.catch.label.textContent = v));
     this.set('catchC', catchState[1], (v) => this.marks.catch.label.setAttribute('class', `l-catch ${v}`));
+  }
+
+  /** Fills the timeline up to v (0..1) and moves the now dot there. */
+  setProgress(v) {
+    const e = this.el;
+    this.set('progress', v.toFixed(3), (p) => {
+      e.done.style.strokeDasharray = `${(p * this.len).toFixed(1)} ${this.len.toFixed(1)}`;
+      const q = e.track.getPointAtLength(p * this.len);
+      e.now.setAttribute('cx', q.x.toFixed(1));
+      e.now.setAttribute('cy', q.y.toFixed(1));
+    });
+  }
+
+  /** Registers a gauge built like the ones in the HTML, so gauge(k, ...) drives it too. */
+  addGauge(k, host) {
+    this.gauges[k] = { host, arc: host.querySelector('.arc'), val: host.querySelector('.g-val') };
+  }
+
+  /** Adds an event mark under the now dot; position it with placeMark(k, f). */
+  addMark(k, label, cls) {
+    const root = this.el.track.ownerSVGElement;
+    const dot = svg('circle', { class: `mark ${cls}`, r: 3.6 });
+    const text = svg('text', { class: cls });
+    text.textContent = label;
+    root.insertBefore(dot, this.el.now);
+    root.insertBefore(text, this.el.now);
+    this.marks[k] = { dot, label: text };
   }
 }
