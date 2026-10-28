@@ -240,7 +240,7 @@ function runGame() {
     flightHud ??= new FlightHud(ui);
     flight = new Flight({ seed: 1 });
     pilot = PILOT ? createFlightPilot() : null;
-    flightView.enter();
+    flightView.enter(flight);
     flightHud.enter();
     document.body.classList.add('free-flight');
     play();

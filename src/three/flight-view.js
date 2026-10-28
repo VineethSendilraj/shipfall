@@ -25,7 +25,8 @@ const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 
 /**
  * Draws a free flight with the catch game's View: its renderer, scene, launch site and vehicle models, plus the
- * planet, its air, the space sky and the flight's craft. enter() adds them; exit() puts the catch scene back.
+ * planet, its air, the space sky and the flight's craft. enter(f) adds them and aims the camera at flight f;
+ * exit() puts the catch scene back.
  */
 export class FlightView {
   constructor(view) {
@@ -49,7 +50,7 @@ export class FlightView {
     this._u = new THREE.Vector3();
   }
 
-  enter() {
+  enter(f) {
     const v = this.view;
     const { scene, world } = v;
     const m = world.moon;
@@ -71,6 +72,9 @@ export class FlightView {
     this.prev = null;
     this.crash = null;
     this.roll = ROLL;
+    // The director's first step only cuts to the opening shot. Without it, a frame drawn before the first sim step
+    // looks out from the world's origin.
+    this.step(f);
     v.guide.visible = v.lane.visible = false;
     this.craft.attach(v.pool[2].root, v.pool[0].root);
     this.craft.showAll(true);
