@@ -41,6 +41,12 @@ const FinalShader = {
       col.r = texture2D(tDiffuse, uv + cc * r2 * 0.0015).r;
       col.g = texture2D(tDiffuse, uv).g;
       col.b = texture2D(tDiffuse, uv - cc * r2 * 0.0015).b;
+      // Grade in linear light, before tone mapping: cool shadows, warm highlights, a little more colour.
+      float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
+      float hi = luma / (luma + 0.35);
+      col *= mix(vec3(0.9, 0.98, 1.12), vec3(1.08, 1.0, 0.9), hi);
+      col = max(mix(vec3(luma), col, 1.22), 0.0);
+      col *= pow(max(luma, 1e-4) / 0.3, 0.12);
       float vig = smoothstep(1.05, 0.3, length(cc * vec2(1.0, 0.9)) * 1.25);
       col *= mix(0.55, 1.0, vig);
       col += uFlash;
