@@ -99,7 +99,9 @@ export class Director {
         catchY = 230;
       }
       const top = catchY + 14;
-      const bottom = Math.min(arm - 6, catchY - 68);
+      // While the engines burn, extend the frame down to show the flame and its ground blast.
+      const burn = b && b.state === 'falling' ? b.throttle : 0;
+      const bottom = Math.max(-4, Math.min(arm - 6, catchY - 68 - 30 * burn));
       const span = top - bottom + 18;
       const halfFov = THREE.MathUtils.degToRad(fov / 2);
       const dist = clamp(span / (2 * Math.tan(halfFov)) * 1.08, 110, 290) * widen;

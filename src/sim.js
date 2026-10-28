@@ -455,7 +455,7 @@ export class Game {
     if (b.burning && b.y > b.zeroY + b.hoverLen) {
       b.burning = false;
       b.cutoff = true;
-      this.addPopup('ENGINE CUTOFF', b.x, b.y + BOOSTER.bottom + 30, { color: '#ffb36b', size: 18, dur: 1.2 });
+      this.addPopup('ENGINE CUTOFF', b.x, b.y + BOOSTER.bottom + 30, { color: '#f2b84b', size: 18, dur: 1.2 });
       this.emit('cutoff');
     }
     if (b.burning) {
@@ -498,7 +498,10 @@ export class Game {
       b.x = clamp(b.x, 26, this.W - 26);
       b.vx *= -0.4;
     }
-    if (b.burning) this.spawnExhaust(b);
+    if (b.burning) {
+      this.spawnExhaust(b);
+      this.spawnGroundBlast(b);
+    }
     if (b.y + BOOSTER.bottom >= GROUND_Y) this.crash(b);
   }
 
@@ -517,7 +520,7 @@ export class Game {
         const cy = clamp(tw.armY, b.y + BOOSTER.top + 20, b.y + BOOSTER.bottom - 20);
         this.spawnSparks(pushLeft ? lo : hi, cy, 22, pushLeft ? -1 : 1);
         this.shake = Math.max(this.shake, 7);
-        this.addPopup('CLANG!', pushLeft ? lo - 40 : hi + 40, cy - 30, { color: '#ffd166', size: 22, dur: 0.9 });
+        this.addPopup('CLANG!', pushLeft ? lo - 40 : hi + 40, cy - 30, { color: '#f2b84b', size: 22, dur: 0.9 });
         this.emit('clang');
       }
     }
@@ -570,26 +573,28 @@ export class Game {
 
     const px = tw.cx;
     const py = tw.armY - 8;
-    this.spawnSparks(px - BOOSTER.halfW - 3, py, 14, -1, true);
-    this.spawnSparks(px + BOOSTER.halfW + 3, py, 14, 1, true);
-    this.flash = perfect ? 0.55 : 0.3;
-    this.flashColor = perfect ? '255,214,120' : '150,230,255';
+    this.spawnSparks(px - BOOSTER.halfW - 3, py, 22, -1);
+    this.spawnSparks(px + BOOSTER.halfW + 3, py, 22, 1);
+    this.spawnClampVapor(px, py);
+    this.shake = Math.max(this.shake, perfect ? 9 : 6);
+    this.flash = perfect ? 0.5 : 0.3;
+    this.flashColor = perfect ? '255,206,130' : '255,236,214';
     const labelX = clamp(px, 170, this.W - 170);
     this.addPopup(perfect ? 'PERFECT!' : 'NICE CATCH!', labelX, py - 120, {
-      color: perfect ? '#ffd166' : '#7ee8ff',
+      color: perfect ? '#f2b84b' : '#f1f2f4',
       size: perfect ? 56 : 44,
       dur: 1.6,
       big: true,
       sy: 0.17,
     });
     this.addPopup(`+${pts.toLocaleString('en-US')}`, labelX, py - 74, { color: '#ffffff', size: 28, dur: 1.6, delay: 0.12, sy: 0.245 });
-    this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#dfe6f5', size: 17, dur: 1.6, delay: 0.2, sy: 0.29 });
+    this.addPopup(`precision +${bonus} · fuel +${fuelBonus}`, labelX, py - 46, { color: '#c9cdd3', size: 17, dur: 1.6, delay: 0.2, sy: 0.29 });
     this.emit('catch', { perfect, pts });
 
     if (this.roundDouble && this.roundCatches === 2) {
       this.score += 500;
       this.stats.doubles++;
-      this.addPopup('DOUBLE CATCH!', this.W / 2, 200, { color: '#ffd166', size: 52, dur: 2.0, big: true, delay: 0.35, sy: 0.84 });
+      this.addPopup('DOUBLE CATCH!', this.W / 2, 200, { color: '#f2b84b', size: 52, dur: 2.0, big: true, delay: 0.35, sy: 0.84 });
       this.addPopup('+500', this.W / 2, 246, { color: '#ffffff', size: 26, dur: 2.0, delay: 0.45, sy: 0.905 });
       this.emit('double');
     }
@@ -616,14 +621,14 @@ export class Game {
     this.flash = 0.35;
     this.flashColor = '255,120,90';
     const lx = clamp(tw.cx, 150, this.W - 150);
-    this.addPopup('MISS', lx, tw.armY - 110, { color: '#ff6b6b', size: 50, dur: 1.6, big: true, sy: 0.24 });
-    this.addPopup(reason, lx, tw.armY - 70, { color: '#ffd0c4', size: 18, dur: 1.6, delay: 0.1, sy: 0.31 });
+    this.addPopup('MISS', lx, tw.armY - 110, { color: '#f0605a', size: 50, dur: 1.6, big: true, sy: 0.24 });
+    this.addPopup(reason, lx, tw.armY - 70, { color: '#f3d2cc', size: 18, dur: 1.6, delay: 0.1, sy: 0.31 });
     this.emit('miss', { reason });
   }
 
   whiff(tw) {
     tw.reopenT = REOPEN_DELAY;
-    this.addPopup('whiff', tw.cx, tw.armY - 40, { color: '#9fb0cc', size: 18, dur: 0.8 });
+    this.addPopup('whiff', tw.cx, tw.armY - 40, { color: '#a2a7af', size: 18, dur: 0.8 });
     this.emit('whiff');
   }
 
@@ -642,8 +647,8 @@ export class Game {
     if (wasFalling) {
       this.loseLife(b);
       const lx = clamp(gx, 170, this.W - 170);
-      this.addPopup('RUD!', lx, GROUND_Y - 200, { color: '#ff7b54', size: 56, dur: 1.8, big: true, sy: 0.24 });
-      this.addPopup('rapid unscheduled disassembly', lx, GROUND_Y - 156, { color: '#ffd0c4', size: 17, dur: 1.8, delay: 0.1, sy: 0.31 });
+      this.addPopup('RUD!', lx, GROUND_Y - 200, { color: '#f0605a', size: 56, dur: 1.8, big: true, sy: 0.24 });
+      this.addPopup('rapid unscheduled disassembly', lx, GROUND_Y - 156, { color: '#f3d2cc', size: 17, dur: 1.8, delay: 0.1, sy: 0.31 });
       this.emit('crash');
     } else {
       this.emit('thud');
@@ -705,6 +710,30 @@ export class Game {
       const a = dir === 0 ? f.range(-Math.PI, 0) : dir > 0 ? f.range(-1.3, 0.4) : f.range(Math.PI - 0.4, Math.PI + 1.3);
       const sp = f.range(140, cool ? 320 : 520);
       this.pushParticle({ k: cool ? 6 : 2, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: f.range(0.35, cool ? 0.7 : 1.1), size: 1, grow: 0 });
+    }
+  }
+
+  /** Exhaust hitting the pad: dust and steam blown out sideways, stronger the closer the engines get. */
+  spawnGroundBlast(b) {
+    const alt = this.altitudeM(b);
+    if (alt > 55) return;
+    const f = this.fx;
+    const k = (1 - alt / 55) * b.throttle;
+    if (!f.chance(0.35 + k * 0.65)) return;
+    const ex = b.x - Math.sin(b.tilt) * BOOSTER.bottom;
+    const n = 1 + Math.round(k * 3);
+    for (let i = 0; i < n; i++) {
+      const side = f.chance(0.5) ? 1 : -1;
+      this.pushParticle({ k: 4, x: ex + side * f.range(4, 30), y: GROUND_Y - f.range(0, 6), vx: side * f.range(160, 420) * (0.4 + k), vy: f.range(-90, -15), t: 0, life: f.range(0.9, 1.9), size: f.range(14, 30), grow: 46 });
+    }
+  }
+
+  /** A ring of vented vapor where the arms clamp the booster. */
+  spawnClampVapor(x, y) {
+    const f = this.fx;
+    for (let i = 0; i < 18; i++) {
+      const side = i % 2 ? 1 : -1;
+      this.pushParticle({ k: 3, x: x + side * (BOOSTER.halfW + f.range(0, 8)), y: y + f.range(-10, 10), vx: side * f.range(60, 190), vy: f.range(-70, 20), t: 0, life: f.range(0.7, 1.4), size: f.range(8, 15), grow: 40 });
     }
   }
 
