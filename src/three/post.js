@@ -4,7 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 
 const FinalShader = {
   uniforms: {
@@ -59,9 +59,9 @@ export function createComposer(renderer, scene, camera, w, h, samples) {
   const final = new ShaderPass(FinalShader);
   composer.addPass(final);
   composer.addPass(new OutputPass());
-  // Only used by the reduced-quality levels, which render without MSAA.
-  const fxaa = new FXAAPass();
-  fxaa.enabled = false;
-  composer.addPass(fxaa);
-  return { composer, bloom, final, fxaa };
+  // Only used by the reduced-quality levels, which render without MSAA. SMAA keeps the thin lattice crisp where FXAA smears it.
+  const aa = new SMAAPass();
+  aa.enabled = false;
+  composer.addPass(aa);
+  return { composer, bloom, final, aa };
 }
