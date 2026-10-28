@@ -36,7 +36,7 @@ Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (6.5 per % f
 
 ### Home screen
 
-The home screen holds the picked vehicle in the tower's arms. **‹ ›** (or ← →, A D, a swipe) picks what to catch: **Booster**, **Ship**, or **Random**, which draws booster or ship each round from the game's seed (its own stream, so a seed flies the same rounds whatever the pick). Double-catch rounds always bring a booster to tower A and a ship to tower B. Game modes appear as tabs once there is more than one: each is an entry in `MODES` in `src/main.js`. The mode, vehicle and map picks are remembered on the device; rules and controls sit behind **How to play**.
+The home screen holds the picked vehicle in the tower's arms. **‹ ›** (or ← →, A D, a swipe) picks what to catch: **Booster**, **Ship**, or **Random**, which draws booster or ship each round from the game's seed (its own stream, so a seed flies the same rounds whatever the pick). Double-catch rounds always bring a booster to tower A and a ship to tower B. Game modes are tabs, one per entry in `MODES` in `src/main.js`: **Catch** and **Free flight**, which always flies the full stack (to orbit and back to the tower; `?flight=1` opens it directly, and Esc returns to the home screen). The mode, vehicle and map picks are remembered on the device; rules and controls sit behind **How to play**.
 
 ### Maps
 

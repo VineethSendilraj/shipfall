@@ -766,7 +766,10 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
     new THREE.MeshStandardMaterial({ map: reg.map, normalMap: reg.normalMap, roughnessMap: reg.roughnessMap, roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.7 }),
   );
   ground.receiveShadow = true;
-  root.add(ground);
+  // The terrain, its rocks and the ridges around it, which free flight hides once it climbs high.
+  const outer = new THREE.Group();
+  root.add(outer);
+  outer.add(ground);
 
   const hex = hexPad();
   const tileW = 16.6;
@@ -867,8 +870,8 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
     beacon: new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
   };
   marsBase(root, rng, mats);
-  scatterRocks(root, rng);
-  horizon(root);
+  scatterRocks(outer, rng);
+  horizon(outer);
 
   // Distant lights of outlying modules.
   const n = 60;
@@ -918,6 +921,8 @@ export function buildMars(root, scene, renderer, towerMats, { bakeEnvironment, l
     floods,
     keyLight: sun,
     dressing: { mount, mats: propMats },
+    outer,
+    haze,
     envTarget,
     // Title screen: from high above the approach, the tower and the domes left of the title card, the lander on
     // the right and the mesas across the top.

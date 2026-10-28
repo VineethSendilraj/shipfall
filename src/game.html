@@ -94,13 +94,24 @@
       </div>
     </div>
     <div class="how hidden" role="dialog" aria-label="How to play">
-      <p class="lede">Steer the falling vehicle over the tower with its cold-gas thrusters, bring the arms to its catch pins, and close them gently.</p>
-      <div class="controls">
-        <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>side thrusters (use landing fuel)</span></div>
-        <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>move the catch arms</span></div>
-        <div><kbd class="wide">Space</kbd><span class="taps catch">CATCH</span><span>close the arms</span></div>
+      <div data-mode="catch">
+        <p class="lede">Steer the falling vehicle over the tower with its cold-gas thrusters, bring the arms to its catch pins, and close them gently.</p>
+        <div class="controls">
+          <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>side thrusters (use landing fuel)</span></div>
+          <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>move the catch arms</span></div>
+          <div><kbd class="wide">Space</kbd><span class="taps catch">CATCH</span><span>close the arms</span></div>
+        </div>
+        <p class="rules">Catch window: pins within ±3 m of the arms, less than 3.75 m off center, descending under 3 m/s.</p>
       </div>
-      <p class="rules">Catch window: pins within ±3 m of the arms, less than 3.75 m off center, descending under 3 m/s.</p>
+      <div data-mode="flight">
+        <p class="lede">Fly the stack to orbit, launch satellites and land the ship back at the tower.</p>
+        <div class="controls">
+          <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>pitch</span></div>
+          <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>throttle</span></div>
+          <div><kbd class="wide">Space</kbd><span class="taps">ACTION</span><span>stage, deploy, flip</span></div>
+        </div>
+        <p class="rules">The screen coaches each step on the way up and back.</p>
+      </div>
       <button class="btn close-how" type="button">Got it</button>
     </div>
   </section>
@@ -125,6 +136,27 @@
       <div class="actions">
         <button id="again" class="btn primary" type="button">Fly again</button>
         <a id="share" class="btn share" href="https://x.com/intent/post" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>
+          Post on X
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="flight-over" class="overlay hidden">
+    <div class="card">
+      <p class="kicker">mission report</p>
+      <h1 id="fo-title">Ship landed</h1>
+      <p class="lede" id="fo-lede"></p>
+      <dl class="report">
+        <div><dt>Satellites deployed</dt><dd id="fo-sats"></dd></div>
+        <div><dt>Landing</dt><dd id="fo-landing"></dd></div>
+        <div><dt>Booster</dt><dd id="fo-booster"></dd></div>
+        <div><dt>Mission time</dt><dd id="fo-time"></dd></div>
+      </dl>
+      <div class="actions">
+        <button id="fo-again" class="btn primary" type="button">Fly again</button>
+        <a id="fo-share" class="btn share" href="https://x.com/intent/post" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>
           Post on X
         </a>

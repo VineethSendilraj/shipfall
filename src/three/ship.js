@@ -9,11 +9,11 @@ export const R = 4.5;
 export const SHIP_ENGINE_Y = -35;
 const TIP = 15.5;
 const NOSE_BASE = 1.9;
-const SKIRT = -32.9;
+export const SKIRT = -32.9;
 const SKIN_M = 71; // meters per texture height of the booster skin, which the ship's steel shares
 const TILE_UV_M = 64; // meters per UV unit on ship.glb's tiles
 const HINGE = THREE.MathUtils.degToRad(-72); // front flap hinges; the tiles cover the half between the hinges
-const WIND = HINGE + Math.PI / 2;
+export const WIND = HINGE + Math.PI / 2;
 const TILE_A0 = HINGE + THREE.MathUtils.degToRad(3);
 const TILE_A1 = HINGE + THREE.MathUtils.degToRad(177);
 // Hex tiles, pointy side up, of circumradius HEX_M; the texture repeats every HEX_COLS x 2 * HEX_ROW_PAIRS tiles.

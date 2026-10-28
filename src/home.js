@@ -65,6 +65,7 @@ export function bindHome({ root, modes, view }) {
     note.textContent = info.note;
     dots.forEach((d, i) => d.classList.toggle('on', TARGETS[i] === target));
     view.setShowcase(mode.targets ? target : 'random');
+    for (const el of help.querySelectorAll('[data-mode]')) el.hidden = el.dataset.mode !== mode.id;
   }
 
   function cycle(step) {
