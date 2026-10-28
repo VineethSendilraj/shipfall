@@ -43,7 +43,9 @@ export const CLOSE_TIME = 0.1;
 const A_BURN = 85;
 const A_MAX = 135;
 const THRUST_ACC = 85;
-const FUEL_RATE = 26;
+const FUEL_RATE = 6;
+// Per second at full throttle: a landing burn with no steering always fits in the tank, with 2% to spare at worst.
+const BURN_FUEL_RATE = 33;
 const REOPEN_DELAY = 0.35;
 const SECOND_BOOSTER_DELAY = 2.2;
 const SPAWN_Y = -270;
@@ -470,10 +472,11 @@ export class Game {
       b.burning = true;
       this.emit('ignite');
     }
-    if (b.burning && b.y > b.zeroY + b.hoverLen) {
+    if (b.burning && (b.fuel <= 0 || b.y > b.zeroY + b.hoverLen)) {
+      const depleted = b.fuel <= 0;
       b.burning = false;
       b.cutoff = true;
-      this.addPopup('ENGINE CUTOFF', b.x, b.y + V.bottom + 30, { color: '#f2b84b', size: 18, dur: 1.2 });
+      this.addPopup(depleted ? 'FUEL DEPLETED' : 'ENGINE CUTOFF', b.x, b.y + V.bottom + 30, { color: depleted ? '#f0605a' : '#f2b84b', size: 18, dur: 1.2 });
       this.emit('cutoff');
     }
     if (b.burning) {
@@ -483,6 +486,7 @@ export class Game {
       const ff = profile > b.vHover ? A_BURN : 0;
       const acc = clamp(G + ff + 8 * (b.vy - vt), G * 0.3, G + A_MAX);
       b.throttle += (acc / (G + A_MAX) - b.throttle) * 0.35;
+      b.fuel = Math.max(0, b.fuel - BURN_FUEL_RATE * b.throttle * DT);
       ay = G - acc;
     } else {
       b.throttle *= 0.8;
@@ -576,7 +580,7 @@ export class Game {
     const precision = clamp(1 - (0.4 * ey + 0.4 * ex + 0.2 * ev), 0, 1);
     const perfect = Math.abs(dy) <= 3 && Math.abs(dx) <= 4 && vy <= 2.2;
     const bonus = Math.round(500 * precision);
-    const fuelBonus = Math.round(b.fuel * 3);
+    const fuelBonus = Math.round(b.fuel * 6.5);
     const pts = 1000 + bonus + fuelBonus;
     this.score += pts;
     this.stats.catches++;

@@ -8,16 +8,29 @@
   </div>
 
   <div id="hud" class="hud hidden">
-    <div class="panel telemetry">
-      <div class="row"><span class="lbl">ALT</span><span class="val" id="h-alt">—</span><span class="unit">m</span></div>
-      <div class="row"><span class="lbl">V/S</span><span class="val" id="h-vs">—</span><span class="unit">m/s</span></div>
-      <div class="row"><span class="lbl">LAT</span><span class="val" id="h-lat">—</span><span class="unit">m</span></div>
-      <div class="row fuel">
-        <span class="lbl">FUEL</span>
-        <div class="bar"><i id="h-fuel"></i></div>
-        <span class="val small" id="h-fuel-num">100</span>
+    <div class="panel hud-bar">
+      <div class="cluster left">
+        <figure class="engines" id="h-eng-a"><svg viewBox="0 0 64 64" aria-hidden="true"></svg><figcaption>BOOSTER</figcaption></figure>
+        <div class="gauge" id="g-alt"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">ALTITUDE</span><b class="g-val">—</b><span class="g-unit">M</span></div>
+        <div class="gauge" id="g-spd"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">SPEED</span><b class="g-val">—</b><span class="g-unit">M/S</span></div>
       </div>
-      <div class="engine" id="h-engine">COAST</div>
+      <div class="mission">
+        <svg id="h-timeline" class="timeline" viewBox="0 0 600 70" aria-hidden="true">
+          <path class="tl-track" d="M10,66 Q300,-6 590,66" />
+          <path class="tl-done" d="M10,66 Q300,-6 590,66" />
+          <circle class="mark m-burn" r="3.6" /><text class="l-burn">LANDING BURN</text>
+          <circle class="mark m-catch" r="3.6" /><text class="l-catch">CATCH</text>
+          <circle class="tl-now" r="4.6" cx="10" cy="66" />
+        </svg>
+        <div class="clock"><span class="tplus">T+</span><span id="h-clock">00:00:00</span></div>
+        <div class="mscore" id="h-mscore">0</div>
+        <div class="flight" id="h-flight"></div>
+      </div>
+      <div class="cluster right">
+        <div class="gauge" id="g-fuel"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30" /><circle class="track" cx="32" cy="32" r="28" /><circle class="arc" cx="32" cy="32" r="28" /></svg><span class="g-lbl">FUEL</span><b class="g-val">—</b><span class="g-unit">%</span></div>
+        <figure class="align" id="h-align"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="rim" cx="32" cy="32" r="30.5" /><line class="axis" x1="32" y1="6" x2="32" y2="58" /><line class="arm" x1="9" y1="32" x2="21" y2="32" /><line class="arm" x1="43" y1="32" x2="55" y2="32" /><clipPath id="align-clip"><circle cx="32" cy="32" r="29.5" /></clipPath><g clip-path="url(#align-clip)"><g class="sil"><rect x="-3" y="-14" width="6" height="27" rx="3" /><rect class="pins" x="-6" y="-12.6" width="12" height="2.2" rx="1" /></g></g></svg><figcaption>ALIGN</figcaption></figure>
+        <figure class="engines ship hidden" id="h-eng-b"><svg viewBox="0 0 64 64" aria-hidden="true"></svg><figcaption>SHIP</figcaption></figure>
+      </div>
     </div>
     <div class="coach" id="h-coach" aria-live="polite"></div>
     <div class="status-stack">
@@ -48,7 +61,7 @@
         <div><b>Catch window</b><span>pins within ±3 m of the arms · lateral offset under 3.75 m · descent under 3 m/s</span></div>
       </div>
       <div class="controls">
-        <div><kbd>←</kbd><kbd>→</kbd> <kbd>A</kbd><kbd>D</kbd><span>lateral thrusters (limited fuel)</span></div>
+        <div><kbd>←</kbd><kbd>→</kbd> <kbd>A</kbd><kbd>D</kbd><span>lateral thrusters (use landing fuel)</span></div>
         <div><kbd>↑</kbd><kbd>↓</kbd> <kbd>W</kbd><kbd>S</kbd><span>move the catch arms</span></div>
         <div><kbd class="wide">Space</kbd><span>close the arms</span></div>
       </div>
@@ -66,7 +79,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg>
         Play
       </button>
-      <p class="hint">◀ ▶ steer · ▲ ▼ arms · <b>CATCH</b> on green</p>
+      <p class="hint">◀ ▶ steer (uses fuel) · ▲ ▼ arms · <b>CATCH</b> on green</p>
       <p class="hint keys">or keys: ← → · ↑ ↓ · Space</p>
       <div class="quick-links">
         <button class="ext open-board" type="button">leaderboard</button>
@@ -88,13 +101,16 @@
         </div>
         <p class="form-note" id="initials-note" aria-live="polite"></p>
       </form>
+      <div class="board">
+        <h2 id="board-over-h">Your best catches</h2>
+        <ol id="board-over"></ol>
+      </div>
       <div class="actions">
         <button id="again" class="btn primary" type="button">Fly again</button>
         <a id="share" class="btn share" href="https://x.com/intent/post" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>
           Post on X
         </a>
-        <button class="btn open-board" type="button">Leaderboard</button>
       </div>
     </div>
   </section>

@@ -4,7 +4,7 @@ import { loadModels } from './three/models.js';
 import { createDemoRunner, DEMO } from './demo.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
-import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows } from './leaderboard.js';
+import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows, clipRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
 
 const params = new URLSearchParams(location.search);
@@ -57,7 +57,7 @@ function createView(opts) {
 }
 
 async function loadFonts() {
-  await Promise.all([document.fonts.load('500 40px "Barlow"'), document.fonts.load('600 20px "Barlow"')]).catch(() => {});
+  await Promise.all([document.fonts.load('400 40px "D-DIN"'), document.fonts.load('700 20px "D-DIN"')]).catch(() => {});
 }
 
 // ------------------------------------------------------------------ demo
@@ -73,17 +73,18 @@ async function runDemo() {
   await loadFonts();
 
   const runner = createDemoRunner();
-  const draw = () => {
+  const draw = (alpha = 1) => {
     const g = runner.game;
     const hudOpacity = ui.demoCards(runner.frame, DEMO.titleFrames, runner.overAt, DEMO.endFrames, g);
     ui.update(g, { hudOpacity: runner.frame < DEMO.titleFrames ? 0 : hudOpacity, dip: view.director.dip });
-    view.render(g);
+    view.render(g, { alpha });
     window.__demoFrame = runner.frame;
     window.__demoInfo = { frame: runner.frame, score: g.score, stats: g.stats, overAt: runner.overAt };
     if (runner.done) window.__demoDone = true;
   };
   const advance = () => {
     if (runner.done) return;
+    view.snapshot(runner.game);
     runner.step();
     view.stepCamera(runner.game);
   };
@@ -114,7 +115,7 @@ async function runDemo() {
       advance();
       acc -= DT;
     }
-    draw();
+    draw(Math.min(1, acc / DT));
     if (!runner.done) requestAnimationFrame(tick);
   };
   draw();
@@ -151,32 +152,48 @@ function runGame() {
   const formNote = $('initials-note');
   const boardEl = $('leaderboard');
 
-  // Small embeds show fewer rows so the whole board fits.
-  const boardSize = () => (document.body.classList.contains('compact') ? 8 : 10);
+  // At most this many rows. Under the game over score the board stays short, and in small embeds it clears the sound button.
+  const compact = () => document.body.classList.contains('compact');
+  const boards = {
+    full: { ol: $('board'), heading: $('board-h'), size: () => (compact() ? 8 : 10), shown: () => !boardEl.classList.contains('hidden') },
+    over: { ol: $('board-over'), heading: $('board-over-h'), size: () => (compact() ? 4 : 6), shown: () => !overEl.classList.contains('hidden') },
+  };
   let worldwide = null;
+  let boardReq = 0;
   let mine = -1;
   let boardOpener = null;
 
-  function renderWorldwide(data) {
-    renderBoard($('board'), boardRows(data, boardSize()));
-    $('board-h').textContent = data.total ? `Worldwide · ${data.total.toLocaleString('en-US')} player${data.total === 1 ? '' : 's'}` : 'Worldwide';
+  /** Fills a board: worldwide with the player's place when we have it, otherwise this device's best runs. */
+  function paintBoard(b) {
+    if (worldwide) b.heading.textContent = worldwide.total ? `Worldwide · ${worldwide.total.toLocaleString('en-US')} player${worldwide.total === 1 ? '' : 's'}` : 'Worldwide';
+    else b.heading.textContent = 'Your best catches';
+    // Short windows get fewer rows, so the card's buttons stay on screen without scrolling.
+    const card = b.ol.closest('.card');
+    for (let size = b.size(); ; size--) {
+      const rows = worldwide ? boardRows(worldwide, size) : clipRows(localRows(loadBoard(), mine), size);
+      renderBoard(b.ol, rows);
+      // Right after a run, an empty board's "no catches yet" would be wrong.
+      b.ol.parentElement.classList.toggle('hidden', b === boards.over && !rows.length);
+      if (size <= 3 || card.scrollHeight <= card.clientHeight) break;
+    }
   }
 
-  /** Shows the worldwide board (with the player's place if they're on it), otherwise this device's best runs. */
-  async function openBoard(ev) {
+  async function refreshBoard(b) {
+    paintBoard(b);
+    // A submit bumps boardReq, so a fetch that finishes after it can't hide the player's new rank.
+    const req = ++boardReq;
+    const data = await fetchGlobal(savedHandle());
+    if (!data || req !== boardReq) return;
+    worldwide = data;
+    if (b.shown()) paintBoard(b);
+  }
+
+  function openBoard(ev) {
     boardOpener = ev.currentTarget;
     boardOpener.closest('.overlay').classList.add('hidden');
-    if (worldwide) renderWorldwide(worldwide);
-    else {
-      renderBoard($('board'), localRows(loadBoard(), mine));
-      $('board-h').textContent = 'Your best catches';
-    }
     boardEl.classList.remove('hidden');
     $('board-back').focus({ preventScroll: true });
-    const data = await fetchGlobal(savedHandle());
-    if (!data) return;
-    worldwide = data;
-    if (!boardEl.classList.contains('hidden')) renderWorldwide(data);
+    refreshBoard(boards.full);
   }
 
   function closeBoard() {
@@ -240,6 +257,7 @@ function runGame() {
     form.querySelector('label').classList.remove('hidden');
     mine = -1;
     overEl.classList.remove('hidden');
+    refreshBoard(boards.over);
     // Focusing the input on a phone pops the keyboard over the card, so only desktop gets autofocus.
     if (canSubmit && !isTouch) setTimeout(() => handleInput.focus(), 50);
     else if (!canSubmit) $('again').focus({ preventScroll: true });
@@ -264,10 +282,12 @@ function runGame() {
     }
     const s = game.stats;
     formNote.textContent = 'Submitting…';
+    boardReq++;
     const res = await submitGlobal({ handle, score: game.score, catches: s.catches, perfects: s.perfects, rounds: game.round });
     const { index } = addEntry(handle, game.score, game.round);
     if (res?.rank) {
       worldwide = res;
+      paintBoard(boards.over);
       const place = `#${res.rank.toLocaleString('en-US')} of ${res.total.toLocaleString('en-US')}`;
       formNote.textContent = res.best > game.score ? `Your best is still ${res.best.toLocaleString('en-US')} (${place})` : `You're ${place}`;
       formNote.classList.add('placed');
@@ -277,6 +297,7 @@ function runGame() {
       return;
     } else {
       mine = index;
+      paintBoard(boards.over);
       formNote.textContent = 'Saved on this device';
     }
     form.querySelector('.initials-row').classList.add('hidden');
@@ -391,6 +412,7 @@ function runGame() {
     game.events.length = 0;
     const input = state === 'playing' ? { ...held, close: closeLatch } : NO_INPUT;
     closeLatch = false;
+    view.snapshot(game);
     game.step(input);
     view.stepCamera(game);
     for (const ev of game.events) {
@@ -425,7 +447,7 @@ function runGame() {
     const b = game.activeBooster();
     sound.update(Math.max(0, ...game.boosters.map((x) => x.throttle)), state === 'playing' && b && b.rcs !== 0);
     ui.update(game, { dip: view.director.dip });
-    view.render(game);
+    view.render(game, { alpha: Math.min(1, acc / DT) });
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
