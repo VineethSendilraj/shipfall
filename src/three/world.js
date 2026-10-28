@@ -305,6 +305,7 @@ const PADS = [
   [-310, -330, -25, -232],
   [-235, -830, -105, -690],
 ];
+const LAUNCH_PAD = PADS.slice(0, 1);
 // Outbuildings: x, z, width, depth, height. The last three are the high bays down the road to the west.
 const BUILDINGS = [
   [172, -30, 26, 14, 9],
@@ -430,7 +431,7 @@ function paint(out, c, t) {
 
 /**
  * The ground at (x, z): albedo (r, g, b, sRGB), water level w (0 dry, 0.5 the waterline, 1 deep) and height h.
- * `fine` adds the features too small for the far map: marsh channels and the puddles round the pad.
+ * `fine` adds the features too small for the far map: marsh channels and the puddles by the pad and the roads.
  */
 function siteSample(x, z, out, fine) {
   // Metres into the Gulf, and into the bay (negative on land). The beach strip and the barrier island are land.
@@ -457,10 +458,9 @@ function siteSample(x, z, out, fine) {
   paint(out, SAND, smooth(0.5, 0.68, fbm(x / 150 - 7, z / 150 + 5, 2)));
   let w = 0.5 * smooth(-40, 0, bay);
   if (site > 0) {
-    // Sand and mud round the pad, with puddles in the low spots.
+    // Sand and mud round the pad.
     paint(out, SAND, site * 0.6);
     paint(out, MUD, site * smooth(0.45, 0.62, fbm(x / 90 + 1, z / 90 - 4, 3)));
-    if (fine) w = Math.max(w, site * 0.53 * smooth(0.5, 0.74, fbm(x / 48 + 3, z / 48 - 2, 3)));
   }
   if (marsh > 0) {
     // Green and brown marsh, ponds, and (close up) a web of tidal channels.
@@ -492,7 +492,9 @@ function siteSample(x, z, out, fine) {
   const dry = Math.max(smooth(9, 5, road), yard);
   paint(out, GRAVEL, dry);
   paint(out, ASPHALT, smooth(4.5, 3, road));
-  out.w = w * (1 - dry);
+  // A few small puddles: beside the launch pad and on the roads.
+  const puddle = fine ? Math.max(smooth(40, 15, boxDist(x, z, LAUNCH_PAD)), smooth(9, 5, road)) * 0.66 * smooth(0.7, 0.78, fbm(x / 20 + 3, z / 20 - 2, 2)) : 0;
+  out.w = Math.max(w * (1 - dry), puddle);
 
   // Low dunes in the scrub away from the water, and a foredune behind the Gulf beach.
   const dunes = smooth(-150, -350, bay) * (1 - marsh) * (1 - site) * 4 * smooth(0.4, 0.75, fbm(x / 130 + 2, z / 130 + 6, 3));
