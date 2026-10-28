@@ -171,13 +171,15 @@ export class Craft {
     this.slot.visible = this.door.visible = s.door > 0.001;
     this.door.rotation.x = s.door * 1.2;
 
-    const heat = Math.min(s.heat, 1.2);
+    const speed = Math.hypot(s.vx, s.vy);
+    // Only a belly-first ship glows: on the way up the air meets the nose, not the tiles.
+    const along = speed > 1 ? (Math.cos(s.ang) * s.vx + Math.sin(s.ang) * s.vy) / speed : 1;
+    const heat = Math.min(s.heat, 1.2) * (1 - along * along);
     const pu = this.plasma.material.uniforms;
     this.plasma.visible = heat > 0.01;
     pu.uHeat.value = heat;
     pu.uTime.value = time;
-    const speed = Math.hypot(s.vx, s.vy);
-    this.wake.visible = heat > 0.02 && speed > 1;
+    this.wake.visible = heat > 0.02;
     if (this.wake.visible) {
       const wu = this.wake.material.uniforms;
       wu.uHeat.value = heat;
