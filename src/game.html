@@ -68,6 +68,7 @@
       <div class="actions title-actions">
         <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
         <button class="btn open-board" type="button">Leaderboard</button>
+        <button class="btn open-explore" type="button">Explore</button>
       </div>
     </div>
   </section>
@@ -83,6 +84,7 @@
       <p class="hint keys">or keys: ← → · ↑ ↓ · Space</p>
       <div class="quick-links">
         <button class="ext open-board" type="button">leaderboard</button>
+        <button class="ext open-explore" type="button">explore</button>
         <a class="ext" href="/" target="_blank" rel="noopener">open full screen ↗</a>
       </div>
     </div>
@@ -125,6 +127,16 @@
         <button id="board-back" class="btn" type="button">Back</button>
       </div>
     </div>
+  </section>
+
+  <section id="explore" class="explore hidden" aria-label="Explore mode">
+    <div class="explore-bar">
+      <span class="explore-tag">EXPLORE</span>
+      <button id="explore-photo" class="btn" type="button">Photo</button>
+      <button id="explore-back" class="btn" type="button">Back <kbd>Esc</kbd></button>
+    </div>
+    <p id="explore-hint" class="explore-hint">drag to orbit · scroll or pinch to zoom · right-drag or two fingers to pan</p>
+    <div id="explore-chips" class="explore-chips" role="toolbar" aria-label="Focus on"></div>
   </section>
 
   <div id="demo-title" class="demo-card hidden">

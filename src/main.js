@@ -6,6 +6,7 @@ import { Sound } from './audio.js';
 import { UI } from './ui.js';
 import { loadBoard, addEntry, renderBoard, fetchGlobal, submitGlobal, normalizeHandle, savedHandle, boardRows, localRows, clipRows } from './leaderboard.js';
 import { AutoQuality } from './quality.js';
+import { Explore } from './explore.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
@@ -132,7 +133,8 @@ function runGame() {
   fit();
   window.addEventListener('resize', fit);
   loadFonts();
-  loadModels().then((models) => view.useModels(models));
+  const models = loadModels();
+  models.then((m) => view.useModels(m));
 
   const sound = new Sound();
   let game = new Game({ width: WORLD_W, seed: 1 });
@@ -237,6 +239,15 @@ function runGame() {
     titleEl.classList.remove('hidden');
   }
 
+  const explore = new Explore({ view, models, game: new Game({ width: WORLD_W, seed: 1 }), onExit: showTitle });
+  window.__explore = explore;
+
+  function startExplore(focus = null) {
+    state = 'explore';
+    titleEl.classList.add('hidden');
+    explore.enter(focus);
+  }
+
   function showGameOver() {
     state = 'over';
     touchEl.classList.add('hidden');
@@ -335,7 +346,9 @@ function runGame() {
   $('quick-play').addEventListener('click', startGame);
   $('again').addEventListener('click', showTitle);
   for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
+  for (const b of document.querySelectorAll('.open-explore')) b.addEventListener('click', () => startExplore());
   $('board-back').addEventListener('click', closeBoard);
+  if (params.get('explore') === '1') startExplore(params.get('focus'));
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);
@@ -355,7 +368,7 @@ function runGame() {
     }
     // Outside a flight, Space and Enter press a focused menu button instead of acting as shortcuts.
     const focused = document.activeElement;
-    const onMenuButton = state !== 'playing' && (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement) && !!focused.closest('.overlay');
+    const onMenuButton = state !== 'playing' && (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement) && !!focused.closest('.overlay, #explore');
     if (ev.code === 'Space' && !onMenuButton) {
       ev.preventDefault();
       if (state === 'playing' && !ev.repeat) closeLatch = true;
@@ -433,11 +446,19 @@ function runGame() {
   let last = performance.now();
   let acc = 0;
   const frame = (now) => {
-    acc += Math.min(0.1, (now - last) / 1000);
+    const dt = Math.min(0.1, (now - last) / 1000);
+    acc += dt;
     last = now;
     const idle = paused || document.hidden;
     if (idle) acc = 0;
     quality.frame(now, !idle);
+    if (state === 'explore') {
+      // The sim stays stopped, so it doesn't fast-forward through the time spent exploring.
+      acc = 0;
+      explore.frame(dt);
+      requestAnimationFrame(frame);
+      return;
+    }
     let n = 0;
     while (acc >= DT && n < 6) {
       step();

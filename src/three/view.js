@@ -81,6 +81,8 @@ export class View {
     scene.add(this.guide, this.lane);
 
     this.director = new Director({ cinematic });
+    /** While true, render() leaves the camera to its caller (Explore's orbit controls) instead of the director. */
+    this.free = false;
     this.size = { w: 1280, h: 720 };
     const post = createComposer(renderer, scene, this.camera, 1280 * pixelRatio, 720 * pixelRatio, samples);
     Object.assign(this, post);
@@ -348,7 +350,7 @@ export class View {
     this.crashLight.intensity = ct < 4 ? 14000 * Math.exp(-ct * 1.4) * (0.85 + 0.15 * Math.sin(t * 31)) : 0;
     if (this.crashFx) this.crashLight.position.set(this.crashFx.x, 9, 8);
 
-    this.director.apply(this.camera, game);
+    if (!this.free) this.director.apply(this.camera, game);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
     this.particles.setScale(scale);
     this.particles.update(game.particles, engines);
