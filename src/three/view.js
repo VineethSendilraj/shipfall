@@ -30,7 +30,7 @@ const TALL_ASPECT = 0.8;
 const TALL_LIFT = 0.35;
 
 export class View {
-  constructor(canvas, { pixelRatio = 1, cinematic = false, samples = 4, preserve = false, map = 'starbase' } = {}) {
+  constructor(canvas, { pixelRatio = 1, cinematic = false, titleTime = 0, samples = 4, preserve = false, map = 'starbase' } = {}) {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
     renderer.setPixelRatio(pixelRatio);
     renderer.toneMapping = THREE.AgXToneMapping;
@@ -81,7 +81,7 @@ export class View {
     this.lane = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 6), laneMat);
     scene.add(this.guide, this.lane);
 
-    this.director = new Director({ cinematic });
+    this.director = new Director({ cinematic, titleTime });
     this.size = { w: 1280, h: 720 };
     const post = createComposer(renderer, scene, this.camera, 1280 * pixelRatio, 720 * pixelRatio, samples);
     Object.assign(this, post);
@@ -369,7 +369,7 @@ export class View {
       }
     }
 
-    this.director.apply(this.camera, game);
+    this.director.apply(this.camera, game, { establish: this.world.establish, alpha });
     // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
     this.explosions.update(t - (1 - alpha) * DT, this.camera);
     const scale = (this.size.h * (1 + this.lift) * this.pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
