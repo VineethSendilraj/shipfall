@@ -92,8 +92,17 @@ function sharedGeometry() {
 }
 
 export function createBoosterMaterials(envIntensity = 1) {
+  const steel = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.15, envMapIntensity: envIntensity * 3.2 });
+  // Under MSAA a sample past a silhouette edge can get a normal facing away from the camera, where the highlight
+  // blows up to thousands of times white and bloom flashes it. Real highlights face the camera, so only those are capped.
+  steel.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <opaque_fragment>',
+      'if ( dot( geometryNormal, geometryViewDir ) < 0.0 ) outgoingLight = min( outgoingLight, vec3( 256.0 ) );\n#include <opaque_fragment>',
+    );
+  };
   return {
-    steel: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.15, envMapIntensity: envIntensity * 3.2 }),
+    steel,
     darkSteel: new THREE.MeshStandardMaterial({ color: 0x3a3b3e, metalness: 0.85, roughness: 0.55 }),
     soot: new THREE.MeshStandardMaterial({ color: 0x1c1a19, metalness: 0.6, roughness: 0.85 }),
     fin: new THREE.MeshStandardMaterial({ color: 0x8a8d93, metalness: 0.9, roughness: 0.42 }),
