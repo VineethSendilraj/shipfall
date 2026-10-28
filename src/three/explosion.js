@@ -28,14 +28,14 @@ const puffVert = /* glsl */ `
   attribute vec4 iA; attribute vec4 iB; attribute vec4 iC;
   varying vec2 vUv; varying vec4 vB; varying vec4 vC; varying float vY; varying float vR; varying vec2 vCS;
   void main() {
-    vec4 mvc = viewMatrix * vec4(iA.xyz, 1.0);
+    vec4 mvc = modelViewMatrix * vec4(iA.xyz, 1.0);
     float c = cos(iB.w), s = sin(iB.w);
     vec2 q = position.xy;
     vec2 off = vec2(c * q.x - s * q.y, s * q.x + c * q.y) * iA.w * 2.0;
     gl_Position = projectionMatrix * (mvc + vec4(off, 0.0, 0.0));
     vUv = q + 0.5;
-    // World height of this corner (the view rotation's transpose maps the offset back to world space).
-    vY = iA.y + (vec4(off, 0.0, 0.0) * viewMatrix).y;
+    // Height of this corner above the group's ground (the rotation's transpose maps the offset back to the group's frame).
+    vY = iA.y + (vec4(off, 0.0, 0.0) * modelViewMatrix).y;
     vR = iA.w; vB = iB; vC = iC; vCS = vec2(c, s);
   }`;
 
@@ -127,7 +127,7 @@ function chunkGeometry() {
 }
 
 /** Seeded description of one explosion; everything time-dependent is evaluated from it in update(). */
-function describe({ t, seed, x, bottom, top, drift, gravity }) {
+function describe({ t, seed, x, y, bottom, top, drift, gravity }) {
   const r = createRng(seed >>> 0);
   const up = new THREE.Vector3().subVectors(top, bottom);
   const cap = Array.from({ length: 22 }, () => ({
@@ -162,7 +162,7 @@ function describe({ t, seed, x, bottom, top, drift, gravity }) {
     const el = r.range(0.35, 1.2);
     const speed = r.range(15, 34) * vs;
     const v = new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).multiplyScalar(speed);
-    const p0 = new THREE.Vector3(x + r.range(-4, 4), r.range(3, 14), r.range(-4, 4));
+    const p0 = new THREE.Vector3(x + r.range(-4, 4), y + r.range(3, 14), r.range(-4, 4));
     const land = (v.y + Math.sqrt(v.y * v.y + 2 * gravity * p0.y)) / gravity;
     const plate = r.chance(0.35);
     return {
@@ -177,7 +177,7 @@ function describe({ t, seed, x, bottom, top, drift, gravity }) {
       seed: r.range(0, 10),
     };
   });
-  return { t0: t, x, bottom: bottom.clone(), up, drift, gravity, cap, ground, engulf, skirt, column, debris, ringSeed: r.next(), scorchSeed: r.next(), scorchR: r.range(15, 20), scorchRot: r.range(0, 6.3) };
+  return { t0: t, x, y, bottom: bottom.clone(), up, drift, gravity, cap, ground, engulf, skirt, column, debris, ringSeed: r.next(), scorchSeed: r.next(), scorchR: r.range(15, 20), scorchRot: r.range(0, 6.3) };
 }
 
 /**
@@ -299,7 +299,7 @@ export function createExplosions() {
   }
 
   function capCenter(e, tau, out) {
-    return out.set(e.x + e.drift * tau * 0.55, 6 + 112 * grow(tau, 3.8), 0);
+    return out.set(e.x + e.drift * tau * 0.55, e.y + 6 + 112 * grow(tau, 3.8), 0);
   }
 
   function puffsFor(e, tau) {
@@ -370,7 +370,7 @@ export function createExplosions() {
       if (a <= 0 || a > 14) continue;
       const fade = clamp01(1 - c.te / 4.6);
       const r = (4 + 6.5 * a ** 0.55) * c.R;
-      const y = 3 + 118 * grow(a, 4.2) * c.h;
+      const y = e.y + 3 + 118 * grow(a, 4.2) * c.h;
       const wob = Math.sin(a * 0.7 + c.w) * 3 * Math.min(1, a / 3);
       const smoke = smooth(0, 0.5, a) * 0.7 * Math.exp(-Math.max(0, a - 3) / 4.5) * (0.35 + 0.65 * fade) * fadeOut(a, 10.5, 13.9) * late;
       const heat = 0.55 * Math.exp(-a / 0.25) * Math.exp(-c.te / 1.0);
@@ -419,12 +419,13 @@ export function createExplosions() {
       puffMat.uniforms.uAmb.value.setRGB(...pal.ambient);
     },
     /**
-     * Starts an explosion at sim time t. bottom/top: world ends of the wreck's axis; x: impact x (m);
+     * Starts an explosion at sim time t. In the group's frame: bottom/top: ends of the wreck's axis; x: impact x (m);
+     * y: impact height above the ground (m), where the fireball, smoke column and debris start.
      * drift: wind (m/s, + is +x); seed: from the sim's fx stream.
      */
-    spawn({ t, seed, x, bottom, top, drift }) {
+    spawn({ t, seed, x, y = 0, bottom, top, drift }) {
       const sign = drift >= 0 ? 1 : -1;
-      const e = describe({ t, seed, x, bottom, top, drift: sign * Math.min(6, Math.max(1.6, Math.abs(drift) * 2)), gravity: pal.gravity });
+      const e = describe({ t, seed, x, y, bottom, top, drift: sign * Math.min(6, Math.max(1.6, Math.abs(drift) * 2)), gravity: pal.gravity });
       active.push(e);
       if (active.length > MAX_ACTIVE) active.shift();
       scorches.push({ t0: t, x, seed: e.scorchSeed, r: e.scorchR, rot: e.scorchRot });
@@ -437,9 +438,11 @@ export function createExplosions() {
       active = active.filter((e) => t > e.t0 - 0.1 && t - e.t0 < LIFE);
       scorches = scorches.filter((s) => t > s.t0 - 0.1 && t - s.t0 < SCORCH_LIFE + 4);
       camera.updateMatrixWorld();
-      camera.getWorldPosition(camPos);
-      camera.getWorldDirection(camDir);
-      puffMat.uniforms.uLight.value.copy(pal.keyDir).transformDirection(camera.matrixWorldInverse);
+      // Puffs are placed and sorted in the group's frame, which free flight turns onto a crash site anywhere on the planet.
+      const turn = group.getWorldQuaternion(q);
+      puffMat.uniforms.uLight.value.copy(pal.keyDir).applyQuaternion(turn).transformDirection(camera.matrixWorldInverse);
+      group.worldToLocal(camera.getWorldPosition(camPos));
+      camera.getWorldDirection(camDir).applyQuaternion(turn.invert());
 
       n = 0;
       let li = 0;
@@ -453,7 +456,7 @@ export function createExplosions() {
         if (tau < 5) {
           const L = 46000 * easeIn(tau, 0.12) * (0.72 * Math.exp(-tau / 0.24) + 0.28 * Math.exp(-tau / 1.1)) * (0.88 + 0.12 * Math.sin(tau * 29 + e.ringSeed * 9)) * fadeOut(tau, 4, 4.95);
           capCenter(e, tau, v3);
-          lp.addScaledVector(v3.setY(Math.min(v3.y, 30) + 4).setZ(8), L);
+          lp.addScaledVector(v3.setY(Math.min(v3.y, e.y + 30) + 4).setZ(8), L);
           li += L;
         }
         const ring = ringMeshes[i];

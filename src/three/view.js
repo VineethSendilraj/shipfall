@@ -13,9 +13,9 @@ const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
 const ENGINE_EXIT = { booster: ENGINE_Y, ship: SHIP_ENGINE_Y };
 // One slot (and engine light) per vehicle on screen; every lit pixel pays for each light, so keep it at three.
 const SLOT_KINDS = ['booster', 'booster', 'ship'];
-const COL_IDLE = new THREE.Color(0.25, 0.95, 1.5);
-const COL_READY = new THREE.Color(0.35, 2.6, 0.75);
-const COL_OFF = new THREE.Color(0.08, 0.25, 0.35);
+export const COL_IDLE = new THREE.Color(0.25, 0.95, 1.5);
+export const COL_READY = new THREE.Color(0.35, 2.6, 0.75);
+export const COL_OFF = new THREE.Color(0.08, 0.25, 0.35);
 
 /** Render quality levels, best first. The auto-quality monitor steps down this list when frames run slow. */
 export const QUALITY = [
