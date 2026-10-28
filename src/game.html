@@ -52,10 +52,9 @@
         <div><kbd>↑</kbd><kbd>↓</kbd> <kbd>W</kbd><kbd>S</kbd><span>move the catch arms</span></div>
         <div><kbd class="wide">Space</kbd><span>close the arms</span></div>
       </div>
-      <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
-      <div class="board">
-        <h2 id="board-title-h">Your best catches</h2>
-        <ol id="board-title"></ol>
+      <div class="actions title-actions">
+        <button id="play" class="btn primary" type="button">Start mission <span>↵</span></button>
+        <button class="btn open-board" type="button">Leaderboard</button>
       </div>
     </div>
   </section>
@@ -69,7 +68,10 @@
       </button>
       <p class="hint">◀ ▶ steer · ▲ ▼ arms · <b>CATCH</b> on green</p>
       <p class="hint keys">or keys: ← → · ↑ ↓ · Space</p>
-      <a class="ext" href="/" target="_blank" rel="noopener">open full screen ↗</a>
+      <div class="quick-links">
+        <button class="ext open-board" type="button">leaderboard</button>
+        <a class="ext" href="/" target="_blank" rel="noopener">open full screen ↗</a>
+      </div>
     </div>
   </section>
 
@@ -79,25 +81,33 @@
       <h1 class="go-score"><span id="go-score">0</span><small>pts</small></h1>
       <p class="lede" id="go-stats"></p>
       <form id="initials-form" class="initials hidden" autocomplete="off" novalidate>
-        <label for="initials">Put your score on the leaderboard</label>
+        <label for="initials">Add your X @ to the leaderboard</label>
         <div class="initials-row">
-          <div class="handle-field"><span aria-hidden="true">@</span><input id="initials" maxlength="16" placeholder="your X handle" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" /></div>
+          <div class="handle-field"><span aria-hidden="true">@</span><input id="initials" maxlength="16" placeholder="yourhandle" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" /></div>
           <button class="btn primary" type="submit">Submit</button>
         </div>
         <p class="form-note" id="initials-note" aria-live="polite"></p>
       </form>
-      <div class="board">
-        <h2 id="board-over-h">Your best catches</h2>
-        <ol id="board-over"></ol>
-      </div>
       <div class="actions">
         <button id="again" class="btn primary" type="button">Fly again</button>
         <a id="share" class="btn share" href="https://x.com/intent/post" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>
           Post on X
         </a>
+        <button class="btn open-board" type="button">Leaderboard</button>
       </div>
-      <button id="to-title" class="link" type="button">Back to title</button>
+    </div>
+  </section>
+
+  <section id="leaderboard" class="overlay hidden">
+    <div class="card">
+      <div class="board">
+        <h2 id="board-h">Your best catches</h2>
+        <ol id="board"></ol>
+      </div>
+      <div class="actions">
+        <button id="board-back" class="btn" type="button">Back</button>
+      </div>
     </div>
   </section>
 

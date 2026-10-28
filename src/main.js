@@ -149,23 +149,41 @@ function runGame() {
   const form = $('initials-form');
   const handleInput = $('initials');
   const formNote = $('initials-note');
+  const boardEl = $('leaderboard');
 
-  // Small embeds show fewer rows so the game over actions stay on screen.
-  const overRows = () => (document.body.classList.contains('compact') ? 6 : 10);
+  // Small embeds show fewer rows so the whole board fits.
+  const boardSize = () => (document.body.classList.contains('compact') ? 8 : 10);
+  let worldwide = null;
+  let mine = -1;
+  let boardOpener = null;
+
+  function renderWorldwide(data) {
+    renderBoard($('board'), boardRows(data, boardSize()));
+    $('board-h').textContent = data.total ? `Worldwide · ${data.total.toLocaleString('en-US')} player${data.total === 1 ? '' : 's'}` : 'Worldwide';
+  }
 
   /** Shows the worldwide board (with the player's place if they're on it), otherwise this device's best runs. */
-  async function showBoard(ol, heading, size, data = null) {
-    if (!data) {
-      renderBoard(ol, localRows());
-      heading.textContent = 'Your best catches';
-      data = await fetchGlobal(savedHandle());
+  async function openBoard(ev) {
+    boardOpener = ev.currentTarget;
+    boardOpener.closest('.overlay').classList.add('hidden');
+    if (worldwide) renderWorldwide(worldwide);
+    else {
+      renderBoard($('board'), localRows(loadBoard(), mine));
+      $('board-h').textContent = 'Your best catches';
     }
-    if (data) {
-      renderBoard(ol, boardRows(data, size));
-      heading.textContent = data.total ? `Worldwide · ${data.total.toLocaleString('en-US')} player${data.total === 1 ? '' : 's'}` : 'Worldwide';
-    }
+    boardEl.classList.remove('hidden');
+    $('board-back').focus({ preventScroll: true });
+    const data = await fetchGlobal(savedHandle());
+    if (!data) return;
+    worldwide = data;
+    if (!boardEl.classList.contains('hidden')) renderWorldwide(data);
   }
-  showBoard($('board-title'), $('board-title-h'), 5);
+
+  function closeBoard() {
+    boardEl.classList.add('hidden');
+    boardOpener.closest('.overlay').classList.remove('hidden');
+    boardOpener.focus({ preventScroll: true });
+  }
 
   const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   // The embed always shows on-screen buttons: they are the mouse controls inside an X post.
@@ -196,7 +214,6 @@ function runGame() {
     state = 'title';
     game = new Game({ width: WORLD_W, seed: 1 });
     view.director.reset();
-    showBoard($('board-title'), $('board-title-h'), 5);
     overEl.classList.add('hidden');
     touchEl.classList.add('hidden');
     document.body.classList.remove('touch-ui', 'playing');
@@ -221,7 +238,7 @@ function runGame() {
     formNote.classList.remove('placed');
     form.querySelector('.initials-row').classList.remove('hidden');
     form.querySelector('label').classList.remove('hidden');
-    showBoard($('board-over'), $('board-over-h'), overRows());
+    mine = -1;
     overEl.classList.remove('hidden');
     // Focusing the input on a phone pops the keyboard over the card, so only desktop gets autofocus.
     if (canSubmit && !isTouch) setTimeout(() => handleInput.focus(), 50);
@@ -248,9 +265,9 @@ function runGame() {
     const s = game.stats;
     formNote.textContent = 'Submitting…';
     const res = await submitGlobal({ handle, score: game.score, catches: s.catches, perfects: s.perfects, rounds: game.round });
-    const { list, index } = addEntry(handle, game.score, game.round);
+    const { index } = addEntry(handle, game.score, game.round);
     if (res?.rank) {
-      await showBoard($('board-over'), $('board-over-h'), overRows(), res);
+      worldwide = res;
       const place = `#${res.rank.toLocaleString('en-US')} of ${res.total.toLocaleString('en-US')}`;
       formNote.textContent = res.best > game.score ? `Your best is still ${res.best.toLocaleString('en-US')} (${place})` : `You're ${place}`;
       formNote.classList.add('placed');
@@ -259,8 +276,7 @@ function runGame() {
       formNote.textContent = res.error;
       return;
     } else {
-      renderBoard($('board-over'), localRows(list, index));
-      $('board-over-h').textContent = 'Your best catches';
+      mine = index;
       formNote.textContent = 'Saved on this device';
     }
     form.querySelector('.initials-row').classList.add('hidden');
@@ -296,8 +312,9 @@ function runGame() {
 
   $('play').addEventListener('click', startGame);
   $('quick-play').addEventListener('click', startGame);
-  $('again').addEventListener('click', startGame);
-  $('to-title').addEventListener('click', showTitle);
+  $('again').addEventListener('click', showTitle);
+  for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
+  $('board-back').addEventListener('click', closeBoard);
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);
@@ -306,18 +323,28 @@ function runGame() {
   const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
   window.addEventListener('keydown', (ev) => {
     if (ev.target instanceof HTMLInputElement) return;
+    if (!boardEl.classList.contains('hidden')) {
+      if (ev.code === 'Escape') closeBoard();
+      return;
+    }
     const k = KEYMAP[ev.code];
     if (k) {
       held[k] = true;
       ev.preventDefault();
     }
-    if (ev.code === 'Space') {
+    // Outside a flight, Space and Enter press a focused menu button instead of acting as shortcuts.
+    const focused = document.activeElement;
+    const onMenuButton = state !== 'playing' && (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement) && !!focused.closest('.overlay');
+    if (ev.code === 'Space' && !onMenuButton) {
       ev.preventDefault();
       if (state === 'playing' && !ev.repeat) closeLatch = true;
       else if (state === 'title' && !ev.repeat) startGame();
     }
-    if (ev.code === 'Enter' && !ev.repeat) {
-      if (state === 'title' || (state === 'over' && !(document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement))) startGame();
+    if (ev.code === 'Enter' && !ev.repeat && !onMenuButton) {
+      if (state === 'title') {
+        ev.preventDefault();
+        startGame();
+      } else if (state === 'over') showTitle();
     }
     if (ev.code === 'KeyM') {
       unlocked = true;
