@@ -76,6 +76,7 @@ export class View {
       return { ...b, kind, plume, light, id: null };
     });
 
+    for (const s of this.pool) s.plume.setPalette(this.world.fx);
     this.particles = createParticles(toX, toY);
     this.particles.setPalette(this.world.fx);
     scene.add(this.particles.group);
@@ -251,6 +252,7 @@ export class View {
         console.error('props model unusable; keeping the procedural one', err);
       }
     }
+    for (const s of this.pool) s.plume.setPalette(this.world.fx);
     this.particles.setPalette(this.world.fx);
     this.explosions.setPalette(this.world.fx);
     if (this.quality) this.setQuality(this.quality);

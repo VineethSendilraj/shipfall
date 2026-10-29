@@ -24,6 +24,9 @@ export function loadModels(base = `${import.meta.env.BASE_URL}models/`) {
 }
 
 const aoMaterials = new WeakMap();
+// Under MSAA, an edge sample of a sub-pixel triangle extrapolates the AO color far past 1 (a one-frame glint on
+// thin parts), unless it is interpolated at the centroid of the covered samples.
+const CENTROID_COLOR = 'centroid varying vec4 vColor;';
 
 /** The vertex-colored twin of a role material, made once and shared by every mesh with baked AO. */
 function withVertexColors(mat) {
@@ -32,7 +35,12 @@ function withVertexColors(mat) {
     twin = mat.clone();
     twin.vertexColors = true;
     // clone() does not copy onBeforeCompile.
-    twin.onBeforeCompile = mat.onBeforeCompile;
+    twin.onBeforeCompile = (shader, renderer) => {
+      mat.onBeforeCompile(shader, renderer);
+      shader.vertexShader = shader.vertexShader.replace('#include <color_pars_vertex>', CENTROID_COLOR);
+      shader.fragmentShader = shader.fragmentShader.replace('#include <color_pars_fragment>', CENTROID_COLOR);
+    };
+    twin.customProgramCacheKey = () => `${mat.customProgramCacheKey()}|centroid-color`;
     aoMaterials.set(mat, twin);
   }
   return twin;

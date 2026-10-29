@@ -475,7 +475,7 @@ export class FlightView {
     const base = this.plumes[i];
     const w = wide * (1 + 1.5 * vac);
     slot.plume.group.scale.set(base.x * w, base.y * (1 + 0.4 * vac), base.z * w);
-    slot.plume.update(thr, f.real, Math.max(0, Math.min(alt, reach)));
+    slot.plume.update(thr, f.real, Math.max(0, Math.min(alt, reach)), Math.max(0, alt));
     slot.throatMat.color.setRGB(7 * thr + 0.02, 3 * thr, 0.9 * thr);
     slot.light.position.set(ex - c * 10, ey - sn * 10, 6);
     slot.light.intensity = thr > 0.02 ? 650 * (0.25 + thr) * wide : 0;
