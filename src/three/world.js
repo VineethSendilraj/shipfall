@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { concrete, puffNoise } from './textures.js';
+import { ATLAS_BANDS, ATLAS_M, concrete, outbuildingAtlas, puffNoise } from './textures.js';
 import { createRng, hash01 } from '../rng.js';
 import { instantiate } from './models.js';
 import { buildMars } from './mars.js';
@@ -733,6 +733,112 @@ function farTown(root, rng) {
   tints.forEach((c, i) => root.add(new THREE.Mesh(mergeGeometries(boxes[i]), new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 }))));
 }
 
+/**
+ * Maps a part into the outbuilding atlas: u runs along each face, ATLAS_M meters per repeat (shifted by du);
+ * v sits mid-band, or with `stretch` spans the band over the part's height. Faces looking up take `top`.
+ */
+function atlasPart(geo, band, { top = band, stretch = false, du = 0 } = {}) {
+  geo.computeBoundingBox();
+  const { min, max } = geo.boundingBox;
+  const pos = geo.attributes.position;
+  const nor = geo.attributes.normal;
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    const ny = nor.getY(i);
+    const along = Math.abs(nor.getX(i)) > 0.5 ? pos.getZ(i) : pos.getX(i);
+    const [v0, v1] = ATLAS_BANDS[ny > 0.5 ? top : band];
+    const v = stretch && Math.abs(ny) < 0.5 ? lerp(v0, v1, (pos.getY(i) - min.y) / (max.y - min.y)) : (v0 + v1) / 2;
+    uv.setXY(i, (along + du) / ATLAS_M, v);
+  }
+  return geo;
+}
+
+/**
+ * The outbuildings as one mesh on one atlas: ribbed and weathered cladding on a concrete plinth under a
+ * trimmed roof, roll-up doors (very tall slots on the high bays), window bands, rooftop units and vents,
+ * and light poles at the corners of each yard. Doors face south, toward the road and the cameras.
+ */
+function outbuildings() {
+  const parts = [];
+  const box = (x, y, z, sx, sy, sz) => new THREE.BoxGeometry(sx, sy, sz).translate(x, y + sy / 2, z);
+  const add = (geo, band, opts) => parts.push(atlasPart(geo, band, opts));
+  BUILDINGS.forEach(([x, z, w, d, h], i) => {
+    const rng = createRng(500 + i);
+    const bay = h >= 18;
+    add(box(x, 0, z, w + 0.6, 0.6, d + 0.6), 'concrete');
+    add(box(x, 0, z, w, h, d), i % 3 ? 'wallA' : 'wallB', { top: 'roof', stretch: true, du: rng.range(0, ATLAS_M) });
+    add(box(x, h, z, w + 0.4, 0.5, d + 0.4), 'trim', { top: 'roof' });
+
+    // South, north, east, west. A panel sits on a face, `s` meters along it from the middle, `out` proud of it.
+    const faces = [
+      { n: [0, 1], len: w, c: [x, z + d / 2] },
+      { n: [0, -1], len: w, c: [x, z - d / 2] },
+      { n: [1, 0], len: d, c: [x + w / 2, z] },
+      { n: [-1, 0], len: d, c: [x - w / 2, z] },
+    ];
+    const panel = (f, s, y0, pw, ph, out, band, stretch = false) => {
+      const [nx, nz] = f.n;
+      const cx = f.c[0] + (nz ? s : (nx * out) / 2);
+      const cz = f.c[1] + (nz ? (nz * out) / 2 : s);
+      add(box(cx, y0, cz, nz ? pw : out, ph, nz ? out : pw), band, { stretch });
+    };
+    const door = (f, s, dw, dh, tall) => {
+      panel(f, s, 0, dw + (tall ? 1.6 : 0.6), dh + (tall ? 1 : 0.4), 0.2, 'dark');
+      panel(f, s, 0, dw, dh, 0.35, tall ? 'doorTall' : 'doorShort', true);
+    };
+    const [south, north, east, west] = faces;
+    // The short side the site cameras see: west for the buildings east of the pad, east for the rest.
+    const near = x > 0 ? west : east;
+    const far = x > 0 ? east : west;
+    if (bay) {
+      const n = w > 90 ? 2 : 1;
+      const dh = 0.86 * h;
+      const dw = Math.min(0.3 * w, 0.7 * dh);
+      for (let k = 0; k < n; k++) door(south, n === 1 ? 0 : (k - 0.5) * w * 0.48, dw, dh, true);
+      for (const f of [north, east, west]) panel(f, 0, h - 3.4, f.len * 0.84, 1.8, 0.1, 'window');
+      door(near, -near.len * 0.25, 5, 6, false);
+      panel(near, near.len * 0.2, 0, 1.2, 2.4, 0.15, 'dark');
+    } else {
+      const n = Math.max(1, Math.min(3, Math.floor(w / 11)));
+      const spacing = Math.min(7.5, w / n);
+      const dh = Math.min(5.5, h * 0.62);
+      for (let k = 0; k < n; k++) door(south, -w * 0.1 + (k - (n - 1) / 2) * spacing, 4.5, dh, false);
+      panel(south, w / 2 - 2.5, 0, 1.1, 2.3, 0.15, 'dark');
+      panel(south, w * 0.3, Math.max(2.6, h * 0.55), w * 0.25, 1.2, 0.1, 'window');
+      door(near, -near.len * 0.22, 4, Math.min(4.5, dh), false);
+      panel(near, near.len * 0.2, Math.max(2.4, h * 0.5), near.len * 0.36, 1.2, 0.1, 'window');
+      for (const f of [north, far]) panel(f, 0, h * 0.55, f.len * 0.8, 1.2, 0.1, 'window');
+    }
+
+    // Rooftop units and vents, kept inside the parapet.
+    const k = bay ? 1.8 : 1;
+    const units = bay ? 5 : 2 + Math.floor(rng.next() * 3);
+    for (let u = 0; u < units + 3; u++) {
+      const ux = x + rng.range(-0.38, 0.38) * w;
+      const uz = z + rng.range(-0.34, 0.34) * d;
+      if (u < units) add(box(ux, h + 0.5, uz, rng.range(1.8, 3.2) * k, rng.range(1, 1.6) * k, rng.range(1.4, 2.4) * k), u % 2 ? 'dark' : 'trim', { top: 'trim' });
+      else add(new THREE.CylinderGeometry(0.35 * k, 0.35 * k, 1.2 * k, 6).translate(ux, h + 0.5 + 0.6 * k, uz), 'dark');
+    }
+
+    // Light poles at two corners of the yard.
+    const ph = bay ? 16 : 11;
+    for (const [sx, sz] of [
+      [-1, 1],
+      [1, -1],
+    ]) {
+      const px = x + sx * (w / 2 + 7);
+      const pz = z + sz * (d / 2 + 7);
+      add(box(px, 0, pz, 0.3, ph, 0.3), 'dark');
+      add(box(px - sx * 0.7, ph - 0.3, pz, 1.6, 0.25, 0.25), 'dark');
+      add(box(px - sx * 1.3, ph - 0.6, pz, 0.7, 0.3, 0.5), 'trim');
+    }
+  });
+  const { map, roughnessMap } = outbuildingAtlas();
+  const mesh = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshStandardMaterial({ map, roughnessMap, roughness: 1, metalness: 0.05 }));
+  mesh.castShadow = mesh.receiveShadow = true;
+  return mesh;
+}
+
 function siteDressing(root, rng, towerMats) {
   const steel = new THREE.MeshStandardMaterial({ color: 0x8f949b, metalness: 0.6, roughness: 0.5 });
   const { olm, dark } = launchMount(steel, towerMats.concrete);
@@ -830,12 +936,7 @@ function siteDressing(root, rng, towerMats) {
     root.add(mesh);
   }
 
-  const sheds = new THREE.Mesh(
-    mergeGeometries(BUILDINGS.map(([x, z, w, d, h]) => new THREE.BoxGeometry(w, h, d).translate(x, h / 2, z))),
-    new THREE.MeshStandardMaterial({ color: 0xc8cacc, metalness: 0.1, roughness: 0.7 }),
-  );
-  sheds.castShadow = sheds.receiveShadow = true;
-  root.add(sheds);
+  root.add(outbuildings());
 
   towerB(root, towerMats.lattice);
   farTown(root, createRng(77));
