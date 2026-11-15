@@ -604,3 +604,14 @@ body.compact .home-links .ext { padding: 6px 7px; }
 
 /* Until a tap turns sound on, the intro's hint asks for that tap; the next one skips. */
 body.intro.sound-locked #app::after { content: 'tap for sound'; }
+
+/* Home footer: the links centered along the bottom, the disclaimer tiny and centered under them. */
+.home > .home-links, body.compact .home > .home-links { left: 0; right: 0; justify-content: center; bottom: 16px; }
+body.tall .home > .home-links { bottom: calc(env(safe-area-inset-bottom) + 16px); }
+.disclaimer, body.compact .disclaimer { left: 50%; transform: translateX(-50%); bottom: 4px; font-size: 6.5px; letter-spacing: 0.12em; padding: 0; background: none; color: rgba(230, 237, 255, 0.45); }
+body.compact .disclaimer { font-size: 6px; bottom: 3px; }
+body.tall .disclaimer { bottom: calc(env(safe-area-inset-bottom) + 3px); }
+/* The dock sits above the centered footer links. */
+.home-dock { bottom: 64px; }
+body.compact .home-dock { bottom: 50px; }
+body.tall .home-dock { bottom: calc(env(safe-area-inset-bottom) + 80px); }

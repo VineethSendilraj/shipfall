@@ -99,8 +99,8 @@ const BOOSTER_CATCH = [
 // Per vehicle: keys, when the arms close, where its pins sit in the arms, how far its middle is below them, its engines.
 const CATCHES = {
   ship: { keys: CATCH, close: CATCH_CLOSE, pins: SHIP_PINS, c: VEHICLES.ship.center / PX_PER_M, engineY: SHIP_ENGINE_Y, wobble: 0.7 },
-  // The booster is caught hovering well above the launch mount, not down on it; it wobbles as its grid fins steer.
-  booster: { keys: BOOSTER_CATCH, close: [14.6, 15.4], pins: BOOSTER_Y + 45, c: VEHICLES.booster.center / PX_PER_M, engineY: ENGINE_Y, wobble: 1 },
+  // The booster is caught as high up the tower as the ship, well clear of the mount; it wobbles as its grid fins steer.
+  booster: { keys: BOOSTER_CATCH, close: [14.6, 15.4], pins: SHIP_PINS, c: VEHICLES.booster.center / PX_PER_M, engineY: ENGINE_Y, wobble: 1 },
 };
 // The intro on opening the game: the ship catch from this many seconds in, played this much faster.
 const INTRO = { from: 4.5, speed: 1.6 };
