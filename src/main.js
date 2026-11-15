@@ -434,10 +434,6 @@ function runGame() {
   for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
   $('board-back').addEventListener('click', closeBoard);
   $('pause-btn').addEventListener('click', () => state === 'playing' && !flight && setPaused(true));
-  $('recenter-btn').addEventListener('click', (e) => {
-    view.orbit.reset();
-    e.currentTarget.blur();
-  });
   $('resume').addEventListener('click', () => setPaused(false));
   $('restart').addEventListener('click', startGame);
   $('home').addEventListener('click', showTitle);
@@ -487,7 +483,6 @@ function runGame() {
       unlocked = true;
       setSound(!sound.enabled);
     }
-    if (ev.code === 'KeyC' && state === 'playing') view.orbit.reset();
     if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing' && !flight) setPaused(true);
     else if (ev.code === 'Escape' && flight) showTitle();
   });

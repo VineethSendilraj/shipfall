@@ -111,9 +111,6 @@ export class Orbit {
     this.yaw += (w.yaw - this.yaw) * k;
     this.pitch += (w.pitch - this.pitch) * k;
     this.zoom += (w.zoom - this.zoom) * k;
-    // body.cam-moved shows the recenter button while the view is off the director's shot.
-    const moved = Math.abs(w.yaw) > 0.01 || Math.abs(w.pitch) > 0.01 || Math.abs(w.zoom - 1) > 0.01;
-    if (moved !== this.moved) document.body.classList.toggle('cam-moved', (this.moved = moved));
     if (Math.abs(this.yaw) < 1e-4 && Math.abs(this.pitch) < 1e-4 && Math.abs(this.zoom - 1) < 1e-4) return pos;
     const rel = pos.sub(tgt);
     const r = rel.length();
