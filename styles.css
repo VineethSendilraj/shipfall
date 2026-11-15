@@ -525,7 +525,7 @@ body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 
 
 /* -------------------------------------------------------------- caps pass: labels, toggles, buttons */
 .map-pick button, .modes button, .btn, .ext, .pick-name, .disclaimer, .how .controls span:last-child { text-transform: uppercase; }
-.map-pick button { font-size: 12px; letter-spacing: 0.14em; }
+.map-pick button { font-size: 12px; letter-spacing: 0.14em; white-space: nowrap; }
 .modes button { font-size: 13px; letter-spacing: 0.12em; }
 .btn { letter-spacing: 0.1em; font-size: 14px; }
 .pick-name { letter-spacing: 0.06em; }
