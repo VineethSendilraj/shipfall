@@ -8,7 +8,7 @@ Catch a falling Starship with the tower's arms. A 3D browser game you can play r
 
 ![A ship caught by the tower's arms](docs/media/shipfall-catch.gif)
 
-Watch with sound: [Starbase](docs/media/shipfall-catch-starbase.mp4) · [Mars](docs/media/shipfall-catch-mars.mp4)
+Watch with sound: [ship catch at Starbase, TX](docs/media/shipfall-catch-starbase.mp4) · [booster catch on Mars](docs/media/shipfall-catch-mars.mp4)
 
 ## How to play
 
