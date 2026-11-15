@@ -465,14 +465,13 @@ function runGame() {
     if (remember) writeSoundPref(on);
   }
 
-  // Browsers only start audio inside a user gesture (iOS: a touch end or click), so every gesture tries until it runs.
-  const GESTURES = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
+  // Browsers only start audio inside a user gesture (iOS: a touch end or click), so any gesture restarts it while it
+  // isn't running: on first load, and after coming back to a page iOS suspended in the background.
   const unlockAudio = (ev) => {
     if (soundBtn.contains(ev.target) || $('pause-sound').contains(ev.target)) return;
-    if (sound.enabled) sound.unlock();
-    if (sound.running) for (const t of GESTURES) window.removeEventListener(t, unlockAudio, { capture: true });
+    if (sound.enabled && !sound.running && !document.hidden) sound.unlock();
   };
-  for (const t of GESTURES) window.addEventListener(t, unlockAudio, { capture: true });
+  for (const t of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(t, unlockAudio, { capture: true });
   // Sound is on unless the player muted it. The context starts suspended until a gesture where the browser requires one.
   setSound(readSoundPref(), false);
 
@@ -490,7 +489,10 @@ function runGame() {
   $('home').addEventListener('click', showTitle);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && state === 'playing') setPaused(true);
+    // The engine drone would otherwise keep going after switching apps or closing the in-app browser.
+    sound.setBackground(document.hidden);
   });
+  window.addEventListener('pagehide', () => sound.setBackground(true));
   if (params.get('explore') === '1') startExplore(params.get('focus'));
   // Opening the game plays a short ship catch, then the home screen (?intro=0 skips it).
   else if (!FLIGHT && params.get('intro') !== '0') startExplore('catch', { intro: true });

@@ -14,6 +14,13 @@ export class Sound {
     }
   }
 
+  /** Silences everything while the page is hidden; picks back up on return if sound is on. */
+  setBackground(hidden) {
+    if (!this.ctx) return;
+    if (hidden) this.ctx.suspend();
+    else if (this.enabled) this.ctx.resume();
+  }
+
   get running() {
     return this.ctx?.state === 'running';
   }

@@ -585,3 +585,7 @@ body.demo .boot { display: none; }
 /* Small embeds: the disclaimer shrinks so it clears the links along the bottom. */
 body.compact .disclaimer { font-size: 6.5px; letter-spacing: 0.06em; padding: 1px 5px; }
 body.compact .home-links .ext { padding: 6px 7px; }
+
+/* No text selection or iOS copy/look-up callout when a finger rests on the game; the handle field still types. */
+#app, #app * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#app input { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
