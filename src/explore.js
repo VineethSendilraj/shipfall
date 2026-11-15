@@ -104,6 +104,10 @@ const CATCHES = {
 };
 // The intro on opening the game: the ship catch from this many seconds in, played this much faster.
 const INTRO = { from: 4.5, speed: 1.6 };
+// The tabs' replays skip the first seconds of the vehicle far up the sky.
+const REPLAY_FROM = 3;
+// Exhaust smoke shows below this height (m), around the tower.
+const SMOKE_ALT = 230;
 // The Mars haze hides a replay seen from hundreds of meters; it thins to this share while one plays.
 const REPLAY_FOG = 0.35;
 // The replay's two fixed corner cameras (from the foot): high over the front-left corner, framing the tower and the
@@ -411,7 +415,7 @@ export class Explore {
     // The arms wait at the vehicle's pins.
     this.game.towers[0].armY = GROUND_Y - CATCHES[kind].pins * PX_PER_M;
     this.thinned = new Map();
-    this.replay = { t: this.intro ? INTRO.from : 0, speed: this.intro ? INTRO.speed : 1, auto: true, kind, vehicle, ...CATCHES[kind] };
+    this.replay = { t: this.intro ? INTRO.from : REPLAY_FROM, speed: this.intro ? INTRO.speed : 1, auto: true, kind, vehicle, ...CATCHES[kind] };
     document.body.classList.add('replaying');
     this.flight = null;
     this.stack.root.visible = false;
@@ -547,10 +551,11 @@ export class Explore {
     const py = GROUND_Y - alt * PX_PER_M;
     const [ex, ey] = [Math.sin(s.a), Math.cos(s.a)];
     if (dt > 0 && s.thr > 0.05) {
-      // A cloud of exhaust smoke left hanging behind the descending vehicle.
-      for (let n = Math.round(dt * 60 * (1 + s.thr * 2)); n > 0; n--) {
+      // Exhaust smoke hangs behind the vehicle only once it is down by the tower, thickening as it nears the ground.
+      const near = Math.max(0, 1 - alt / SMOKE_ALT);
+      for (let n = Math.round(dt * 60 * near * (1 + 1.5 * s.thr)); n > 0; n--) {
         const sp = f.range(150, 260) * s.thr;
-        g.pushParticle({ k: 1, x: px + ex * 30 + f.range(-8, 8), y: py + ey * 30, vx: ex * sp + f.range(-25, 25), vy: ey * sp, t: 0, life: f.range(1.6, 2.8), size: f.range(16, 28), grow: 55 });
+        g.pushParticle({ k: 1, x: px + ex * 30 + f.range(-8, 8), y: py + ey * 30, vx: ex * sp + f.range(-25, 25), vy: ey * sp, t: 0, life: f.range(1.2, 2.2), size: f.range(12, 22), grow: 45 });
       }
       // The blast hits the ground below 90 m: billowing dust and steam thrown out both ways.
       const k = Math.max(0, 1 - alt / 90) * s.thr;

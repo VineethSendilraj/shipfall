@@ -91,11 +91,11 @@ function makeTower(idx, side, x) {
 }
 
 export class Game {
-  constructor({ width = 1280, seed = 1, maxRounds = Infinity, overrides = null, target = 'booster', spawnY = SPAWN_Y, stagger = false } = {}) {
-    // Live play drops from higher and, in a double round, holds the second vehicle until the first is down;
-    // the demo and the tests keep the original timing so their scripted inputs still fly the same.
+  constructor({ width = 1280, seed = 1, maxRounds = Infinity, overrides = null, target = 'booster', spawnY = SPAWN_Y, live = false } = {}) {
+    // Live play drops from higher, always from the side away from the tower, and in a double round holds the second
+    // vehicle until the first is down; the demo and the tests keep the original rounds so their scripted inputs still fly.
     this.spawnY = spawnY;
-    this.stagger = stagger;
+    this.live = live;
     this.W = width;
     this.seed = seed >>> 0;
     this.maxRounds = maxRounds;
@@ -165,12 +165,14 @@ export class Game {
       vHover: Math.min(2.5, 1.3 + d * 0.17) * PX_PER_M,
       hoverLen: Math.max(11, 22 - d * 2.2),
       zeroY: r.range(ARM_MIN + 30, ARM_MAX - 15),
-      spawnDx: towardTower ? toward * r.range(15, 42) : -toward * r.range(60 + d * 10, 110 + d * 16),
+      // Live play never starts on the tower's side, where the vehicle would fall against the tower: the near draw
+      // starts just off the catch lane on the open side instead.
+      spawnDx: towardTower ? (this.live ? -1 : 1) * toward * r.range(15, 42) : -toward * r.range(60 + d * 10, 110 + d * 16),
       vx0: r.range(-12 - d * 4, 12 + d * 4),
     };
     // The ship starts well out on the far side and drifts in toward its tower, rather than dropping straight onto it.
     if (kind === 'ship') {
-      p.spawnDx -= toward * 90;
+      p.spawnDx -= toward * (this.live ? 40 : 90);
       p.vx0 = toward * (18 + Math.abs(p.vx0));
     }
     const o = this.overrides[this.round]?.boosters?.[slot];
@@ -233,7 +235,7 @@ export class Game {
         vy: p.vy0,
         fuel: 100,
         state: i === 0 ? 'falling' : 'waiting',
-        delay: i * (this.stagger ? STAGGER_DELAY : SECOND_BOOSTER_DELAY),
+        delay: i * (this.live ? STAGGER_DELAY : SECOND_BOOSTER_DELAY),
         throttle: 0,
         burning: false,
         cutoff: false,
@@ -443,7 +445,7 @@ export class Game {
     for (const b of this.boosters) {
       switch (b.state) {
         case 'waiting':
-          if (this.stagger && this.boosters.some((o) => o !== b && o.state === 'falling')) break;
+          if (this.live && this.boosters.some((o) => o !== b && o.state === 'falling')) break;
           b.delay -= DT;
           if (b.delay <= 0) {
             b.state = 'falling';

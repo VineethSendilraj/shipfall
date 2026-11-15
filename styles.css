@@ -315,17 +315,19 @@ body.compact .actions { margin-top: 12px; gap: 8px; }
 body.compact .actions .btn { padding: 10px 10px; font-size: 14px; }
 body.compact .coach { font-size: 12px; bottom: 30px; padding: 5px 10px; }
 body.touch-ui .coach, body.compact.touch-ui .coach { bottom: calc(clamp(50px, min(14.5vw, 15vh), 68px) + 40px); }
-body.tall.touch-ui .coach { bottom: calc(30% + clamp(50px, min(14.5vw, 15vh), 68px) + 24px); }
+body.tall.touch-ui .coach { bottom: calc(var(--touch-bottom) + clamp(50px, min(14.5vw, 15vh), 68px) + 12px); }
 body.compact .initials input { font-size: 15px; padding: 8px 0; }
 body.compact .form-note { margin-top: 4px; font-size: 12px; }
 body.compact .form-note.placed { margin: 0; font-size: 15px; }
 
 /* Tall viewports: phone apps open the embed in a sheet that can cover the bottom ~30%. */
-body.tall .touch { bottom: calc(30% + 12px); }
-body.tall #gameover, body.tall #leaderboard { align-items: start; padding-top: 16px; padding-bottom: 30%; }
+/* The touch keys sit low, within thumb reach. */
+body.tall { --touch-bottom: max(32px, calc(env(safe-area-inset-bottom) + 20px)); }
+body.tall .touch { bottom: var(--touch-bottom); }
+body.tall #gameover, body.tall #leaderboard { padding-top: 16px; padding-bottom: 30%; }
 body.tall #gameover .card, body.tall #leaderboard .card { max-height: 100%; }
 body.tall #corner { bottom: auto; top: 104px; }
-/* These cards sit at the top, over the sound button's spot, and end above the bottom 30%. */
+/* These cards sit centered above the bottom 30%. */
 body.tall:has(#gameover:not(.hidden), #leaderboard:not(.hidden)) #corner { top: auto; bottom: 10px; }
 body.tall #pause { padding-bottom: 30%; }
 
@@ -557,3 +559,6 @@ body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 
 .touch button.catch { color: #0b0c0e; background: var(--ink); border-color: var(--ink); font-weight: 700; letter-spacing: 0.14em; }
 .touch button.catch.on { background: #cfd3da; }
 .touch button.catch.idle { color: var(--muted); background: rgba(10, 11, 13, 0.5); border-color: rgba(255, 255, 255, 0.14); }
+
+/* Until the game script decides between the intro and the home screen, show neither. */
+html:not(.booted) #title-screen { visibility: hidden; }

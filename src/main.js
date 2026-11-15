@@ -270,7 +270,7 @@ function runGame() {
     setPaused(false);
     explore.resetMounts();
     mapPicker.apply();
-    game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0, target: home.target, spawnY: LIVE_SPAWN_Y, stagger: true });
+    game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0, target: home.target, spawnY: LIVE_SPAWN_Y, live: true });
     game.start();
     view.director.reset();
     ui.resetScore();
@@ -492,6 +492,8 @@ function runGame() {
   // Opening the game plays a short ship catch, then the home screen (?intro=0 skips it).
   else if (!FLIGHT && params.get('intro') !== '0') startExplore('catch', { intro: true });
   else if (state === 'title') explore.models.then(() => state === 'title' && explore.mountUnderTower(true));
+  // The home screen stays hidden until here, so a reload never flashes it before the intro takes over.
+  document.documentElement.classList.add('booted');
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);
