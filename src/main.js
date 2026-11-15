@@ -568,6 +568,19 @@ function runGame() {
     for (const k in held) held[k] = false;
   });
 
+  // iOS shows Copy / Paste / Look Up on a long press anywhere it thinks there's text. Cancelling the touch start
+  // stops that; pointer events (the controls, drags, swipes) still arrive. Buttons, links and fields keep their taps.
+  document.addEventListener('touchstart', (ev) => {
+    if (!ev.target.closest('button, a, input, label, .how, .board')) ev.preventDefault();
+  }, { passive: false });
+  touchEl.addEventListener('touchstart', (ev) => ev.preventDefault(), { passive: false });
+  document.addEventListener('selectstart', (ev) => {
+    if (!(ev.target instanceof HTMLInputElement)) ev.preventDefault();
+  });
+  document.addEventListener('contextmenu', (ev) => {
+    if (!(ev.target instanceof HTMLInputElement)) ev.preventDefault();
+  });
+
   for (const btn of touchEl.querySelectorAll('button')) {
     const k = btn.dataset.k;
     const down = (ev) => {

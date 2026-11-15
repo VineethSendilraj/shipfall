@@ -16,6 +16,8 @@ const ESTABLISH_OUT = 1.2;
 const UP = new THREE.Vector3(0, 1, 0);
 // How much further back the play shot sits than a tight frame, so the tower and the incoming vehicle have room.
 const PLAY_ZOOM = 1.35;
+// The most height (m) the play camera fits: a vehicle dropping from high up is followed, not shown far off beside the tower.
+const MAX_SPAN = 150;
 
 /**
  * Cinematic camera. Advanced once per fixed sim step so the demo is frame-exact; the render
@@ -132,7 +134,7 @@ export class Director {
       const top = catchY + 14;
       // While the engines burn, extend the frame down to show the flame and its ground blast.
       const burn = b && b.state === 'falling' ? b.throttle : 0;
-      const bottom = Math.max(-4, Math.min(arm - 6, catchY - 68 - 30 * burn));
+      const bottom = Math.max(-4, top - MAX_SPAN, Math.min(arm - 6, catchY - 68 - 30 * burn));
       const span = top - bottom + 18;
       const halfFov = THREE.MathUtils.degToRad(fov / 2);
       const dist = clamp((span / (2 * Math.tan(halfFov))) * 1.08 * PLAY_ZOOM, 110 * PLAY_ZOOM, 290 * PLAY_ZOOM) * widen;
