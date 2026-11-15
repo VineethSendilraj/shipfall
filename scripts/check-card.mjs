@@ -67,9 +67,9 @@ try {
       'twitter:player': `${site.url}${CARD.player}`,
       'twitter:player:width': String(CARD.playerWidth),
       'twitter:player:height': String(CARD.playerHeight),
-      'twitter:image': `${site.url}${CARD.playerImage}`,
+      'twitter:image': `${site.url}${CARD.playerImage}?v=${CARD.imageVersion}`,
       'og:title': CARD.title,
-      'og:image': `${site.url}${CARD.image}`,
+      'og:image': `${site.url}${CARD.image}?v=${CARD.imageVersion}`,
       'og:url': `${site.url}/`,
     };
     for (const [k, v] of Object.entries(expect)) check(m.get(k) === v, `${path} meta ${k}`, m.get(k) ?? '(missing)');

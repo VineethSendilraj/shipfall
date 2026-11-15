@@ -13,6 +13,8 @@ export const CARD = {
   site: '@VineethSendil',
   // X shows this image in place of the frame until the game loads, so it has the frame's square shape.
   playerImage: '/player.jpg',
+  // Bump when the card images change: X caches a card image by its URL, so a new query makes it fetch the new one.
+  imageVersion: 3,
   playerImageSize: 1080,
   player: '/embed/',
   playerWidth: 480,
@@ -57,7 +59,7 @@ export function cardMeta(site, env = process.env) {
     ['name', 'twitter:site', handle.startsWith('@') ? handle : `@${handle}`],
     ['name', 'twitter:title', CARD.title],
     ['name', 'twitter:description', CARD.description],
-    ['name', 'twitter:image', abs(CARD.playerImage)],
+    ['name', 'twitter:image', `${abs(CARD.playerImage)}?v=${CARD.imageVersion}`],
     ['name', 'twitter:image:alt', CARD.imageAlt],
     ['name', 'twitter:player', abs(CARD.player)],
     ['name', 'twitter:player:width', String(CARD.playerWidth)],
@@ -67,7 +69,7 @@ export function cardMeta(site, env = process.env) {
     ['property', 'og:title', CARD.title],
     ['property', 'og:description', CARD.description],
     ['property', 'og:url', abs('/')],
-    ['property', 'og:image', abs(CARD.image)],
+    ['property', 'og:image', `${abs(CARD.image)}?v=${CARD.imageVersion}`],
     ['property', 'og:image:type', 'image/jpeg'],
     ['property', 'og:image:width', String(CARD.imageWidth)],
     ['property', 'og:image:height', String(CARD.imageHeight)],
