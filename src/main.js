@@ -27,7 +27,7 @@ const EMBED = document.body.classList.contains('embed');
 const SITE_URL = __SITE_URL__;
 // The launch post on X (https://x.com/<handle>/status/<id>). When set, Post on X quotes it instead of linking the site.
 const SHARE_POST = import.meta.env.VITE_SHARE_POST || '';
-// A new key, so a mute saved while testing doesn't carry over: sound starts on.
+// Saved mute preference; sound starts on.
 const SOUND_KEY = 'shipfall.sound';
 const WORLD_W = 1280;
 const $ = (id) => document.getElementById(id);

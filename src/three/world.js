@@ -1052,7 +1052,7 @@ export function buildWorld(scene, renderer, towerMats, map = 'starbase') {
   root.name = `world-${map}`;
   const world =
     map === 'mars' ? buildMars(root, scene, renderer, towerMats, { bakeEnvironment, launchMount }) : buildStarbase(root, scene, renderer, towerMats);
-  // First in the scene, so lights keep the order they had before maps existed.
+  // First in the scene, so the lights keep a stable order.
   scene.add(root);
   scene.children.unshift(scene.children.pop());
   // props.glb geometry is shared with the loaded model, which outlives any one world. So are the

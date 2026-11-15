@@ -6,6 +6,10 @@ Catch a falling Starship with the tower's arms. A 3D browser game you can play r
 
 [![ShipFall](public/player.jpg)](https://shipfall.vercel.app)
 
+![A ship caught by the tower's arms](docs/media/shipfall-catch.gif)
+
+Watch with sound: [Starbase](docs/media/shipfall-catch-starbase.mp4) · [Mars](docs/media/shipfall-catch-mars.mp4)
+
 ## How to play
 
 Steer the falling ship or booster over the tower, line the arms up with its pins, and close them gently.

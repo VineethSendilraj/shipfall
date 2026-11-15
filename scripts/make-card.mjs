@@ -1,9 +1,10 @@
 // Renders the share-card images from the real 3D scene with the ShipFall tag over it: square for X's player card
 // (public/player.jpg) and wide for og:image (public/share.jpg).
-//   stack: free flight (?flight=1&capture=1) seconds after liftoff, the full stack climbing out of its smoke.
-//   ship:  the demo's double catch (?demo=1&capture=1), the ship swinging upright on its engines beside the tower.
-// The page is rendered taller than the card and the top is kept, which crops most of the ground away.
-//   replay: Explore's ship catch replay on its landing burn (default), with the big wordmark.
+//   double: Explore's ship catch replay into tower A while tower B holds a booster (default), big wordmark.
+//   replay: Explore's ship catch replay on its landing burn, big wordmark.
+//   ship:   the demo's double catch (?demo=1&capture=1), the ship swinging upright on its engines beside the tower.
+//   stack:  free flight (?flight=1&capture=1) seconds after liftoff, the full stack climbing out of its smoke.
+// For ship and stack the page is rendered taller than the card and the top is kept, cropping most of the ground.
 // Usage: npm run card                        (CARD_SCENE=double|replay|ship|stack, default double)
 //        CHROMIUM_CHANNEL=chrome npm run card   (uses the installed Google Chrome instead of Playwright's Chromium)
 //        CARD_OUT=/tmp/cards npm run card       (writes there instead of public/, to compare options)
@@ -21,7 +22,7 @@ const OUT = process.env.CARD_OUT ? resolve(process.env.CARD_OUT) : join(REPO, 'p
 // at: mission seconds (stack) or demo sim frame (ship); cam: the look-around offset; extra: how much taller than the
 // card the page renders (the extra is cropped off the bottom); y: where the title block sits, as a fraction of the card.
 const SCENES = {
-  // The default: Explore's ship catch replay, the ship on its landing burn beside the tower in its own smoke.
+  // Explore's ship catch replay, the ship on its landing burn beside the tower in its own smoke.
   replay: { url: `/?explore=1&capture=1&map=${MAP}`, replay: 'ship', at: Number(process.env.CARD_AT || 14.6), big: true, square: { extra: 0 }, wide: { extra: 0 } },
   // The double catch: the ship replay into tower A while tower B holds a booster it just caught.
   double: { url: `/?explore=1&capture=1&map=${MAP}`, replay: 'ship', double: true, at: Number(process.env.CARD_AT || 14.6), big: true, square: { extra: 0 }, wide: { extra: 0 } },
@@ -44,7 +45,7 @@ const SHOTS = [
   { file: CARD.image, w: CARD.imageWidth, h: CARD.imageHeight, u: 0.62, title: 150, sub: false, ...SCENE.wide },
 ];
 
-// The big-title look: only the scene, the wordmark low in the frame and "Playable in X" above it.
+// The big-title look: only the scene, the wordmark and the "Playable in X" banner (placed by CARD_TEXT).
 const bigCss = (s) => `
   #explore, #corner, .disclaimer, #explore-hint, #title-screen, #hud, .explore-view, #explore-chips, .intro-logo, .explore-bar { display: none !important; }
   .card-art { position: fixed; top: auto; transform: none; width: auto; left: 0; right: 0; bottom: ${s.h * (0.075 + (s.extra || 0))}px; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 99; }
