@@ -40,7 +40,7 @@ The home screen holds the picked vehicle in the tower's arms. **‹ ›** (or �
 
 ### Maps
 
-The home screen has a **Starbase | Mars** switch. Starbase is the night launch site; Mars is a dusk site on a red regolith plain with mesas on the horizon, a butterscotch sky with the blue Martian sunset glow, Phobos and Deimos, and a small base (habitat domes, solar arrays, landing pads, cargo, antenna masts) around the same towers and launch mount. A map changes only the scenery, lighting and effect colours: physics, rules and scoring are identical. The choice is remembered on the device, `?map=mars` selects it from a link, and switching rebuilds the world in place (the old one's GPU resources are freed). `?demo=1` and `share.jpg` use Starbase unless `?map=mars` is given.
+The home screen has a **Starbase | Mars** switch. Starbase is the night launch site; Mars is a dusk site on a red regolith plain with mesas on the horizon, a butterscotch sky with the blue Martian sunset glow, Phobos and Deimos, and a small base (habitat domes, solar arrays, landing pads, cargo, antenna masts) around the same towers and launch mount. A map changes only the scenery, lighting and effect colours: physics, rules and scoring are identical. The choice is remembered on the device, `?map=mars` selects it from a link, and switching rebuilds the world in place (the old one's GPU resources are freed). Mars is the default for new players; the share cards are rendered on Mars.
 
 ## Run locally
 
