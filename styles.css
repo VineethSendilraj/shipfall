@@ -563,9 +563,10 @@ body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 
 /* Until the game script decides between the intro and the home screen, show neither. */
 html:not(.booted) #title-screen { visibility: hidden; }
 
-/* Wide screens keep the gauges along the bottom, so the on-screen keys sit just above them. */
-body:not(.compact):not(.tall) .touch { bottom: calc(128px * var(--ui) + 6px); }
-body:not(.compact):not(.tall).touch-ui .coach { bottom: calc(128px * var(--ui) + clamp(50px, min(14.5vw, 15vh), 68px) + 22px); }
+/* Wide screens: one bottom row. The on-screen keys sit in the gauge bar's outer corners, the gauges move inward. */
+body:not(.compact):not(.tall) .touch { bottom: calc(16px * var(--ui) + 14px); }
+body:not(.compact):not(.tall).touch-ui .hud-bar { padding-left: calc(var(--keys-l) + 20px); padding-right: calc(var(--keys-r) + 20px); }
+body:not(.compact):not(.tall) { --kb: clamp(50px, min(14.5vw, 15vh), 68px); --keys-l: calc(var(--kb) * 2 + 8px + 12px); --keys-r: calc(var(--kb) * 3.42 + 16px + 12px); }
 
 /* Mission timeline: events still ahead can be clicked to fast-forward to them. */
 .timeline .fl.ahead { pointer-events: auto; cursor: pointer; }
@@ -615,3 +616,5 @@ body.tall .disclaimer { bottom: calc(env(safe-area-inset-bottom) + 3px); }
 .home-dock { bottom: 64px; }
 body.compact .home-dock { bottom: 50px; }
 body.tall .home-dock { bottom: calc(env(safe-area-inset-bottom) + 80px); }
+body:not(.compact):not(.tall).touch-ui .hud-bar { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: calc(12px * var(--ui)); }
+body:not(.compact):not(.tall).touch-ui .mission { width: auto; max-width: calc(560px * var(--ui)); justify-self: center; min-width: 0; }

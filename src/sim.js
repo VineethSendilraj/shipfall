@@ -58,6 +58,9 @@ const REOPEN_DELAY = 0.35;
 const SECOND_BOOSTER_DELAY = 2.2;
 const SPAWN_Y = -270;
 export const LIVE_SPAWN_Y = -620;
+const LIVE_CATCH_TOP = 15; // px below ARM_MIN where the live catch band starts
+const LIVE_CATCH_BAND = 60; // px
+const LIVE_ARM_START = ARM_MIN + 45;
 const STAGGER_DELAY = 1.2; // after the first vehicle is caught or lost
 const INTRO_TIME = 0.8;
 const OUTRO_TIME = 1.3;
@@ -100,6 +103,7 @@ export class Game {
     // vehicle until the first is down; the demo and the tests keep the original rounds so their scripted inputs still fly.
     this.spawnY = spawnY;
     this.live = live;
+    this.armStart = live ? LIVE_ARM_START : ARM_DEFAULT;
     this.W = width;
     this.seed = seed >>> 0;
     this.maxRounds = maxRounds;
@@ -120,6 +124,7 @@ export class Game {
     this.roundDouble = false;
     const pos = towerPositions(width);
     this.towers = [makeTower(0, -1, pos.a)];
+    this.towers[0].armY = this.armStart;
     // Every vehicle in flight: a booster at tower A, and in double-catch rounds also a ship at tower B.
     this.boosters = [];
     this.particles = [];
@@ -179,6 +184,9 @@ export class Game {
       spawnDx: towardTower ? (this.live ? -1 : 1) * toward * r.range(15, 42) : -toward * r.range(60 + d * 10, 110 + d * 16),
       vx0: r.range(-12 - d * 4, 12 + d * 4),
     };
+    // Live play catches up near the top of the tower (pins about 100-116 m up) rather than low over the pad; the
+    // same draw is squeezed into that band so the random stream doesn't shift.
+    if (this.live) p.zeroY = ARM_MIN + LIVE_CATCH_TOP + ((p.zeroY - (ARM_MIN + 30)) / (ARM_MAX - 45 - ARM_MIN)) * LIVE_CATCH_BAND;
     // The ship starts well out on the far side and drifts in toward its tower, rather than dropping straight onto it.
     if (kind === 'ship') {
       p.spawnDx -= toward * (this.live ? 40 : 90);
@@ -279,6 +287,7 @@ export class Game {
         tw.reopenT = 0.3;
       }
       const t = makeTower(1, 1, towerPositions(this.W).b);
+      t.armY = this.armStart;
       t.rise = 0;
       this.towers.push(t);
       this.banner = { text: 'DOUBLE CATCH UNLOCKED', sub: 'second tower online · booster and ship per round', t: 0, dur: UNLOCK_TIME, gold: true };
