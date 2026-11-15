@@ -127,8 +127,8 @@ export class View {
    * pulls the camera away from this shot instead.
    */
   /** Starts a glide from the camera's current pose into the director's next shots, over `ms`. */
-  handoffFrom(camera, ms = 1600) {
-    this.handoff = { pos: camera.position.clone(), quat: camera.quaternion.clone(), fov: camera.fov, t0: performance.now(), ms };
+  handoffFrom(camera, target = null, ms = 1900) {
+    this.handoff = { pos: camera.position.clone(), quat: camera.quaternion.clone(), tgt: target?.clone() ?? null, fov: camera.fov, t0: performance.now(), ms };
   }
 
   setShowcase(kind) {
@@ -515,10 +515,15 @@ export class View {
       // After the intro, the camera glides from where the replay left it into this shot.
       const h = this.handoff;
       if (h) {
-        const e = THREE.MathUtils.smoothstep((performance.now() - h.t0) / h.ms, 0, 1);
+        const e = THREE.MathUtils.smootherstep((performance.now() - h.t0) / h.ms, 0, 1);
         const cam = this.camera;
+        // Move and aim together: the aim slides from where the replay looked to the home shot's target, so the camera
+        // travels in toward the tower instead of swinging its view on its own.
         cam.position.lerpVectors(h.pos, cam.position, e);
-        cam.quaternion.slerpQuaternions(h.quat, cam.quaternion, e);
+        if (h.tgt && shot.hero) {
+          cam.up.set(0, 1, 0);
+          cam.lookAt(this._v.copy(h.tgt).lerp(shot.hero.tgt, e));
+        } else cam.quaternion.slerpQuaternions(h.quat, cam.quaternion, e);
         cam.fov = h.fov + (cam.fov - h.fov) * e;
         cam.updateProjectionMatrix();
         if (e >= 1) this.handoff = null;
