@@ -70,7 +70,7 @@ export class View {
     this.shipMats = createShipMaterials(mats);
     this.pool = SLOT_KINDS.map((kind) => {
       const b = kind === 'ship' ? createShip(this.shipMats) : createBooster(mats);
-      const plume = kind === 'ship' ? createShipPlume() : createPlume();
+      const plume = kind === 'ship' ? createShipPlume() : createPlume({ boost: 1.45 });
       b.root.add(plume.group);
       b.root.visible = false;
       const light = new THREE.PointLight(0xff8f45, 0, 0, 2);

@@ -19,7 +19,7 @@ const OUT = process.env.CARD_OUT ? resolve(process.env.CARD_OUT) : join(REPO, 'p
 // card the page renders (the extra is cropped off the bottom); y: where the title block sits, as a fraction of the card.
 const SCENES = {
   stack: { url: '/?flight=1&capture=1', ready: '__flightReady', at: 3.5, cam: { zoom: 1.75, pitch: -0.24, yaw: 0 }, square: { extra: 0.22, y: 0.2 }, wide: { extra: 0.2, y: 0.22, zoom: 1.9 } },
-  ship: { url: '/?demo=1&capture=1', ready: '__demoReady', at: 1318, cam: { zoom: 0.72, pitch: -0.08, yaw: 0.15 }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
+  ship: { url: '/?demo=1&capture=1', ready: '__demoReady', at: Number(process.env.CARD_AT || 1342), cam: { zoom: 0.72, pitch: -0.08, yaw: 0.15 }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
 };
 const SCENE = SCENES[process.env.CARD_SCENE || 'ship'];
 // The X logo, as on the game's Post on X button.

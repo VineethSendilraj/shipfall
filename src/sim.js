@@ -146,12 +146,13 @@ export class Game {
     return Math.min(this.round - 1, 9);
   }
 
-  makeBoosterParams(towerIdx, slot) {
+  makeBoosterParams(towerIdx, slot, kind = 'booster') {
     const r = this.rng;
     const d = this.difficulty();
     const tw = this.towers[towerIdx];
     const toward = -tw.side;
-    const towardTower = r.chance(0.3);
+    // The ship always comes in from the side away from its tower (the draw is kept so the random stream doesn't shift).
+    const towardTower = r.chance(0.3) && kind !== 'ship';
     const p = {
       vy0: (44 + d * 3.5) * PX_PER_M + r.range(-8, 8),
       // The hover speed cap and length floor keep every round's catch window at 1.2 s or more without steering.
@@ -190,8 +191,8 @@ export class Game {
     this.roundDouble = this.doubleUnlocked && this.towers.length > 1;
     const pick = this.target === 'random' ? (this.picks.chance(0.5) ? 'ship' : 'booster') : this.target;
     const kind = this.roundDouble ? 'booster' : pick;
-    this.params = [{ ...this.makeBoosterParams(0, 0), kind }];
-    if (this.roundDouble) this.params.push({ ...this.makeBoosterParams(1, 1), kind: 'ship' });
+    this.params = [{ ...this.makeBoosterParams(0, 0, kind), kind }];
+    if (this.roundDouble) this.params.push({ ...this.makeBoosterParams(1, 1, 'ship'), kind: 'ship' });
     this.wind = this.makeWind();
     this.roundT = 0;
     this.roundCatches = 0;

@@ -8,13 +8,13 @@ export const PLACEHOLDER_SITE_URL = 'https://shipfall.example';
 
 export const CARD = {
   title: 'ShipFall',
-  description: 'Try to catch Starship',
+  description: "Let's see if you have what it takes to catch Starship",
   imageAlt: "A stainless rocket ship caught in a launch tower's arms, sparks flying",
   site: '@VineethSendil',
   // X shows this image in place of the frame until the game loads, so it has the frame's square shape.
   playerImage: '/player.jpg',
   // Bump when the card images change: X caches a card image by its URL, so a new query makes it fetch the new one.
-  imageVersion: 5,
+  imageVersion: 6,
   playerImageSize: 1080,
   player: '/embed/',
   playerWidth: 480,

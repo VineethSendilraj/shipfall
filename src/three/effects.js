@@ -72,7 +72,8 @@ const FLAME_LIT = new THREE.Color(1.5, 1.05, 0.7);
  * Plume of one vehicle. update() takes how far the exhaust can reach (alt) and the engine exit's height above the
  * ground, which raises steam or dust once the blast gets there; setPalette() takes the map's fx colours.
  */
-export function createPlume() {
+/** boost: how much longer and wider the flame is than the base plume (the booster's 33 engines burn bigger). */
+export function createPlume({ boost = 1 } = {}) {
   const group = new THREE.Group();
   group.position.y = ENGINE_Y;
   const outer = plumeLayer(5.2, 7.5, [2.4, 0.7, 0.12], [0.9, 0.22, 0.04], { pow: 0.7, cover: 1.6 });
@@ -99,8 +100,8 @@ export function createPlume() {
       const on = throttle > 0.02;
       group.visible = on;
       if (!on) return;
-      const len = 14 + 54 * Math.min(1, throttle * 1.2);
-      const width = 0.75 + 0.55 * Math.min(1, throttle * 1.4);
+      const len = (14 + 54 * Math.min(1, throttle * 1.2)) * boost;
+      const width = (0.75 + 0.55 * Math.min(1, throttle * 1.4)) * Math.sqrt(boost);
       const amp = Math.min(1, 0.5 + throttle * 1.2);
       for (const L of layers) {
         L.mesh.scale.set(width, Math.min(len * L.len, alt + 6), width);
