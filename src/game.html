@@ -181,6 +181,7 @@
       <div class="pause-head">
         <p class="kicker">paused</p>
         <div class="pause-tools">
+          <button id="pause-how" class="icon-btn" type="button" title="How to play" aria-label="How to play" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.2 9.2a2.9 2.9 0 1 1 3.9 2.7c-.7.3-1.1.9-1.1 1.6v.7"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor"/></svg></button>
           <button id="restart" class="icon-btn" type="button" title="Restart" aria-label="Restart"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5"/></svg></button>
           <button id="home" class="icon-btn" type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg></button>
           <button id="pause-sound" class="icon-btn" type="button" title="Sound" aria-label="Sound" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7"/><path class="mute" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l5 5M21 9l-5 5"/></svg></button>
@@ -188,6 +189,7 @@
       </div>
       <div class="pause-score" id="pause-score">0</div>
       <p class="pause-meta" id="pause-meta"></p>
+      <div class="how pause-how hidden" id="pause-how-panel"></div>
       <button id="resume" class="btn primary pause-resume" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l12.5-7.5z"/></svg>Resume</button>
     </div>
   </section>

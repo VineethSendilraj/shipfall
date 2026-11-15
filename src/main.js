@@ -263,8 +263,21 @@ function runGame() {
       $('pause-score').textContent = game.score.toLocaleString('en-US');
       $('pause-meta').textContent = `Round ${game.round} · ${game.lives} ${game.lives === 1 ? 'try' : 'tries'} left`;
     }
+    setPauseHelp(false);
     $('resume').focus({ preventScroll: true });
   }
+
+  // The pause card's how-to-play: the home screen's panel for the mode being played.
+  function setPauseHelp(open) {
+    const panel = $('pause-how-panel');
+    if (open) {
+      const src = document.querySelector(`#title-screen .how [data-mode="${flight ? 'flight' : 'catch'}"]`);
+      panel.innerHTML = src ? src.innerHTML : '';
+    }
+    panel.classList.toggle('hidden', !open);
+    $('pause-how').setAttribute('aria-expanded', String(open));
+  }
+  $('pause-how').addEventListener('click', () => setPauseHelp($('pause-how-panel').classList.contains('hidden')));
 
   function startGame() {
     // The handle field keeps focus after a game over; the arrow keys belong to the game again.

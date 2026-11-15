@@ -24,12 +24,12 @@ export const COL_OFF = new THREE.Color(0.08, 0.25, 0.35);
 
 /** Render quality levels, best first. The auto-quality monitor steps down this list when frames run slow. */
 export const QUALITY = [
-  // Sharpness comes first: phones have 2-3x screens and go soft below about 1.5x, so the lower tiers cut effects
-  // (shadows, bloom, MSAA) and keep the pixel ratio.
+  // Phones have 2-3x screens: 1.5x looks sharp and runs smoothly on a typical phone; below 1x the picture goes soft,
+  // so that is the floor, and the lower tiers cut shadows and bloom along the way.
   { name: 'high', maxDpr: 2, shadows: true, bloom: 1, msaa: 4, bakedSky: false },
-  { name: 'medium', maxDpr: 2, shadows: true, bloom: 0.5, msaa: 0, bakedSky: true },
-  { name: 'low', maxDpr: 1.75, shadows: false, bloom: 0.5, msaa: 0, bakedSky: true },
-  { name: 'minimal', maxDpr: 1.5, shadows: false, bloom: 0, msaa: 0, bakedSky: true },
+  { name: 'medium', maxDpr: 1.5, shadows: true, bloom: 0.5, msaa: 0, bakedSky: true },
+  { name: 'low', maxDpr: 1.25, shadows: false, bloom: 0.5, msaa: 0, bakedSky: true },
+  { name: 'minimal', maxDpr: 1, shadows: false, bloom: 0, msaa: 0, bakedSky: true },
 ];
 
 // Phone apps can cover the bottom ~30% of a tall embed, so the camera's aim point is lifted toward the top.
