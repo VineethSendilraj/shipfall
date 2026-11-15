@@ -1,162 +1,88 @@
-# Catch the Booster
+# ShipFall
 
-A 3D browser game: a rocket booster is falling back to the launch site at night. Steer it with cold-gas thrusters, raise or lower the tower's two "chopstick" catch arms to meet its catch pins, and close them at the right moment.
+A 3D browser game: steer a falling rocket booster or ship into the tower's catch arms, and close them at the right moment. Playable inside an X post.
 
-**Not affiliated with SpaceX.** The game is inspired by public news coverage of booster catches. It uses no logos, trademarks or official imagery: the booster, ship, tower and site models are built from code in this repo (see [3D models](#3d-models)), and the textures, the sky and the effects are generated procedurally at runtime.
+**[Play at shipfall.vercel.app](https://shipfall.vercel.app)**
 
-- Real-time 3D with [three.js](https://threejs.org) (installed from npm and bundled by Vite, so nothing loads from a CDN): a brushed-stainless booster with rolled rings and weld seams, a vented hot-stage ring, four lattice grid fins on actuator housings, catch hardpoints and 33 engine bells under the heat shield; a stainless upper stage (the ship) with an ogive nose, black hexagonal heat-shield tiles, two forward and two aft flaps and six engines; a steel lattice tower with a moving carriage and truss catch arms; a launch mount, pad and tank farm.
-- Moonlit night sky (procedural stars, milky way, textured moon), moon-cast shadows, inverse-square floodlights, warm engine light on the booster and tower.
-- HDR post-processing: bloom on the plume and lights, heat haze under the engines, vignette and a subtle lens fringe.
-- A cinematic camera: low-angle tracking during descent, a close-up on each catch, and a wide shot when the second tower comes online.
-- Static site only: no backend, no API keys, no analytics, no third-party network calls (no CDNs; the only runtime fetches are the game's own model files).
-- Playable inside an X post through a player card: `/` is the share page, `/embed/` is the game-only page X frames (see [X player card](#x-player-card)).
+[![ShipFall: a ship caught in the tower's arms](public/player.jpg)](https://shipfall.vercel.app)
+
+Built with [three.js](https://threejs.org) and Vite. Static site plus one Vercel Function for the worldwide leaderboard. Not affiliated with SpaceX.
+
+**Ship catch replay** (Explore → Ship catch): [watch the clip](docs/media/shipfall-catch.mp4)
+
+| Belly flop | Flip and burn | Caught |
+| --- | --- | --- |
+| ![](docs/media/catch-8.jpg) | ![](docs/media/catch-12.jpg) | ![](docs/media/catch-17.jpg) |
+
+## Play it inside an X post
+
+The site ships a `twitter:card=player` card. Post a link to `/` (the share page) and x.com plays `/embed/` (the game-only page, designed for 480×480) in a frame inside the post. X's phone apps show the card image with a play button and open the game in the in-app browser. DMs and the composer show no player, so test with a real post.
+
+X caches a card for about seven days, so post a fresh address each time the card changes, e.g. `https://shipfall.vercel.app/?v=10`.
+
+## Modes
+
+| Mode | What you do |
+| --- | --- |
+| **Catch** | Pick **ShipFall** (booster or ship, a new one each round), **Ship only** or **Booster only**. At 3,000 pts **double catch** unlocks: a second tower, a booster and a ship each round. |
+| **Mission** | Fly the full stack to orbit, deploy satellites, then land the ship back at the tower. |
+| **Explore** | Orbit around the stack on the launch mount. Chips fly to each part; **Ship catch** replays a ship catch from an aerial corner camera, with a **Ground view** chip. |
+
+Scores go to a worldwide leaderboard by X @handle (handles aren't verified).
 
 ## Controls
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
-| Lateral thrusters (use landing fuel) | `←` `→` or `A` `D` | ◀ ▶ |
-| Move catch arms | `↑` `↓` or `W` `S` | ▲ ▼ |
-| Close arms | `Space` | CATCH |
-| Start / restart | `Enter` | Start button |
-| Sound on/off (starts on your first click or key press) | `M` | speaker button |
-| Pause | `P` / `Esc` | — |
+| Side thrusters (Catch) / pitch (Mission) | `←` `→` or `A` `D` | ◀ ▶ |
+| Catch arms (Catch) / throttle (Mission) | `↑` `↓` or `W` `S` | ▲ ▼ |
+| Close arms (Catch) / stage, deploy, flip (Mission) | `Space` | CATCH / ACTION |
+| Start | `Enter` | Play |
+| Pause | `P` / `Esc` | pause button |
+| Sound | `M` | speaker button |
+| Explore | drag to orbit, scroll to zoom, right-drag to pan, `1`–`9` for parts | drag, pinch, two-finger pan |
 
-### Rules
+## Maps
 
-The landing burn ignites automatically below 112 m (143 m for the ship, which lights up with its pins at the same height), or higher if the vehicle is too fast to stop in time, and slows the vehicle into a brief, slow descent before engine cutoff. The burn and the thrusters share one tank: steering shortens the hover, and an empty tank cuts the engine early. A catch succeeds if, at the moment the arms finish closing:
-
-- the catch pins (just below the booster's grid fins, or the ship's forward flaps) are within **±12 px (±3 m)** of the arms vertically,
-- the lateral offset from the catch centerline is **under 15 px (3.75 m)**, and
-- the descent rate is **under 3 m/s** (4 px = 1 m).
-
-Otherwise it's a miss: the arms clang off the booster, or it slides past and hits the pad. You have 3 boosters.
-
-Scoring: 1,000 per catch + precision bonus (up to 500) + fuel bonus (6.5 per % fuel left). Each round gets harder (faster entry, stronger wind and gusts, shorter hover). At 3,000 points **double catch** unlocks: a second tower rises, and from then on each round brings a booster to tower A and a ship to tower B (+500 for catching both). The ship uses the same catch tolerances; it is 50 m tall against the booster's 80 m, so the arms clang on it over a shorter span. Top 5 scores are stored in `localStorage`, and **Post score ↗** opens an X post composer in a new tab with `i caught the booster: 4,210 pts` and the site URL.
-
-### Home screen
-
-The home screen holds the picked vehicle in the tower's arms. **‹ ›** (or ← →, A D, a swipe) picks what to catch: **Booster**, **Ship**, or **Random**, which draws booster or ship each round from the game's seed (its own stream, so a seed flies the same rounds whatever the pick). Double-catch rounds always bring a booster to tower A and a ship to tower B. Game modes are tabs, one per entry in `MODES` in `src/main.js`: **Booster catch**; **Mission**, which always flies the full stack (to orbit and back to the tower; `?flight=1` opens it directly); and **Explore**, orbit controls round the stack on the launch mount (`?explore=1&focus=<part>` opens it directly). Esc returns to the home screen from either. The mode, vehicle and map picks are remembered on the device; rules and controls sit behind **How to play**.
-
-### Maps
-
-The home screen has a **Starbase | Mars** switch. Starbase is the night launch site; Mars is a dusk site on a red regolith plain with mesas on the horizon, a butterscotch sky with the blue Martian sunset glow, Phobos and Deimos, and a small base (habitat domes, solar arrays, landing pads, cargo, antenna masts) around the same towers and launch mount. A map changes only the scenery, lighting and effect colours: physics, rules and scoring are identical. The choice is remembered on the device, `?map=mars` selects it from a link, and switching rebuilds the world in place (the old one's GPU resources are freed). Mars is the default for new players; the share cards are rendered on Mars.
+**Mars** (default): a dusk regolith plain with mesas, Phobos and Deimos, and a small base. **Starbase**: the night launch site. Maps change only the scenery; physics and scoring are identical. `?map=mars|starbase` picks one from a link.
 
 ## Run locally
 
-```bash
-npm install
-npm run dev               # Vite dev server → http://127.0.0.1:41730/  (embed: /embed/)
-npm run build             # static site → dist/
-npm start                 # serve dist/ with the _headers rules applied → http://127.0.0.1:41730/
-npm test                  # simulation tests
-```
-
-Open `/?demo=1` for the scripted showcase (also works on `/embed/?demo=1`; it is off by default). Add `?quality=high|medium|low|minimal` to pin a render quality level.
-
-## Deterministic demo (`?demo=1`)
-
-A roughly 28 s showcase: a title card, then round 1 with a visible arm adjustment and a clean catch, then round 2 with a wind gust, a near-miss lateral correction and a **PERFECT** catch, then **double catch unlocked**, with a booster caught at tower A and the ship at tower B, and finally an end card with the score and the disclaimer.
-
-- All randomness comes from a seeded `mulberry32` PRNG (`src/rng.js`); the demo never calls `Math.random()` or `Date.now()`.
-- The simulation (`src/sim.js`) advances by frame count with a fixed `dt = 1/60 s`. The camera director is stepped with it.
-- Inputs come from the hard-coded, frame-keyed script in `src/demo-script.js`. It was generated by `node scripts/author-demo.mjs`, an autopilot that plays the seeded rounds; that tool then replays the hard-coded script and verifies the result is identical. `node scripts/author-demo.mjs --check` re-verifies.
-- The cursor, touch buttons, sound button and leaderboard prompt are hidden. `window.__demoDone = true` is set when the end card finishes.
-
-## Record the showcase
+Node 20.11+.
 
 ```bash
 npm install
-npx playwright install chromium        # once; on bare Linux also: npx playwright install-deps chromium
-npm run record
-```
-
-`npm run record` builds the site, then `scripts/record.mjs` serves `dist/` and opens `/?demo=1&capture=1` in headless Chromium (1280×720, WebGL through ANGLE/SwiftShader, so no GPU is required). Real-time screen capture would drop frames on a software GPU, so it drives the demo frame by frame instead. Each video frame advances the fixed-step simulation by two 1/60 s steps, renders, and is screenshotted, then the frames are piped into `ffmpeg-static`. The result plays at real speed with no dropped or duplicated frames, and it is identical on every run. A full capture takes several minutes on a CPU.
-
-Outputs (default directory `artifacts/`, git-ignored; override with `-- --out <dir>`):
-
-- `booster-demo.mp4`: 1280×720, H.264, yuv420p, 30 fps
-- `booster-demo.gif`: 640 px wide, 12 fps, palettegen/paletteuse, under 15 MB
-- `booster-still-*.png`: 1280×720 cover stills
-- `qa-frames/`: evenly spaced frames from the MP4 for review (`-- --qa N`)
-
-With a real GPU you can pass different Chromium flags, e.g. `CHROMIUM_ARGS="--use-gl=egl" npm run record`.
-
-## X player card
-
-A post of `/` shows `/embed/` in a frame: x.com plays it inside the post, while X's phone apps show the image with a play button and open the frame's page in their in-app browser. DMs and the post composer show no player, so test with a real post. X reserves player cards for audio and video, so it may stop showing a game's frame. X caches a card for about seven days, so post a fixed page at a new address (for example `/?v=3`).
-
-- **`/`** (share page): the full game with title screen, rules and leaderboard, plus all card meta tags. Share this URL.
-- **`/embed/`** (player): the game only, full-bleed at any frame size (designed for 480×480), no scrollbars. One tap on **Play** starts it, and audio stays off until that first gesture. The big on-screen buttons work with mouse and touch, the keyboard works once the frame has focus, and on tall viewports the buttons, start card and game-over card stay above the bottom 30%. Links open in a new tab. It doesn't depend on the parent page and works standalone.
-- **Meta tags** (both pages): `twitter:card=player`, `twitter:site` (`CARD.site`, or `VITE_TWITTER_SITE=@handle`), `twitter:player=<SITE_URL>/embed/` at 480×480, `twitter:image=<SITE_URL>/player.jpg`, `twitter:title`/`twitter:description`, and `og:title`/`og:description`/`og:image`/`og:url`.
-- **Sandbox**: X frames the player with `sandbox="allow-popups allow-same-origin allow-scripts allow-presentation"`, so the handle box submits on the button's click rather than a form submit event. `scripts/fixtures/embed-host.html` frames `/embed/` the same way.
-- **Card images**: `public/player.jpg` (1080×1080, the frame's shape, for X) and `public/share.jpg` (1200×630, `og:image` for wide link previews), both a frame of the real 3D scene (round-1 chopstick catch) rendered by `npm run card`.
-- **Performance**: about 170 KB of gzipped JS. An auto-quality monitor measures real frame times and steps down from high to medium, low and then minimal (pixel ratio 1.5, 1, 0.75 then 0.5; MSAA replaced by FXAA; shadows and bloom off at the bottom levels; a baked sky cube map instead of the procedural sky shader) whenever it can't hold about 33 fps. Software renderers such as SwiftShader start at `low`.
-- **Headers**: `vercel.json` and `public/_headers` (Cloudflare Pages) send `Content-Security-Policy: frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com` on every route and no `X-Frame-Options`. `vercel.json` sets `trailingSlash: true`, so `/embed/` returns 200 directly (only `/embed` redirects).
-
-```bash
-npm run check:card        # build, serve dist/, verify meta tags, card images, HTML size, headers, JS budget
-npm run card              # re-render public/player.jpg and public/share.jpg from the demo scene
-npm run record:embed      # Playwright video of /embed/ inside a 480×480 iframe host page + screenshots
+npm run dev      # Vite dev server (game-only page at /embed/)
+npm test         # simulation, flight and leaderboard API tests
+npm run build    # static site -> dist/
 ```
 
 ## Deploy
 
-All absolute URLs in the meta tags come from one build-time value, **`VITE_SITE_URL`**: the public https origin, with no path and no trailing slash. `SITE_URL` works as an alias.
+Vercel picks up `vercel.json` (build command, `dist/` output, frame-ancestors headers for X, `trailingSlash`). Set these environment variables:
 
-- **Vercel**: Project → Settings → Environment Variables → `VITE_SITE_URL=https://your-domain`. `vercel.json` already sets the build command (`npm run build`), the output directory (`dist`), the headers and `trailingSlash`. If it's unset, the build falls back to `https://$VERCEL_PROJECT_PRODUCTION_URL`.
-- **Cloudflare Pages**: build command `npm run build`, output directory `dist`, and the environment variable `VITE_SITE_URL=https://your-domain`. `dist/_headers` is applied automatically. If it's unset, the build falls back to `CF_PAGES_URL`, which is the per-deployment URL.
-- **Locally**: `VITE_SITE_URL=https://your-domain npm run check:card`, or put it in a `.env` file.
+| Variable | Purpose |
+| --- | --- |
+| `VITE_SITE_URL` | Public https origin, no trailing slash (e.g. `https://shipfall.vercel.app`). All card URLs come from it. |
+| `VITE_SHARE_POST` | Optional. A launch post on X that **Post on X** quotes instead of linking the site. |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Set by Vercel's Upstash for Redis integration (Storage → Upstash for Redis, free tier). Powers `api/leaderboard.js`; without it the API returns 503 and the game shows an on-device board. |
 
-Without any of these, the build uses the placeholder `https://catch-the-booster.example` and prints a warning. The build rejects non-https values. After deploying, paste the `/` URL into a post (or X's card validator) to check the card. GitHub Pages can't send the required headers, so it isn't supported.
+After deploying, post a fresh `/?v=N` link to check the card.
 
-### Worldwide leaderboard
+## Scripts worth knowing
 
-`api/leaderboard.js` is a Vercel Function that keeps each X handle's best score in Upstash Redis. To turn it on: Vercel project → Storage → Create Database → Upstash for Redis (free tier), connect it to the project, and redeploy. The integration sets `KV_REST_API_URL` and `KV_REST_API_TOKEN` (`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` also work). Until it's connected, the API answers 503 and the game shows the on-device board instead.
+| Command | What it does |
+| --- | --- |
+| `npm run check:card` | Builds, serves `dist/` and checks meta tags, card images, headers and the JS budget. Run with `VITE_SITE_URL` set. |
+| `npm run card` | Re-renders `public/player.jpg` and `public/share.jpg` from the real scene. `CARD_SCENE=ship\|stack`, `CARD_MAP=mars\|starbase`, `CHROMIUM_CHANNEL=chrome` to use installed Chrome. |
+| `npm run record` | Records the deterministic `?demo=1` showcase to MP4/GIF in `artifacts/` (needs `npx playwright install chromium` once). |
+| `npm run record:embed` | Records `/embed/` inside a 480×480 iframe host page, sandboxed like X's. |
+| `npm run author-demo` | Regenerates the demo's input script; `-- --check` re-verifies it. |
 
-Players type their handle; it isn't verified, and the API only rejects malformed handles, scores the reported run can't produce, and more than 10 submits a minute per IP.
+## Credits
 
-## 3D models
+- Fonts: D-DIN (Datto) and Sedgwick Ave Display, both SIL Open Font License; licenses in [`public/licenses/`](public/licenses/).
+- [three.js](https://threejs.org): MIT.
+- 3D models: built by the Blender script in [`blender/`](blender/), no third-party assets. Textures and sky are procedural.
 
-The booster, the ship, the tower (structure, carriage and catch arm) and the site props (tank farm, insulated spheres, launch mount) are modeled in Blender by a script and shipped as meshopt-compressed GLBs in `public/models/`:
-
-| File | Triangles | Size |
-| --- | --- | --- |
-| `booster.glb` | 77,188 | 637 KB |
-| `ship.glb` | 38,444 | 257 KB |
-| `tower.glb` (structure, carriage, one arm drawn twice) | 58,056 | 656 KB |
-| `props.glb` | 53,678 | 390 KB |
-
-- The game loads them at startup (`src/three/models.js`) and swaps them in when they arrive; until then, or if a file fails to load, it uses the procedural three.js models in `booster.js`, `ship.js`, `tower.js` and `world.js`. `?demo=1` waits up to 6 s for them before the first step, so a demo run never changes models midway.
-- Units are meters with +Y up, in the same frame as the procedural models: catch hardpoints rest on the arms at y = 0, the booster's bell exits are at y = -67.6 and the ship's at y = -35 (its nose tip at y = 15.5), and the arm and carriage nodes keep the pivots `setArms()` rotates and raises. The tower is built for the right-hand tower and mirrored for the left one.
-- Each mesh is named after a game material (glTF extra `role`: `steel`, `darkSteel`, `fin`, `bell`, `throat`, `tiles`, `lattice`, `arm`, `tankSteel`, …). The GLBs carry no materials; the game assigns its own. The booster body keeps the cylindrical UVs its skin texture expects; the ship's steel shares that texture (V in meters at the booster's scale), and its `tiles` carry UVs in meters / 64 for the hex tile texture `ship.js` draws.
-- Ambient occlusion is baked with Cycles into a vertex color (`COLOR_0`) on every mesh except the engine throats, which the game tints at runtime. Meshes with it get a vertex-colored copy of their role material (one per material); long members are cut along their length so the per-vertex bake can shade the joints.
-- The ship: tiles cover the windward half between the flap hinges, which sit off the camera axis so the flaps stand out on both sides; the catch pins stay on the ±Z sides where the arms close. Three sea-level engines at the center (they carry the throat discs and the plume) and three vacuum engines on the outer ring.
-- Rebuild with Blender (tested with 5.2): `blender/build.sh` runs `blender/build_models.py` headless (the AO bake is part of it) and compresses with `@gltf-transform/cli`. `blender/build.sh --render <dir>` also writes preview renders; `--no-bake` skips the bake for quick geometry iterations.
-
-No third-party models are used. Before modeling, downloadable CC0 / CC-BY candidates were checked and set aside: Sketchfab and BlendSwap require an account to download, Printables and Cults3D models are non-commercial or "no AI" licensed 3D-print files, and Poly Pizza has only stylized low-poly rockets and tanks.
-
-## Project layout
-
-```
-index.html                 share page (meta tags + full game)
-embed/index.html           player page for the X card (game only)
-src/game.html              shared game markup, injected into both pages at build time
-site.config.mjs            SITE_URL resolution + card meta tags (used by the build and check:card)
-vite.config.mjs            multi-page build, meta/markup injection
-styles.css                 HUD, overlays, embed + compact + tall layouts
-src/sim.js                 fixed-step physics, catch rules, scoring, rounds (DOM-free)
-src/demo.js                demo config + runner; src/demo-script.js frame-keyed inputs
-src/three/                 3D view: booster, ship, tower, world/sky (mars.js: the Mars map), effects and crash explosion, camera director, post-processing, model loader
-src/maps.js                map list, saved choice and the home screen's map picker
-src/home.js                home screen: game mode tabs, what-to-catch picker, How to play
-blender/                   Blender script that builds public/models/*.glb, and the build wrapper
-src/quality.js             automatic render-quality fallback
-src/ui.js                  DOM HUD, popups, banners, demo cards
-src/main.js                game loop, input (keyboard/mouse/touch), leaderboard, sound
-public/                    player.jpg, share.jpg, _headers, models/*.glb, font licenses (copied to dist/ as-is)
-vercel.json                Vercel build + headers
-scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
-```
-
-Fonts: D-DIN by Datto and Sedgwick Ave Display (the wordmark), both SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm). 3D models: built from `blender/` in this repo, no third-party assets.
+**Not affiliated with SpaceX.** No logos, trademarks or official imagery.

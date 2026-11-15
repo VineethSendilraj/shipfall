@@ -390,15 +390,15 @@ body.compact .map-pick button { font-size: 12px; padding: 0 11px; }
 
 .pick { position: absolute; inset: 0; pointer-events: none; }
 .pick-arrow { position: absolute; top: var(--hero-y); left: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; display: grid; place-items: center; pointer-events: auto; cursor: pointer;
-  color: var(--ink); border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(10, 11, 13, 0.42); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background 0.15s, border-color 0.15s, transform 0.08s; }
+  color: var(--ink); background: none; border: 0; padding: 0; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7)); transition: transform 0.12s, opacity 0.15s; opacity: 0.9; }
 .pick-arrow[data-step='-1'] { transform: translateX(-230px); }
 .pick-arrow[data-step='1'] { transform: translateX(230px); }
-.pick-arrow:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.45); }
+.pick-arrow:hover { opacity: 1; }
 .pick-arrow[data-step='-1']:active { transform: translateX(-231px); }
 .pick-arrow[data-step='1']:active { transform: translateX(231px); }
 .pick-arrow:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .pick-label { display: flex; flex-direction: column; align-items: center; text-align: center; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75); }
-.pick-name { font-size: 30px; line-height: 1.05; font-weight: 700; letter-spacing: 0.01em; color: var(--ink); }
+.pick-name { font-size: 38px; line-height: 1.05; font-weight: 700; letter-spacing: 0.01em; color: var(--ink); }
 .pick-note { margin-top: 4px; font-size: 14px; letter-spacing: 0.02em; color: rgba(241, 242, 244, 0.78); }
 .pick.fixed .pick-arrow { display: none; }
 
@@ -444,7 +444,7 @@ body.compact .pick-arrow { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
 body.compact .pick-arrow[data-step='-1'] { transform: translateX(min(-120px, -26vw)); }
 body.compact .pick-arrow[data-step='1'] { transform: translateX(max(120px, 26vw)); }
 body.compact .home-dock { bottom: 12px; gap: 10px; }
-body.compact .pick-name { font-size: 24px; }
+body.compact .pick-name { font-size: 32px; }
 body.compact .pick-note { font-size: 12px; }
 body.compact:not(.tall) .pick-note { display: none; }
 body.compact .modes button { font-size: 13px; padding: 9px 14px; }
@@ -456,7 +456,7 @@ body.compact .how { padding: 16px 18px 14px; }
 body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
 body.compact .how .rules { margin: 12px 0 14px; font-size: 12px; }
 body.tall .overlay.home { --hero-y: 34%; }
-body.tall .home-dock { bottom: calc(env(safe-area-inset-bottom) + 34px); }
+body.tall .home-dock { bottom: calc(env(safe-area-inset-bottom) + 76px); }
 body.tall .how { top: 35%; }
 
 /* -------------------------------------------------------------- explore */

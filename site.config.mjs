@@ -1,7 +1,7 @@
 // Build-time site settings shared by vite.config.mjs and scripts/check-card.mjs.
 //
 // SITE_URL is the public origin the share card points at (absolute URLs are required by the X crawler).
-// Set VITE_SITE_URL (or SITE_URL) when building, e.g. `VITE_SITE_URL=https://booster.example.com npm run build`.
+// Set VITE_SITE_URL (or SITE_URL) when building, e.g. `VITE_SITE_URL=https://shipfall.vercel.app npm run build`.
 // Without it, Vercel and Cloudflare Pages builds fall back to the URL the platform provides.
 
 export const PLACEHOLDER_SITE_URL = 'https://shipfall.example';
