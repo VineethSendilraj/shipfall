@@ -40,6 +40,8 @@ const burnAltM = (v, base = BURN_ALT_M) => base + (BOOSTER.bottom - v.bottom) / 
 const LIVE_BURN_ALT_M = Infinity;
 // ...and burns a little leaner, so the longer burn still leaves the same catch window.
 const LIVE_BURN_FUEL_RATE = 26;
+// ...and brakes more gently, so the visible landing burn starts higher (about 190 m instead of 130 m).
+const LIVE_A_BURN = 55;
 export const DOUBLE_UNLOCK_SCORE = 3000;
 /** What a single-catch round sends to tower A. Double-catch rounds always send a booster to A and a ship to B. */
 export const TARGETS = ['booster', 'ship', 'random'];
@@ -529,9 +531,10 @@ export class Game {
     }
     if (b.burning) {
       const d = b.zeroY - b.y;
-      const profile = d > 0 ? Math.sqrt(2 * A_BURN * d) : 0;
+      const aBurn = this.live ? LIVE_A_BURN : A_BURN;
+      const profile = d > 0 ? Math.sqrt(2 * aBurn * d) : 0;
       const vt = Math.max(b.vHover, profile);
-      const ff = profile > b.vHover ? A_BURN : 0;
+      const ff = profile > b.vHover ? aBurn : 0;
       const acc = clamp(G + ff + 8 * (b.vy - vt), G * 0.3, G + A_MAX);
       b.throttle += (acc / (G + A_MAX) - b.throttle) * 0.35;
       b.fuel = Math.max(0, b.fuel - (this.live ? LIVE_BURN_FUEL_RATE : BURN_FUEL_RATE) * this.fuelUse() * b.throttle * DT);
