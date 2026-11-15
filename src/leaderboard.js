@@ -49,7 +49,11 @@ export function savedHandle() {
 /** Inserts an entry into the on-device board, persists, and returns { list, index }. */
 export function addEntry(handle, score, round) {
   const entry = { handle, score, round, at: new Date().toISOString().slice(0, 10) };
-  const all = [...loadAll(), entry].sort((a, b) => b.score - a.score).slice(0, KEEP);
+  // The same handle in any capitalization is one player, shown as typed most recently.
+  const same = handle.toLowerCase();
+  const all = [...loadAll().map((e) => ((e.handle || '').toLowerCase() === same ? { ...e, handle } : e)), entry]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, KEEP);
   const list = dedupe(all).slice(0, 5);
   try {
     localStorage.setItem(KEY, JSON.stringify(all));

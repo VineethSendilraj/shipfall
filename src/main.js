@@ -368,7 +368,7 @@ function runGame() {
   const MODES = [
     { id: 'catch', label: 'Catch', targets: true, start: startGame },
     { id: 'flight', label: 'Mission', title: 'Mission', blurb: 'Launch to orbit, deploy satellites, land', start: startFlight },
-    { id: 'explore', label: 'Explore', title: 'Explore', blurb: 'The stack up close and catch replays', instant: true, start: () => startExplore() },
+    { id: 'explore', label: 'Simulate', title: 'Simulate', blurb: 'The stack up close and catch replays', instant: true, start: () => startExplore() },
   ];
   const home = bindHome({ root: titleEl, modes: MODES, view });
 

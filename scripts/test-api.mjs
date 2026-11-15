@@ -75,17 +75,17 @@ await test('a submit returns the rank and the board', async () => {
   assert.equal(res.entries[0].handle, 'Alice');
 });
 
-await test('each handle keeps its best score', async () => {
+await test('each handle keeps its best score, shown as typed most recently', async () => {
   await post({ handle: 'bob', ...run(3600) }, '5.6.7.8');
   const res = await (await post({ handle: 'alice', ...run(3100) })).json();
   assert.equal(res.best, 4200);
-  assert.deepEqual(res.entries.map((e) => [e.handle, e.score]), [['Alice', 4200], ['bob', 3600]]);
+  assert.deepEqual(res.entries.map((e) => [e.handle, e.score]), [['alice', 4200], ['bob', 3600]]);
 });
 
 await test('a player below the top 10 gets their rank, the field size and their neighbors', async () => {
   for (let i = 0; i < 12; i++) await post({ handle: `pilot${i}`, ...run(5000 + i * 100) }, `10.0.0.${i}`);
   const res = await (await post({ handle: 'rookie', ...run(3050) }, '10.0.1.1')).json();
-  // 12 pilots, then Alice (4,200), bob (3,600), rookie (3,050).
+  // 12 pilots, then alice (4,200), bob (3,600), rookie (3,050).
   assert.equal(res.total, 15);
   assert.equal(res.rank, 15);
   assert.equal(res.entries.length, 10);

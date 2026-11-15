@@ -20,7 +20,7 @@ Steer the falling ship or booster over the tower, line the arms up with its pins
 | Arms | `↑` `↓` | ▲ ▼ |
 | Catch | `Space` | CATCH |
 
-**Catch** the ship, the booster, or both. **Mission** flies the full stack to orbit and back. **Explore** walks around the stack and replays catches. Scores go on a worldwide leaderboard by X handle.
+**Catch** the ship, the booster, or both. **Mission** flies the full stack to orbit and back. **Simulate** walks around the stack and replays catches. Scores go on a worldwide leaderboard by X handle.
 
 ## Run locally
 

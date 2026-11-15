@@ -114,10 +114,16 @@ export async function POST(request) {
     // GT keeps each handle's best score; the details are only replaced when the score improves.
     const [changed] = await redis(db, [['ZADD', BOARD, 'GT', 'CH', run.score, key]]);
     const [prev] = await redis(db, [['HGET', WHO, key]]);
-    if (changed || !prev) {
-      const meta = JSON.stringify({ h: handle, c: run.catches, p: run.perfects, r: run.rounds, t: Date.now() });
-      await redis(db, [['HSET', WHO, key, meta]]);
+    // Handles match ignoring case; the board shows the capitalization typed most recently.
+    let meta = { h: handle, c: run.catches, p: run.perfects, r: run.rounds, t: Date.now() };
+    if (!changed && prev) {
+      try {
+        meta = { ...JSON.parse(prev), h: handle };
+      } catch {
+        // Unreadable details: replace them with this run's.
+      }
     }
+    if (changed || !prev || meta.h !== JSON.parse(prev || '{}').h) await redis(db, [['HSET', WHO, key, JSON.stringify(meta)]]);
     const data = await board(db, key);
     return json({ rank: data.me.rank, best: data.me.score, ...data });
   } catch {
