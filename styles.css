@@ -524,11 +524,12 @@ body.tall .explore-chips { bottom: max(16px, env(safe-area-inset-bottom)); }
 body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 44px); }
 
 /* -------------------------------------------------------------- caps pass: labels, toggles, buttons */
-.map-pick button, .modes button, .btn, .ext, .pick-name, .how .controls span:last-child { text-transform: uppercase; }
+.map-pick button, .modes button, .btn, .ext, .pick-name, .disclaimer, .how .controls span:last-child { text-transform: uppercase; }
 .map-pick button { font-size: 12px; letter-spacing: 0.14em; white-space: nowrap; }
 .modes button { font-size: 13px; letter-spacing: 0.12em; }
 .btn { letter-spacing: 0.1em; font-size: 14px; }
 .pick-name { letter-spacing: 0.06em; }
+.disclaimer { letter-spacing: 0.14em; font-size: 9.5px; }
 
 /* How to play: one column of key chips and short labels. */
 .how { padding: 24px 24px 20px; }
