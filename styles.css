@@ -415,7 +415,7 @@ body.compact .home-links .ext { font-size: 12px; padding: 4px 6px; }
 body.compact .how { padding: 16px 18px 14px; }
 body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
 body.compact .how .rules { margin: 12px 0 14px; font-size: 12px; }
-body.tall .overlay.home { --hero-y: 28%; }
+body.tall .overlay.home { --hero-y: 25%; }
 body.tall .home-dock { bottom: calc(30% + 8px); }
 body.tall .how { top: 35%; }
 

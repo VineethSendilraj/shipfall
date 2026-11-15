@@ -13,6 +13,8 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // Mission seconds after liftoff, and the look-around offset that pulls back and looks up at the stack.
 const CARD_T = Number(process.env.CARD_T || 3);
 const CAMERA = { zoom: 1.9, pitch: -0.12, yaw: 0 };
+// The X logo, as on the game's Post on X button.
+const X_PATH = 'M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z';
 const CHANNEL = process.env.CHROMIUM_CHANNEL || undefined;
 const GL_ARGS = (process.env.CHROMIUM_ARGS || (CHANNEL ? '--ignore-gpu-blocklist' : '--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist')).split(' ').filter(Boolean);
 
@@ -31,7 +33,9 @@ const cardCss = (s) => `
     filter: drop-shadow(0 ${8 * s.u}px ${18 * s.u}px rgba(0, 0, 0, 0.55)) drop-shadow(0 ${2 * s.u}px 0 rgba(0, 0, 0, 0.6)); }
   .card-art .tag { margin-top: ${18 * s.u}px; padding: ${12 * s.u}px ${30 * s.u}px; border-radius: ${10 * s.u}px; font: 700 ${40 * s.u}px/1 var(--display); letter-spacing: ${0.06 * 40 * s.u}px; text-transform: uppercase;
     color: #1a0d03; background: linear-gradient(180deg, #ffc46b, #ff8a2a); box-shadow: 0 ${6 * s.u}px ${20 * s.u}px rgba(0, 0, 0, 0.45), inset 0 ${2 * s.u}px 0 rgba(255, 255, 255, 0.45); }
-  .card-art .sub { display: ${s.sub === false ? 'none' : 'block'}; margin-top: ${16 * s.u}px; font: 700 ${30 * s.u}px/1 var(--display); letter-spacing: ${0.1 * 30 * s.u}px; text-transform: uppercase; color: #f1f2f4; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85); }
+  .card-art .sub { display: ${s.sub === false ? 'none' : 'flex'}; align-items: center; gap: ${12 * s.u}px; margin-top: ${16 * s.u}px; font: 700 ${30 * s.u}px/1 var(--display); letter-spacing: ${0.1 * 30 * s.u}px; text-transform: uppercase; color: #f1f2f4; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85); }
+  .card-art .x { display: grid; place-items: center; width: ${46 * s.u}px; height: ${46 * s.u}px; border-radius: ${11 * s.u}px; background: #000; box-shadow: 0 ${3 * s.u}px ${12 * s.u}px rgba(0, 0, 0, 0.5); }
+  .card-art .x svg { width: 64%; height: 64%; }
   .card-foot { position: absolute; left: ${22 * s.u}px; bottom: ${18 * s.u}px; font: 600 ${16 * s.u}px var(--display); letter-spacing: 0.1em; color: rgba(241, 242, 244, 0.75); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 `;
 
@@ -45,7 +49,7 @@ for (const s of SHOTS) {
   await page.waitForFunction(() => window.__flightReady === true, null, { timeout: 120000 });
   await page.addStyleTag({ content: cardCss(s) });
   await page.evaluate(
-    ([t, cam]) => {
+    ([t, cam, xPath]) => {
       for (let i = 0; i < 20000; i++) if (window.__advance(1, false).t >= t) break;
       const o = window.__view.orbit;
       Object.assign(o.want, cam);
@@ -54,13 +58,13 @@ for (const s of SHOTS) {
       for (let i = 0; i < 3; i++) window.__advance(1, true);
       const art = document.createElement('div');
       art.className = 'card-art';
-      art.innerHTML = '<h1>ShipFall</h1><div class="tag">Try to catch Starship</div><div class="sub">Playable in the timeline</div>';
+      art.innerHTML = '<h1>ShipFall</h1><div class="tag">Try to catch Starship</div><div class="sub">Playable in <i class="x"><svg viewBox="0 0 24 24"><path fill="#fff" d="' + xPath + '"/></svg></i></div>';
       const foot = document.createElement('div');
       foot.className = 'card-foot';
       foot.textContent = 'not affiliated with SpaceX';
       document.getElementById('app').append(art, foot);
     },
-    [CARD_T, { ...CAMERA, zoom: s.zoom ?? CAMERA.zoom }],
+    [CARD_T, { ...CAMERA, zoom: s.zoom ?? CAMERA.zoom }, X_PATH],
   );
   await page.evaluate(() => document.fonts.ready);
   const out = join(REPO, 'public', s.file);

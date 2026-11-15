@@ -37,7 +37,7 @@ const TALL_LIFT = 0.35;
 // the ring's top flange, BODY_TOP + 4 = 12 m, minus the ship's aft end, SHIP_SKIRT = -32.9 m).
 // Home screen hero shot, per screen shape: the share of the screen height the vehicle fills and where its
 // middle sits from the top. The home screen's arrows follow `y` (--hero-y in styles.css).
-const HERO_LAYOUT = { wide: { fill: 0.5, y: 0.43 }, square: { fill: 0.4, y: 0.36 }, tall: { fill: 0.3, y: 0.28 } };
+const HERO_LAYOUT = { wide: { fill: 0.5, y: 0.43 }, square: { fill: 0.4, y: 0.36 }, tall: { fill: 0.24, y: 0.25 } };
 // Seconds a new pick takes to drop into the arms.
 const HERO_SETTLE = 0.55;
 const heroParts = (kind) => (kind === 'random' ? [['booster', 0], ['ship', SHIP_Y]] : [[kind, 0]]);

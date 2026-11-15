@@ -20,7 +20,9 @@ export class AutoQuality {
     this.view = view;
     const forcedLevel = QUALITY.findIndex((q) => q.name === forced);
     this.locked = forcedLevel >= 0;
-    this.level = this.locked ? forcedLevel : isSoftwareRenderer(view.renderer) ? 2 : 0;
+    // Phones and tablets start at medium (pixel ratio 1, no MSAA): high-DPR screens on mobile GPUs rarely hold 33 fps at high.
+    const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    this.level = this.locked ? forcedLevel : isSoftwareRenderer(view.renderer) ? 2 : touch ? 1 : 0;
     this.last = 0;
     this.frames = 0;
     this.elapsed = 0;
