@@ -263,21 +263,40 @@ export class View {
     const { scene } = this;
     const old = this.world;
     old.saved = { fog: scene.fog, environment: scene.environment, environmentIntensity: scene.environmentIntensity };
+    // Its baked sky goes with it too: re-baking on every switch was the main stall on phones.
+    old.skyCube = this.skyCube;
+    this.skyCube = null;
     scene.remove(old.root);
     (this.worlds ??= {})[old.map] = old;
-    this.skyCube?.dispose();
-    this.skyCube = null;
     const cached = this.worlds[map];
     if (cached) {
       scene.add(cached.root);
       scene.children.unshift(scene.children.pop());
       Object.assign(scene, cached.saved);
       this.world = cached;
+      this.skyCube = cached.skyCube ?? null;
     } else this.buildMap(map);
     for (const s of this.pool) s.plume.setPalette(this.world.fx);
     this.particles.setPalette(this.world.fx);
     this.explosions.setPalette(this.world.fx);
     if (this.quality) this.setQuality(this.quality);
+  }
+
+  /** Builds a map ahead of time, detached, with its shaders compiling in the background, so a later switch is instant. */
+  prebuildMap(map) {
+    if (map === this.world.map || this.worlds?.[map]) return;
+    const { scene } = this;
+    const current = this.world;
+    const keep = { fog: scene.fog, environment: scene.environment, environmentIntensity: scene.environmentIntensity };
+    this.buildMap(map);
+    const built = this.world;
+    built.saved = { fog: scene.fog, environment: scene.environment, environmentIntensity: scene.environmentIntensity };
+    if (this.quality?.bakedSky) built.skyCube = bakeSky(this.renderer, built.sky);
+    this.renderer.compileAsync(built.root, this.camera, scene).catch(() => {});
+    scene.remove(built.root);
+    (this.worlds ??= {})[map] = built;
+    this.world = current;
+    Object.assign(scene, keep);
   }
 
   buildMap(map) {

@@ -495,6 +495,11 @@ function runGame() {
   // Opening the game plays a short ship catch, then the home screen (?intro=0 skips it).
   else if (!FLIGHT && params.get('intro') !== '0') startExplore('catch', { intro: true });
   else if (state === 'title') explore.models.then(() => state === 'title' && explore.mountUnderTower(true));
+  // Once the first screen is up, the other map is built in idle time so switching to it doesn't stall.
+  explore.models.then(() => {
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1500));
+    idle(() => view.prebuildMap(view.world.map === 'mars' ? 'starbase' : 'mars'), { timeout: 6000 });
+  });
   // The home screen stays hidden until here, so a reload never flashes it before the intro takes over.
   document.documentElement.classList.add('booted');
   soundBtn.addEventListener('click', () => {
