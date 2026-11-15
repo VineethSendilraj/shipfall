@@ -292,6 +292,9 @@ function runGame() {
     mapPicker.apply();
     flightView ??= new FlightView(view);
     flightHud ??= new FlightHud(ui);
+    flightHud.onSkip = skipTo;
+    warp = null;
+    document.body.classList.remove('warping');
     flight = new Flight({ seed: 1 });
     pilot = PILOT ? createFlightPilot() : null;
     flightView.enter(flight);
@@ -596,7 +599,29 @@ function runGame() {
     }
   }
 
+  // Fast-forward to a timeline event: the autopilot flies WARP_STEPS sim steps a frame until the event happens.
+  let warp = null;
+  const WARP_STEPS = 40;
+  function skipTo(mark) {
+    if (state !== 'playing' || !flight || flight.marks[mark] != null) return;
+    warp = { mark, pilot: createFlightPilot() };
+    document.body.classList.add('warping');
+  }
+  function stepWarp() {
+    flightView.snapshot(flight);
+    for (let i = 0; i < WARP_STEPS && warp; i++) {
+      flight.step(warp.pilot(flight));
+      flightView.step(flight);
+      if (flight.marks[warp.mark] != null || flight.phase === 'over') {
+        warp = null;
+        document.body.classList.remove('warping');
+      }
+    }
+    if (flight.phase === 'over' && overTimer < 0) overTimer = 2.6;
+  }
+
   function stepFlight() {
+    if (warp && state === 'playing') return stepWarp();
     const input = state !== 'playing' ? NO_INPUT : pilot ? pilot(flight) : { ...held, close: closeLatch };
     closeLatch = false;
     flightView.snapshot(flight);

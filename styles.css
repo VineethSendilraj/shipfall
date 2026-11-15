@@ -566,3 +566,8 @@ html:not(.booted) #title-screen { visibility: hidden; }
 /* Wide screens keep the gauges along the bottom, so the on-screen keys sit just above them. */
 body:not(.compact):not(.tall) .touch { bottom: calc(128px * var(--ui) + 6px); }
 body:not(.compact):not(.tall).touch-ui .coach { bottom: calc(128px * var(--ui) + clamp(50px, min(14.5vw, 15vh), 68px) + 22px); }
+
+/* Mission timeline: events still ahead can be clicked to fast-forward to them. */
+.timeline .fl.ahead { pointer-events: auto; cursor: pointer; }
+.timeline text.fl.ahead:hover { fill: var(--ink); }
+.timeline .mark.fl.ahead:hover { fill: var(--ink); }

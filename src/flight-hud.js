@@ -75,9 +75,14 @@ export class FlightHud {
     const span = gaps.reduce((a, b) => a + b, 0);
     let at = 0;
     this.frac = MARKS.map((_, i) => 0.04 + (0.92 * (at += i ? gaps[i - 1] : 0)) / span);
+    // Clicking an event still ahead fast-forwards to it (set onSkip); the booster catch isn't one of the ship's own.
+    this.onSkip = null;
     MARKS.forEach(([k, label], i) => {
       bar.addMark(`fl-${k}`, label, 'fl');
       bar.placeMark(`fl-${k}`, this.frac[i]);
+      if (k === 'catch') return;
+      const m = bar.marks[`fl-${k}`];
+      for (const el of [m.dot, m.label]) el.addEventListener('click', () => m.label.classList.contains('ahead') && this.onSkip?.(k));
     });
     this.retro = svg('g', { class: 'retro' }, $('h-align').querySelector('svg'));
     svg('circle', { r: 4.4 }, this.retro);
@@ -195,7 +200,7 @@ export class FlightHud {
     for (const [k, label] of MARKS) {
       const m = bar.marks[`fl-${k}`];
       const at = f.marks[k];
-      let cls = at == null ? '' : f.t - at < ON_FOR ? 'on' : 'past';
+      let cls = at == null ? (k !== 'catch' && f.phase !== 'over' ? 'ahead' : '') : f.t - at < ON_FOR ? 'on' : 'past';
       let text = label;
       if (k === 'catch' && f.booster.state === 'lost') [text, cls] = ['BOOSTER LOST', 'bad'];
       if (k === 'landing' && f.outcome) [text, cls] = f.outcome.ok ? [label, 'ok'] : [f.outcome.lost ? 'SHIP LOST' : 'CRASH', 'bad'];

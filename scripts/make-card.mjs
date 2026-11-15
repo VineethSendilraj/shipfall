@@ -27,6 +27,8 @@ const SCENES = {
   ship: { url: `/?demo=1&capture=1&map=${MAP}`, ready: '__demoReady', at: Number(process.env.CARD_AT || 1325), cam: { zoom: 0.72, pitch: -0.08, yaw: 0.15 }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
 };
 const SCENE = SCENES[process.env.CARD_SCENE || 'replay'];
+// CARD_STYLE=big puts the big-title look on the demo and flight scenes too (the replay always uses it).
+const BIG = SCENE.big || process.env.CARD_STYLE === 'big';
 // The X logo, as on the game's Post on X button.
 const X_PATH = 'M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z';
 const CHANNEL = process.env.CHROMIUM_CHANNEL || undefined;
@@ -41,12 +43,13 @@ const SHOTS = [
 // The big-title look: only the scene, the wordmark low in the frame and "Playable in X" above it.
 const bigCss = (s) => `
   #explore, #corner, .disclaimer, #explore-hint, #title-screen, #hud, .explore-view, #explore-chips, .intro-logo, .explore-bar { display: none !important; }
-  .card-art { position: fixed; left: 0; right: 0; bottom: ${s.h * 0.03}px; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 99; }
-  .card-art .sub { display: flex; align-items: center; gap: ${12 * s.u}px; font: 700 ${30 * s.u}px/1 var(--display); letter-spacing: ${0.14 * 30 * s.u}px; text-transform: uppercase; color: #fff; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7); }
-  .card-art .x { display: grid; place-items: center; width: ${46 * s.u}px; height: ${46 * s.u}px; border-radius: ${11 * s.u}px; background: #000; box-shadow: 0 ${3 * s.u}px ${12 * s.u}px rgba(0, 0, 0, 0.5); }
+  .card-art { position: fixed; top: auto; transform: none; width: auto; left: 0; right: 0; bottom: ${s.h * (0.075 + (s.extra || 0))}px; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 99; }
+  .card-art .sub { display: flex; align-items: center; gap: ${12 * s.u}px; margin-bottom: ${6 * s.u}px; padding: ${9 * s.u}px ${12 * s.u}px ${9 * s.u}px ${22 * s.u}px; border-radius: ${10 * s.u}px; font: 700 ${28 * s.u}px/1 var(--display); letter-spacing: ${0.14 * 28 * s.u}px; text-transform: uppercase;
+    color: #1a0d03; background: linear-gradient(180deg, #ffc46b, #ff8a2a); box-shadow: 0 ${6 * s.u}px ${20 * s.u}px rgba(0, 0, 0, 0.4), inset 0 ${2 * s.u}px 0 rgba(255, 255, 255, 0.45); }
+  .card-art .x { display: grid; place-items: center; width: ${40 * s.u}px; height: ${40 * s.u}px; border-radius: ${8 * s.u}px; background: #000; }
   .card-art .x svg { width: 64%; height: 64%; }
   .card-art h1 { margin: 0; font: 400 ${s.title}px/1.05 'Sedgwick Ave Display', var(--display); color: #fff; text-shadow: 0 ${6 * s.u}px ${30 * s.u}px rgba(0, 0, 0, 0.45); }
-  .card-foot { position: fixed; left: ${18 * s.u}px; bottom: ${12 * s.u}px; z-index: 99; font: 600 ${13 * s.u}px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(241, 242, 244, 0.75); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
+  .card-foot { position: fixed; top: auto; left: ${18 * s.u}px; bottom: ${12 * s.u + s.h * (s.extra || 0)}px; z-index: 99; font: 600 ${13 * s.u}px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(241, 242, 244, 0.75); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 `;
 
 const cardCss = (s) => `
@@ -80,7 +83,7 @@ for (const s of SHOTS) {
       ([kind, at, xPath]) => {
         const e = window.__explore;
         e.startReplay(kind);
-        for (let t = 0; t < at; t += 1 / 30) window.__exploreFrame(1 / 30);
+        while (e.replay.t < at) window.__exploreFrame(1 / 30);
         const art = document.createElement('div');
         art.className = 'card-art';
         art.innerHTML = '<div class="sub">Playable in <i class="x"><svg viewBox="0 0 24 24"><path fill="#fff" d="' + xPath + '"/></svg></i></div><h1>ShipFall</h1>';
@@ -123,6 +126,12 @@ for (const s of SHOTS) {
     },
     [SCENE.ready === '__flightReady', SCENE.at, { ...SCENE.cam, zoom: s.zoom ?? SCENE.cam.zoom }, X_PATH],
   );
+  if (BIG) {
+    await page.addStyleTag({ content: bigCss(s) });
+    await page.evaluate((xPath) => {
+      document.querySelector('.card-art').innerHTML = '<div class="sub">Playable in <i class="x"><svg viewBox="0 0 24 24"><path fill="#fff" d="' + xPath + '"/></svg></i></div><h1>ShipFall</h1>';
+    }, X_PATH);
+  }
   await page.evaluate(() => Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))]));
   const out = join(OUT, s.file);
   await page.screenshot({ path: out, type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: s.w, height: s.h } });
