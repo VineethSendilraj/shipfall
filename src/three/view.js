@@ -244,9 +244,28 @@ export class View {
    */
   setMap(map) {
     if (map === this.world.map) return;
-    this.world.dispose();
+    // A map left behind stays built (detached, with the fog and light it set), so switching back is instant.
+    const { scene } = this;
+    const old = this.world;
+    old.saved = { fog: scene.fog, environment: scene.environment, environmentIntensity: scene.environmentIntensity };
+    scene.remove(old.root);
+    (this.worlds ??= {})[old.map] = old;
     this.skyCube?.dispose();
     this.skyCube = null;
+    const cached = this.worlds[map];
+    if (cached) {
+      scene.add(cached.root);
+      scene.children.unshift(scene.children.pop());
+      Object.assign(scene, cached.saved);
+      this.world = cached;
+    } else this.buildMap(map);
+    for (const s of this.pool) s.plume.setPalette(this.world.fx);
+    this.particles.setPalette(this.world.fx);
+    this.explosions.setPalette(this.world.fx);
+    if (this.quality) this.setQuality(this.quality);
+  }
+
+  buildMap(map) {
     this.world = buildWorld(this.scene, this.renderer, this.towerMats, map);
     if (this.models?.props) {
       try {
@@ -255,10 +274,6 @@ export class View {
         console.error('props model unusable; keeping the procedural one', err);
       }
     }
-    for (const s of this.pool) s.plume.setPalette(this.world.fx);
-    this.particles.setPalette(this.world.fx);
-    this.explosions.setPalette(this.world.fx);
-    if (this.quality) this.setQuality(this.quality);
   }
 
   setQuality(q) {

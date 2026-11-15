@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ARM_REACH, GROUND_Y, PX_PER_M } from './sim.js';
+import { ARM_REACH, GROUND_Y, PX_PER_M, VEHICLES } from './sim.js';
 import { toX } from './three/director.js';
 import { ENGINE_Y } from './three/booster.js';
 import { createStack, SHIELD_Y, SHIP_Y } from './three/stack.js';
-import { SPIN } from './three/ship.js';
+import { SPIN, SHIP_ENGINE_Y, createShip, createShipPlume, faceTower } from './three/ship.js';
 
 const $ = (id) => document.getElementById(id);
 const { lerp } = THREE.MathUtils;
@@ -43,6 +43,8 @@ const FILL_CD = 800;
  */
 const PRESETS = [
   { id: 'stack', label: 'Stack', target: [0, 76, 0], camera: [62, 10, 200], fov: 44 },
+  // Not a framing: replays a ship catch (see CATCH below) with the camera following the ship.
+  { id: 'catch', label: 'Ship catch', replay: true },
   // From below, between two of the mount's legs.
   { id: 'engines', label: 'Engines', target: [0, BOOSTER_Y + ENGINE_Y + 0.35, 0], camera: [0, 10, 6.3], fov: 52, wide: true },
   { id: 'fins', label: 'Grid fins', target: [0, BOOSTER_Y + 4.5, 0], camera: [11, BOOSTER_Y + 12, 14], fov: 40 },
@@ -67,6 +69,57 @@ const PARTS = [
   [-SPIN, [4.8, 7.1], [-2.6, -1.5], [134.9, 140.8]],
   [Math.PI - SPIN, [4.9, 7.25], [-2.1, -1.3], [134.9, 140.8]],
 ];
+// The ship catch replay, after the real one: the ship falls belly first from high over the far side, level with its
+// tiles down and its nose away from the tower, relights its three sea-level engines, swings upright leaning slightly
+// in, eases into the open arms and they close on its pins. Keys: [seconds, meters out on the far side, meters above
+// the catch, rotation about z (pi/2 level, 0 upright, negative leaning toward the tower), throttle].
+const CATCH = [
+  [0, 300, 1150, Math.PI / 2, 0],
+  [6.5, 150, 430, Math.PI * 0.485, 0],
+  [7.2, 135, 360, Math.PI * 0.45, 0.9],
+  [9.6, 70, 190, -0.14, 1],
+  [13.5, 8, 25, -0.05, 0.75],
+  [15.2, 0, 0, 0, 0.55],
+  [15.6, 0, 0, 0, 0],
+];
+const CATCH_CLOSE = [15.0, 15.8]; // the arms close on the pins between these times
+const CATCH_C = VEHICLES.ship.center / PX_PER_M; // the ship's middle, this far below its pins
+// The replay's two fixed corner cameras (from the foot): high over the front-left corner, framing the tower and the
+// falling ship together, and someone standing at eye height out at the front-right corner. Each aims partway from the
+// arms toward the ship, so the tower stays in the shot as the ship comes down to it.
+// The aerial camera dollies from the high corner to a closer one over the descent, its aim sliding from the ship to the
+// tower (air: [start, end] weights toward the ship).
+const CATCH_AIR = [new THREE.Vector3(-300, 760, 620), new THREE.Vector3(-150, 150, 250)];
+const CATCH_GROUND = new THREE.Vector3(240, 1.7, 330);
+const CATCH_AIM = { air: [0.85, 0.3], ground: 0.45 };
+// Where the camera sits relative to the ship's middle at the start and at the catch, until the player takes over.
+const smooth01 = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+
+/** The replay's state at time t: { dx, h, a, thr }, positions on a smooth curve through the keys. */
+function catchAt(t) {
+  const K = CATCH;
+  const last = K.length - 1;
+  if (t >= K[last][0]) return { dx: K[last][1], h: K[last][2], a: K[last][3], thr: K[last][4] };
+  let i = 0;
+  while (t > K[i + 1][0]) i++;
+  const [t0, t1] = [K[i][0], K[i + 1][0]];
+  const u = (t - t0) / (t1 - t0);
+  // Cubic Hermite with finite-difference slopes keeps the path and speed smooth through the keys.
+  const slope = (j, k) => {
+    const a = K[Math.max(0, j - 1)];
+    const b = K[Math.min(last, j + 1)];
+    return ((b[k] - a[k]) / (b[0] - a[0] || 1)) * (t1 - t0);
+  };
+  const herm = (k) => {
+    const [p0, p1, m0, m1] = [K[i][k], K[i + 1][k], slope(i, k), slope(i + 1, k)];
+    const u2 = u * u;
+    const u3 = u2 * u;
+    return (2 * u3 - 3 * u2 + 1) * p0 + (u3 - 2 * u2 + u) * m0 + (-2 * u3 + 3 * u2) * p1 + (u3 - u2) * m1;
+  };
+  const e = smooth01(u);
+  return { dx: herm(1), h: herm(2), a: lerp(K[i][3], K[i + 1][3], e), thr: lerp(K[i][4], K[i + 1][4], e) };
+}
+
 const AXES = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]].map((a) => new THREE.Vector3(...a));
 const probe = new THREE.Vector3();
 const push = new THREE.Vector3();
@@ -198,6 +251,11 @@ export class Explore {
     });
     $('explore-back').addEventListener('click', () => this.back());
     $('explore-photo').addEventListener('click', () => this.photo());
+    this.viewBtn = $('explore-view');
+    this.viewBtn.addEventListener('click', (ev) => {
+      if (ev.detail > 0) this.viewBtn.blur();
+      this.setGroundView(!this.ground);
+    });
     window.addEventListener('keydown', (ev) => this.onKey(ev));
   }
 
@@ -216,6 +274,8 @@ export class Explore {
     for (const [i, p] of PRESETS.entries()) this.chips[i].lastChild.textContent = p.labels?.[world.map] ?? p.label;
     $('explore').classList.remove('hidden');
     document.body.classList.add('exploring');
+    // Built before the first focus, so a replay asked for on entry (?focus=catch) can wait on it.
+    this.ready ??= this.models.then((m) => this.build(m));
     const start = PRESETS.find((p) => p.id === focus);
     this.focus(start ?? PRESETS[0], !!start);
     // The glide in starts at the title camera, outside the site and the orbit limits.
@@ -235,6 +295,7 @@ export class Explore {
     this.controls.enabled = false;
     this.controls.autoRotate = false;
     this.flight = null;
+    this.endReplay();
     $('explore').classList.add('hidden');
     document.body.classList.remove('exploring');
     if (this.stack) this.stage(false);
@@ -247,6 +308,7 @@ export class Explore {
 
   build(models) {
     const { view } = this;
+    this.builtModels = models;
     this.stack = createStack(view.boosterMats, view.shipMats, models);
     this.stack.root.position.set(this.foot.x, BOOSTER_Y, this.foot.z);
     view.scene.add(this.stack.root);
@@ -267,12 +329,103 @@ export class Explore {
     // The title's map picker can swap in another world, with its own mount, between visits.
     if (this.world !== view.world) {
       this.world = view.world;
-      this.moveMount = mountMover(view, this.foot);
+      // One mover per world: a cached world comes back with its mount already split off.
+      this.movers ??= new WeakMap();
+      if (!this.movers.has(view.world)) this.movers.set(view.world, mountMover(view, this.foot));
+      this.moveMount = this.movers.get(view.world);
       this.pickables = [this.stack.root, view.towers[0].root, view.scene.getObjectByName('props') ?? view.world.dressing.mount];
     }
-    this.stack.root.visible = on;
+    this.stack.root.visible = on && !this.replay;
     this.lights.visible = on;
     this.moveMount(on);
+    this.replayShip?.plume.setPalette(view.world.fx);
+  }
+
+  /** Starts (or restarts) the ship catch replay: the stack steps aside and the camera follows the falling ship. */
+  startReplay() {
+    // Only inside Explore: the replay ship would otherwise sit in the home screen's tower beside its showcase.
+    if (!this.active) return;
+    if (!this.stack) {
+      this.ready?.then(() => this.active && this.startReplay());
+      return;
+    }
+    const { view } = this;
+    if (!this.replayShip) {
+      const ship = createShip(view.shipMats, this.builtModels?.ship);
+      faceTower(ship, 1);
+      ship.plume = createShipPlume();
+      ship.root.add(ship.plume.group);
+      this.replayShip = ship;
+    }
+    this.replayShip.plume.setPalette(view.world.fx);
+    view.scene.add(this.replayShip.root);
+    this.replay = { t: 0, auto: true };
+    document.body.classList.add('replaying');
+    this.flight = null;
+    this.stack.root.visible = false;
+    // The corner cameras sit outside the orbit limits Explore uses for the stack.
+    this.controls.maxTargetRadius = Infinity;
+    this.controls.maxDistance = Infinity;
+    this.controls.autoRotate = false;
+    setFov(view.camera, 55);
+    this.stepReplay(0, true);
+  }
+
+  /** Switches the replay between following the ship from above and the fixed camera on the ground. */
+  setGroundView(on) {
+    this.ground = on;
+    this.viewBtn.setAttribute('aria-pressed', String(on));
+    this.viewBtn.title = on ? 'Aerial view' : 'Ground view';
+    setFov(this.view.camera, 55);
+    // Back in the follow view, the camera eases back to its framing around the ship.
+    if (!on && this.replay) this.replay.auto = true;
+  }
+
+  endReplay() {
+    if (!this.replay) return;
+    this.replay = null;
+    document.body.classList.remove('replaying');
+    if (this.ground) this.setGroundView(false);
+    this.replayShip?.root.removeFromParent();
+    this.game.towers[0].open = 1;
+    this.controls.maxTargetRadius = PIVOT_R;
+    this.controls.maxDistance = 520;
+    if (this.stack) this.stack.root.visible = this.active;
+  }
+
+  /** Advances the replay: places the ship, its flame and the arms, and moves the camera with the ship. */
+  stepReplay(dt, snap = false) {
+    const r = this.replay;
+    const { view } = this;
+    r.t += dt;
+    const s = catchAt(r.t);
+    const ship = this.replayShip;
+    // The keys place the ship's middle; the root (its pins) sits CATCH_C up the turned axis from it.
+    const mid = new THREE.Vector3(this.foot.x - s.dx, SHIP_PINS - CATCH_C + s.h, this.foot.z);
+    ship.root.rotation.set(0, 0, s.a);
+    ship.root.position.set(mid.x - Math.sin(s.a) * CATCH_C, mid.y + Math.cos(s.a) * CATCH_C, mid.z);
+    const engineY = ship.root.position.y + Math.cos(s.a) * SHIP_ENGINE_Y;
+    const engineX = ship.root.position.x - Math.sin(s.a) * SHIP_ENGINE_Y;
+    ship.plume.update(s.thr, this.game.t, Math.max(0, engineY - view.world.groundHeight(engineX, mid.z)));
+    ship.throatMat.color.setRGB(7 * s.thr + 0.02, 3 * s.thr, 0.9 * s.thr);
+    const [c0, c1] = CATCH_CLOSE;
+    this.game.towers[0].open = 1 - smooth01((r.t - c0) / (c1 - c0));
+    // The aim leans from the arms toward the ship. A drag or zoom in the aerial view keeps the player's angle and
+    // moves with the aim; the ground view stays put where a person would stand.
+    const c = this.controls;
+    const arms = new THREE.Vector3(this.foot.x, SHIP_PINS - CATCH_C, this.foot.z);
+    const k = smooth01(r.t / CATCH_CLOSE[0]);
+    const aim = arms.lerp(mid, this.ground ? CATCH_AIM.ground : lerp(CATCH_AIM.air[0], CATCH_AIM.air[1], k));
+    const move = aim.clone().sub(c.target);
+    c.target.copy(aim);
+    if (this.ground) {
+      const g = CATCH_GROUND.clone().add(this.foot);
+      g.y = view.world.groundHeight(g.x, g.z) + CATCH_GROUND.y;
+      view.camera.position.copy(g);
+    } else if (r.auto) {
+      view.camera.position.lerp(CATCH_AIR[0].clone().lerp(CATCH_AIR[1], k).add(this.foot), snap ? 1 : 1 - Math.exp(-dt * 3));
+    } else view.camera.position.add(move);
+    this.idle = r.t > CATCH_CLOSE[1] + 2 ? this.idle : 0;
   }
 
   createControls() {
@@ -299,6 +452,11 @@ export class Explore {
     c.autoRotateSpeed = 0.9;
     c.addEventListener('start', () => {
       this.wake();
+      // Dragging or zooming during the replay hands the camera to the player; it still follows the ship.
+      if (this.replay) {
+        this.replay.auto = false;
+        return;
+      }
       // Taking over a glide from outside would snap the camera inside the orbit limits, so it runs to its end.
       if (this.flight?.outside) return;
       this.flight = null;
@@ -336,6 +494,8 @@ export class Explore {
     this.wake();
     this.chips.forEach((chip, i) => chip.classList.toggle('on', PRESETS[i] === p));
     this.chips[PRESETS.indexOf(p)].scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' });
+    if (p.replay) return this.startReplay();
+    this.endReplay();
     const base = p.world ? new THREE.Vector3() : this.foot;
     const to = { target: new THREE.Vector3(...p.target).add(base), position: new THREE.Vector3(...p.camera).add(base), fov: this.fovFor(p) };
     const { camera } = this.view;
@@ -502,7 +662,7 @@ export class Explore {
     const dx = p.x - SITE.x;
     const dz = p.z - SITE.z;
     const k = SITE_R / Math.hypot(dx, dz);
-    if (k < 1 && !this.flight?.outside) p.set(SITE.x + dx * k, p.y, SITE.z + dz * k);
+    if (k < 1 && !this.flight?.outside && !this.replay) p.set(SITE.x + dx * k, p.y, SITE.z + dz * k);
     // More than one round for the corners, where getting out of one shape can put the camera in another.
     for (let round = 0; round < 3; round++) {
       for (const shape of this.shapes) {
@@ -582,6 +742,7 @@ export class Explore {
   frame(dt) {
     this.game.t += dt;
     this.idle += dt;
+    if (this.replay) this.stepReplay(dt);
     if (this.flight) this.fly(dt);
     else this.orbit(dt);
     this.clamp();

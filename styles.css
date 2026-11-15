@@ -366,10 +366,13 @@ body.compact #flight-over .report div { padding: 4px 8px; font-size: 12.5px; }
 body.tall #flight-over { align-items: start; padding-top: 16px; padding-bottom: 30%; }
 
 /* ------------------------------------------------- map picker (src/maps.js) */
-.map-pick { display: flex; gap: 2px; padding: 3px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(6, 7, 9, 0.5); }
-.map-pick button { flex: 1; font: 600 14px var(--display); letter-spacing: 0.04em; color: var(--muted); background: none; border: 0; border-radius: 5px; padding: 8px 14px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+/* A split toggle: the picked half fills its side edge to edge; the same height and frame as the icon buttons. */
+.map-pick { display: flex; height: 40px; padding: 0; gap: 0; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: rgba(10, 11, 13, 0.62); }
+.map-pick button { flex: 1; font: 600 13px var(--display); letter-spacing: 0.04em; color: var(--muted); background: none; border: 0; border-radius: 0; padding: 0 14px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+body.compact .map-pick { height: 36px; }
+body.compact .map-pick button { font-size: 12px; padding: 0 11px; }
 .map-pick button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
-.map-pick button[aria-pressed='true'] { color: var(--ink); background: rgba(255, 255, 255, 0.16); }
+.map-pick button[aria-pressed='true'] { color: var(--ink); background: rgba(255, 255, 255, 0.2); }
 .map-pick button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 
 /* ------------------------------------------------------- home (src/home.js) */
@@ -404,8 +407,6 @@ body.tall #flight-over { align-items: start; padding-top: 16px; padding-bottom: 
 .btn.play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .home-links { display: flex; align-items: center; gap: 4px; }
 .home-top { position: absolute; top: 20px; right: 22px; display: flex; align-items: center; gap: 8px; }
-.home-top .map-pick { padding: 2px; background: rgba(6, 7, 9, 0.4); border-color: rgba(255, 255, 255, 0.12); }
-.home-top .map-pick button { font-size: 12.5px; padding: 5px 11px; }
 .home-links .ext { white-space: nowrap; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); padding: 8px 10px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 .home-links .ext:hover, .home-links .ext:focus-visible { color: var(--ink); }
 .home-links .full { display: none; }
@@ -442,7 +443,6 @@ body.compact .modes button { font-size: 13px; padding: 7px 12px; }
 body.compact .btn.play { min-width: 220px; padding: 12px 28px; font-size: 19px; }
 body.compact .home-links { gap: 0; }
 body.compact .home-top { top: 10px; right: 12px; gap: 6px; }
-body.compact .home-top .map-pick button { font-size: 12px; padding: 4px 9px; }
 body.compact .home-links .ext { font-size: 12px; padding: 4px 6px; }
 body.compact .how { padding: 16px 18px 14px; }
 body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
@@ -457,9 +457,14 @@ body.tall .how { top: 35%; }
 /* Explore shows the ShipFall wordmark where its label was. */
 .explore-tag { margin-right: auto; font-family: 'Sedgwick Ave Display', var(--display); font-size: 40px; line-height: 1; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6); }
 .explore-bar .btn { pointer-events: auto; padding: 8px 13px; font-size: 13px; background: rgba(10, 11, 13, 0.62); }
-.explore-bar .map-pick { pointer-events: auto; padding: 2px; background: rgba(10, 11, 13, 0.62); }
-.explore-bar .map-pick button { font-size: 12.5px; padding: 6px 11px; }
-body.compact .explore-bar .map-pick button { font-size: 12px; padding: 4px 9px; }
+.explore-bar .explore-photo { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 8px; border-color: var(--line); }
+.explore-bar .explore-photo svg, .icon-btn svg { display: block; }
+body.compact .explore-bar .explore-photo { width: 36px; height: 36px; padding: 0; }
+.explore-bar .map-pick { pointer-events: auto; }
+/* The ground-view switch only shows while the ship catch replays. */
+.explore-bar .explore-view { display: none; }
+body.replaying .explore-bar .explore-view { display: grid; }
+.explore-bar .explore-view[aria-pressed='true'] { background: rgba(241, 242, 244, 0.92); color: #0a0b0d; }
 .explore kbd { font-size: 10px; min-width: 0; padding: 1px 5px; border-radius: 4px; box-shadow: none; }
 .explore-bar kbd { margin-left: 6px; }
 .explore-hint { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); margin: 0; text-align: center; text-wrap: balance;
@@ -477,12 +482,12 @@ body.compact .explore-bar .map-pick button { font-size: 12px; padding: 4px 9px; 
 .chip.on kbd { border-color: rgba(0, 0, 0, 0.3); background: rgba(0, 0, 0, 0.06); }
 @media (pointer: coarse) { .explore kbd { display: none; } }
 body.exploring #sound, body.embed #explore-photo { display: none; }
-body.compact .explore-bar { top: 10px; left: 10px; right: 10px; gap: 6px; }
+body.compact .explore-bar { top: 10px; left: 10px; right: 10px; gap: 8px; }
 body.compact .explore-tag { font-size: 32px; }
 body.compact .explore-bar .btn { padding: 6px 10px; font-size: 12px; }
 body.compact .explore-hint { bottom: 64px; font-size: 11px; padding: 5px 10px; }
 body.compact .explore-chips { bottom: 26px; gap: 4px; max-width: calc(100% - 16px); }
 body.compact .chip { padding: 6px 9px; font-size: 10.5px; letter-spacing: 0.1em; }
 body.compact .chip kbd { display: none; }
-body.tall .explore-chips { bottom: calc(30% + 12px); }
-body.tall .explore-hint { bottom: calc(30% + 52px); }
+body.tall .explore-chips { bottom: max(16px, env(safe-area-inset-bottom)); }
+body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 44px); }

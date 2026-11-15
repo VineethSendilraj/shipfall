@@ -20,6 +20,8 @@ const DEMO_MODE = params.get('demo') === '1';
 const FLIGHT = params.get('flight') === '1';
 const CAPTURE = (DEMO_MODE || FLIGHT) && params.get('capture') === '1';
 const PILOT = FLIGHT && (CAPTURE || params.get('pilot') === '1');
+// ?explore=1&capture=1: Explore is stepped by window.__exploreFrame(dt) instead of the clock, for recordings.
+const EXPLORE_CAPTURE = params.get('explore') === '1' && params.get('capture') === '1';
 const FLIGHT_SOUNDS = { ignite: 'ignite', stage: 'ignite', close: 'close', catch: 'catch', boosterLost: 'crash', orbit: 'unlock', deploy: 'close', flip: 'ignite', landingBurn: 'ignite', landed: 'catch' };
 const EMBED = document.body.classList.contains('embed');
 const SITE_URL = __SITE_URL__;
@@ -328,6 +330,7 @@ function runGame() {
 
   const explore = new Explore({ view, models, game: new Game({ width: WORLD_W, seed: 1 }), onExit: showTitle });
   window.__explore = explore;
+  if (EXPLORE_CAPTURE) window.__exploreFrame = (dt) => explore.frame(dt);
 
   function startExplore(focus = null) {
     state = 'explore';
@@ -622,7 +625,7 @@ function runGame() {
     if (state === 'explore') {
       // The sim stays stopped, so it doesn't fast-forward through the time spent exploring.
       acc = 0;
-      explore.frame(dt);
+      if (!EXPLORE_CAPTURE) explore.frame(dt);
       requestAnimationFrame(frame);
       return;
     }
