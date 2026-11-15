@@ -168,6 +168,8 @@ function runGame() {
   const flightOverEl = $('flight-over');
   const touchEl = $('touch');
   const soundBtn = $('sound');
+  // Sound is on unless the player turned it off; browsers only start it on the first tap, so show it on from the start.
+  soundBtn.setAttribute('aria-pressed', String(readSoundPref()));
   const shareLink = $('share');
   const form = $('initials-form');
   const handleInput = $('initials');
