@@ -35,7 +35,11 @@ export const BOOSTER = VEHICLES.booster;
 export const SHIP = VEHICLES.ship;
 /** The booster lights its landing burn at this altitude; the ship lights up with its pins at the same height. */
 export const BURN_ALT_M = 112;
-const burnAltM = (v) => BURN_ALT_M + (BOOSTER.bottom - v.bottom) / PX_PER_M;
+const burnAltM = (v, base = BURN_ALT_M) => base + (BOOSTER.bottom - v.bottom) / PX_PER_M;
+// Live play lights the landing burn higher, so the flame shows sooner on the way down.
+const LIVE_BURN_ALT_M = 160;
+// ...and burns a little leaner, so the longer burn still leaves the same catch window.
+const LIVE_BURN_FUEL_RATE = 26;
 export const DOUBLE_UNLOCK_SCORE = 3000;
 /** What a single-catch round sends to tower A. Double-catch rounds always send a booster to A and a ship to B. */
 export const TARGETS = ['booster', 'ship', 'random'];
@@ -53,7 +57,7 @@ const BURN_FUEL_RATE = 33;
 const REOPEN_DELAY = 0.35;
 const SECOND_BOOSTER_DELAY = 2.2;
 const SPAWN_Y = -270;
-export const LIVE_SPAWN_Y = -400;
+export const LIVE_SPAWN_Y = -560;
 const STAGGER_DELAY = 1.2; // after the first vehicle is caught or lost
 const INTRO_TIME = 0.8;
 const OUTRO_TIME = 1.3;
@@ -496,7 +500,7 @@ export class Game {
     const alt = this.altitudeM(b);
     let ay = G;
 
-    if (!b.burning && !b.cutoff && (alt <= burnAltM(V) || b.vy * b.vy >= 2 * A_IGNITE * (b.zeroY - b.y))) {
+    if (!b.burning && !b.cutoff && (alt <= burnAltM(V, this.live ? LIVE_BURN_ALT_M : BURN_ALT_M) || b.vy * b.vy >= 2 * A_IGNITE * (b.zeroY - b.y))) {
       b.burning = true;
       b.burnT = 0;
       this.emit('ignite');
@@ -516,7 +520,7 @@ export class Game {
       const ff = profile > b.vHover ? A_BURN : 0;
       const acc = clamp(G + ff + 8 * (b.vy - vt), G * 0.3, G + A_MAX);
       b.throttle += (acc / (G + A_MAX) - b.throttle) * 0.35;
-      b.fuel = Math.max(0, b.fuel - BURN_FUEL_RATE * b.throttle * DT);
+      b.fuel = Math.max(0, b.fuel - (this.live ? LIVE_BURN_FUEL_RATE : BURN_FUEL_RATE) * b.throttle * DT);
       ay = G - acc;
     } else {
       b.throttle *= 0.8;

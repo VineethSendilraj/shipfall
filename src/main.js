@@ -267,6 +267,8 @@ function runGame() {
   }
 
   function startGame() {
+    // The handle field keeps focus after a game over; the arrow keys belong to the game again.
+    if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
     setPaused(false);
     explore.resetMounts();
     mapPicker.apply();
@@ -501,7 +503,8 @@ function runGame() {
 
   const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
   window.addEventListener('keydown', (ev) => {
-    if (ev.target instanceof HTMLInputElement) return;
+    // Typing a handle swallows keys, but not once a round is running (the field can keep focus after a game over).
+    if (ev.target instanceof HTMLInputElement && state !== 'playing') return;
     if (state === 'title' && ev.code === 'Escape' && home.closeHelp()) return;
     if (!boardEl.classList.contains('hidden')) {
       if (ev.code === 'Escape') closeBoard();
