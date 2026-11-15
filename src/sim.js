@@ -37,7 +37,7 @@ export const SHIP = VEHICLES.ship;
 export const BURN_ALT_M = 112;
 const burnAltM = (v, base = BURN_ALT_M) => base + (BOOSTER.bottom - v.bottom) / PX_PER_M;
 // Live play lights the landing burn higher, so the flame shows sooner on the way down.
-const LIVE_BURN_ALT_M = 160;
+const LIVE_BURN_ALT_M = Infinity;
 // ...and burns a little leaner, so the longer burn still leaves the same catch window.
 const LIVE_BURN_FUEL_RATE = 26;
 export const DOUBLE_UNLOCK_SCORE = 3000;
@@ -57,8 +57,9 @@ const BURN_FUEL_RATE = 33;
 const REOPEN_DELAY = 0.35;
 const SECOND_BOOSTER_DELAY = 2.2;
 const SPAWN_Y = -270;
-export const LIVE_SPAWN_Y = -560;
-const STAGGER_DELAY = 1.2; // after the first vehicle is caught or lost
+export const LIVE_SPAWN_Y = -620;
+const STAGGER_DELAY = 1.2; // after the first vehicle is down near the arms (or caught or lost)
+const STAGGER_ALT_M = 140;
 const INTRO_TIME = 0.8;
 const OUTRO_TIME = 1.3;
 const UNLOCK_TIME = 1.8;
@@ -449,7 +450,7 @@ export class Game {
     for (const b of this.boosters) {
       switch (b.state) {
         case 'waiting':
-          if (this.live && this.boosters.some((o) => o !== b && o.state === 'falling')) break;
+          if (this.live && this.boosters.some((o) => o !== b && o.state === 'falling' && this.altitudeM(o) > STAGGER_ALT_M)) break;
           b.delay -= DT;
           if (b.delay <= 0) {
             b.state = 'falling';

@@ -331,7 +331,8 @@ export class View {
 
   stepCamera(game) {
     this.director.step(game, this.size.w / (this.size.h * (1 + this.lift)));
-    if (this.showcase) this.stepHero(game);
+    // Only on the home screen: the hero pins the arms to the showcased vehicle, which would freeze them in a round.
+    if (this.showcase && game.phase === 'ready') this.stepHero(game);
   }
 
   /** Call before each sim step: what that step started from, so frames drawn between steps can be interpolated. */

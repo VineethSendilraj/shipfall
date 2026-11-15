@@ -3,10 +3,24 @@ const HANDLE_KEY = 'catch-the-booster.handle';
 const API = '/api/leaderboard';
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;
 
+/** One row per handle (its best score), highest first. */
+function dedupe(list) {
+  const seen = new Set();
+  return [...list]
+    .sort((a, b) => b.score - a.score)
+    .filter((e) => {
+      const k = (e.handle || e.initials || '').toLowerCase();
+      if (!k) return true;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
 export function loadBoard() {
   try {
     const list = JSON.parse(localStorage.getItem(KEY) || '[]');
-    return Array.isArray(list) ? list.filter((e) => e && typeof e.score === 'number').slice(0, 5) : [];
+    return Array.isArray(list) ? dedupe(list.filter((e) => e && typeof e.score === 'number')).slice(0, 5) : [];
   } catch {
     return [];
   }
@@ -28,14 +42,15 @@ export function savedHandle() {
 /** Inserts an entry into the on-device board, persists, and returns { list, index }. */
 export function addEntry(handle, score, round) {
   const entry = { handle, score, round, at: new Date().toISOString().slice(0, 10) };
-  const list = [...loadBoard(), entry].sort((a, b) => b.score - a.score).slice(0, 5);
+  const list = dedupe([...loadBoard(), entry]).slice(0, 5);
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
     localStorage.setItem(HANDLE_KEY, handle);
   } catch {
     // Storage can be unavailable (private mode); the board still renders for this session.
   }
-  return { list, index: list.indexOf(entry) };
+  // A lower score than the handle's best still points at that handle's row.
+  return { list, index: list.findIndex((e) => (e.handle || '').toLowerCase() === handle.toLowerCase()) };
 }
 
 /** Worldwide board ({ entries, total, me, around }), or null when the backend isn't reachable (local dev, not configured). */

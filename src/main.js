@@ -236,8 +236,8 @@ function runGame() {
   }
 
   const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-  // The embed always shows on-screen buttons: they are the mouse controls inside an X post.
-  const showButtons = EMBED || isTouch;
+  // On-screen buttons on every device: touch, the X embed, and desktop too, where they work with the mouse beside the keys.
+  const showButtons = true;
   Object.defineProperty(window, '__game', { get: () => game });
   Object.defineProperty(window, '__flight', { get: () => flight });
   Object.defineProperty(window, '__flightView', { get: () => flightView });
