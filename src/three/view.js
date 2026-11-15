@@ -11,7 +11,8 @@ import { Director, toX, toY } from './director.js';
 import { Orbit } from './orbit.js';
 import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
 
-// Seconds the ship takes to swing from belly first to upright once its landing burn lights.
+// The ship's lean toward its tower on the way down (radians), and the seconds it takes to straighten once its burn lights.
+const SHIP_LEAN = 0.2;
 const SHIP_FLIP_S = 2.2;
 const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
 const ENGINE_EXIT = { booster: ENGINE_Y, ship: SHIP_ENGINE_Y };
@@ -433,11 +434,10 @@ export class View {
         root.rotation.set(0, 0, a);
         root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);
       } else if (b.kind === 'ship' && b.state === 'falling') {
-        // The ship falls belly first, level with its tiles down and its nose toward the tower, and swings upright as the
-        // landing burn lights, nose leaning in; it rolls half a turn on the way so the tiles end up facing away.
+        // The ship comes down nearly upright, nose leaning slightly in toward the tower with its tiles facing away, and
+        // straightens as the landing burn lights.
         const k = b.burnT === null ? 0 : THREE.MathUtils.smoothstep(b.burnT, 0, SHIP_FLIP_S);
-        const a = -(b.tower === 0 ? 1 : -1) * (Math.PI / 2) * (1 - k) - b.tilt;
-        if (slot.spin) slot.spin.rotation.y += Math.PI * (1 - k);
+        const a = -(b.tower === 0 ? 1 : -1) * SHIP_LEAN * (1 - k) - b.tilt;
         const c = VEHICLES.ship.center / PX_PER_M;
         root.rotation.set(0, 0, a);
         root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);

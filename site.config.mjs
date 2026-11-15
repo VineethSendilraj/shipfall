@@ -14,7 +14,7 @@ export const CARD = {
   // X shows this image in place of the frame until the game loads, so it has the frame's square shape.
   playerImage: '/player.jpg',
   // Bump when the card images change: X caches a card image by its URL, so a new query makes it fetch the new one.
-  imageVersion: 8,
+  imageVersion: 9,
   playerImageSize: 1080,
   player: '/embed/',
   playerWidth: 480,
