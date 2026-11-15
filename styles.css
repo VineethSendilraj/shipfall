@@ -601,3 +601,6 @@ body.compact .home-links .ext { padding: 6px 7px; }
   .touch button.catch { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--b, 62px) * 0.07); }
   .touch button.catch::after { content: 'SPACE'; font: 600 calc(var(--b, 62px) * 0.13) / 1 var(--mono); letter-spacing: 0.08em; padding: 2px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: 0.55; }
 }
+
+/* Until a tap turns sound on, the intro's hint asks for that tap; the next one skips. */
+body.intro.sound-locked #app::after { content: 'tap for sound'; }

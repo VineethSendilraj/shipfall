@@ -251,6 +251,8 @@ function mountMover(view, foot) {
  */
 export class Explore {
   /** game: a fresh Game, used only as the static scene description (tower, arms, clock). */
+  canSkip = () => true;
+
   constructor({ view, models, game, onExit }) {
     this.view = view;
     this.models = models;
@@ -286,8 +288,8 @@ export class Explore {
       this.setGroundView(!this.ground);
     });
     window.addEventListener('keydown', (ev) => this.onKey(ev));
-    // Any tap or key skips the intro.
-    for (const type of ['pointerdown', 'keydown']) window.addEventListener(type, () => this.intro && this.finishIntro(), { capture: true });
+    // Any tap or key skips the intro, unless canSkip says that gesture is needed for something else (turning sound on).
+    for (const type of ['pointerdown', 'keydown']) window.addEventListener(type, () => this.intro && this.canSkip() && this.finishIntro(), { capture: true });
   }
 
   /** focus: a preset id to open on, without the glide (?explore=1&focus=engines). */

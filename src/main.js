@@ -485,6 +485,10 @@ function runGame() {
     if (sound.enabled && !sound.running && !document.hidden) sound.unlock();
   };
   for (const t of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(t, unlockAudio, { capture: true });
+  // Inside an X post the tap on the card doesn't reach the game, so the first tap in the intro turns sound on
+  // and the next one skips.
+  const soundLocked = () => sound.enabled && !sound.running;
+  explore.canSkip = () => !soundLocked();
   // Sound is on unless the player muted it. The context starts suspended until a gesture where the browser requires one.
   setSound(readSoundPref(), false);
 
@@ -694,6 +698,7 @@ function runGame() {
     const idle = paused || document.hidden;
     if (idle) acc = 0;
     quality.frame(now, !idle);
+    document.body.classList.toggle('sound-locked', soundLocked());
     // The loading screen lifts once there's something to show: the intro's first frame, or any other screen.
     if (!shown && (state !== 'explore' || !explore.intro || explore.replay)) {
       shown = true;
