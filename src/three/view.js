@@ -9,7 +9,7 @@ import { createComposer } from './post.js';
 import { SHIP_Y } from './stack.js';
 import { Director, toX, toY } from './director.js';
 import { Orbit } from './orbit.js';
-import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT, ARM_REACH, towerPositions } from '../sim.js';
+import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
 
 // The ship's lean toward its tower on the way down (radians), and the seconds it takes to straighten once its burn lights.
 const SHIP_LEAN = 0.2;
@@ -17,8 +17,7 @@ const SHIP_FLIP_S = 2.2;
 const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
 const ENGINE_EXIT = { booster: ENGINE_Y, ship: SHIP_ENGINE_Y };
 // One slot (and engine light) per vehicle on screen; every lit pixel pays for each light, so keep it at three.
-// The last ship only ever sits in the home screen's backdrop tower.
-const SLOT_KINDS = ['booster', 'booster', 'ship', 'ship'];
+const SLOT_KINDS = ['booster', 'booster', 'ship'];
 export const COL_IDLE = new THREE.Color(0.25, 0.95, 1.5);
 export const COL_READY = new THREE.Color(0.35, 2.6, 0.75);
 export const COL_OFF = new THREE.Color(0.08, 0.25, 0.35);
@@ -181,24 +180,6 @@ export class View {
       slot.throatMat.color.setRGB(0.02, 0, 0);
       slot.light.intensity = 0;
     }
-    const back = this.pool.find((s) => s.id === null && s.kind === 'ship');
-    if (back && !game.towers[1]) {
-      const tw1 = this.backdropTower(game);
-      back.id = 'hero';
-      back.root.visible = true;
-      back.root.rotation.set(0, 0, 0);
-      back.root.position.set(toX(tw1.cx), toY(tw1.armY), 0);
-      if (back.spin) faceTower(back, -1);
-      back.plume.update(0, game.t, 0);
-      back.throatMat.color.setRGB(0.02, 0, 0);
-      back.light.intensity = 0;
-    }
-  }
-
-  /** The home screen's second tower, standing where double catch raises it, its arms closed on a ship. */
-  backdropTower(game) {
-    const x = towerPositions(game.W).b;
-    return { x, cx: x + ARM_REACH, armY: game.towers[0].armY, bounce: 0, open: 0, rise: 1, ready: false, holding: true };
   }
 
   heroArms() {
@@ -420,7 +401,7 @@ export class View {
     const active = game.activeTower();
     const hero = this.showcase && game.phase === 'ready' && this.heroSpan;
     this.towers.forEach((view, i) => {
-      const tw = game.towers[i] ?? (hero && i === 1 ? this.backdropTower(game) : null);
+      const tw = game.towers[i];
       view.root.visible = !!tw;
       if (!tw) return;
       view.root.position.set(toX(tw.x), -(1 - tw.rise) * 158, 0);

@@ -480,6 +480,9 @@ body.tall .how { top: 35%; }
 .explore-bar .explore-photo svg, .icon-btn svg { display: block; }
 body.compact .explore-bar .btn.explore-photo { width: 36px; height: 36px; padding: 0; }
 .explore-bar .map-pick { pointer-events: auto; }
+/* The intro: the replay alone, with a quiet skip hint. */
+body.intro #explore, body.intro .chip.explore-view, body.intro .explore-hint, body.intro #corner { display: none !important; }
+body.intro #app::after { content: 'tap to skip'; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); font: 600 12px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(241, 242, 244, 0.7); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); pointer-events: none; }
 /* The ground-view switch: a chip just above the chip bar, only while the ship catch replays. */
 .chip.explore-view { display: none; position: absolute; left: 50%; transform: translateX(-50%); bottom: 92px; pointer-events: auto; }
 body.replaying .chip.explore-view { display: inline-flex; }

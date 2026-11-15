@@ -98,10 +98,12 @@ const BOOSTER_CATCH = [
 ];
 // Per vehicle: keys, when the arms close, where its pins sit in the arms, how far its middle is below them, its engines.
 const CATCHES = {
-  ship: { keys: CATCH, close: CATCH_CLOSE, pins: SHIP_PINS, c: VEHICLES.ship.center / PX_PER_M, engineY: SHIP_ENGINE_Y },
+  ship: { keys: CATCH, close: CATCH_CLOSE, pins: SHIP_PINS, c: VEHICLES.ship.center / PX_PER_M, engineY: SHIP_ENGINE_Y, wobble: 0.7 },
   // The booster is caught hovering well above the launch mount, not down on it; it wobbles as its grid fins steer.
   booster: { keys: BOOSTER_CATCH, close: [14.6, 15.4], pins: BOOSTER_Y + 45, c: VEHICLES.booster.center / PX_PER_M, engineY: ENGINE_Y, wobble: 1 },
 };
+// The intro on opening the game: the ship catch from this many seconds in, played this much faster.
+const INTRO = { from: 4.5, speed: 1.6 };
 // The Mars haze hides a replay seen from hundreds of meters; it thins to this share while one plays.
 const REPLAY_FOG = 0.35;
 // The replay's two fixed corner cameras (from the foot): high over the front-left corner, framing the tower and the
@@ -280,10 +282,15 @@ export class Explore {
       this.setGroundView(!this.ground);
     });
     window.addEventListener('keydown', (ev) => this.onKey(ev));
+    // Any tap or key skips the intro.
+    for (const type of ['pointerdown', 'keydown']) window.addEventListener(type, () => this.intro && this.finishIntro(), { capture: true });
   }
 
   /** focus: a preset id to open on, without the glide (?explore=1&focus=engines). */
-  enter(focus = null) {
+  /** opts.intro: play the ship catch once with no UI, then go home (also on any tap or key). */
+  enter(focus = null, opts = {}) {
+    this.intro = !!opts.intro;
+    document.body.classList.toggle('intro', this.intro);
     this.active = true;
     this.view.free = true;
     this.controls ??= this.createControls();
@@ -389,7 +396,7 @@ export class Explore {
     // The arms wait at the vehicle's pins.
     this.game.towers[0].armY = GROUND_Y - CATCHES[kind].pins * PX_PER_M;
     this.thinned = new Map();
-    this.replay = { t: 0, auto: true, kind, vehicle, ...CATCHES[kind] };
+    this.replay = { t: this.intro ? INTRO.from : 0, speed: this.intro ? INTRO.speed : 1, auto: true, kind, vehicle, ...CATCHES[kind] };
     document.body.classList.add('replaying');
     this.flight = null;
     this.stack.root.visible = false;
@@ -411,6 +418,14 @@ export class Explore {
     if (!on && this.replay) this.replay.auto = true;
   }
 
+  /** Leaves the intro for the home screen. */
+  finishIntro() {
+    if (!this.intro) return;
+    this.intro = false;
+    document.body.classList.remove('intro');
+    this.back();
+  }
+
   endReplay() {
     if (!this.replay) return;
     this.replay = null;
@@ -430,7 +445,11 @@ export class Explore {
   stepReplay(dt, snap = false) {
     const r = this.replay;
     const { view } = this;
-    r.t += dt;
+    r.t += dt * r.speed;
+    if (this.intro && r.t > r.close[1] + 1.2) {
+      this.finishIntro();
+      return;
+    }
     const fog = view.scene.fog;
     if (fog && !this.thinned.has(fog)) {
       this.thinned.set(fog, fog.density);

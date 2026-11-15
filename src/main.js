@@ -332,19 +332,19 @@ function runGame() {
   window.__explore = explore;
   if (EXPLORE_CAPTURE) window.__exploreFrame = (dt) => explore.frame(dt);
 
-  function startExplore(focus = null) {
+  function startExplore(focus = null, opts = {}) {
     state = 'explore';
     titleEl.classList.add('hidden');
     // Explore draws its own stack through View, which would also hold the hero vehicle in the arms.
     view.setShowcase(null);
-    explore.enter(focus);
+    explore.enter(focus, opts);
   }
 
   // Home screen modes, in picker order. `targets`: the player picks what to catch.
   const MODES = [
     { id: 'catch', label: 'Catch', targets: true, start: startGame },
-    { id: 'flight', label: 'Mission', title: 'Mission: orbit, deploy satellites, land', blurb: '', start: startFlight },
-    { id: 'explore', label: 'Explore', title: 'Explore: the stack and a ship catch', blurb: '', instant: true, start: () => startExplore() },
+    { id: 'flight', label: 'Mission', title: 'Mission', blurb: 'Launch to orbit, deploy satellites, land', start: startFlight },
+    { id: 'explore', label: 'Explore', title: 'Explore', blurb: 'The stack up close and catch replays', instant: true, start: () => startExplore() },
   ];
   const home = bindHome({ root: titleEl, modes: MODES, view });
 
@@ -480,6 +480,8 @@ function runGame() {
     if (document.hidden && state === 'playing') setPaused(true);
   });
   if (params.get('explore') === '1') startExplore(params.get('focus'));
+  // Opening the game plays a short ship catch, then the home screen (?intro=0 skips it).
+  else if (!FLIGHT && params.get('intro') !== '0') startExplore('catch', { intro: true });
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);
