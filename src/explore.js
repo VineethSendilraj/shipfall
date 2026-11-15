@@ -87,11 +87,12 @@ const CATCH_C = VEHICLES.ship.center / PX_PER_M; // the ship's middle, this far 
 // The replay's two fixed corner cameras (from the foot): high over the front-left corner, framing the tower and the
 // falling ship together, and someone standing at eye height out at the front-right corner. Each aims partway from the
 // arms toward the ship, so the tower stays in the shot as the ship comes down to it.
-// The aerial camera dollies from the high corner to a closer one over the descent, its aim sliding from the ship to the
-// tower (air: [start, end] weights toward the ship).
-const CATCH_AIR = [new THREE.Vector3(-300, 760, 620), new THREE.Vector3(-150, 150, 250)];
+// The aerial camera looks in from this corner direction and backs off just far enough to fit the ship, the arms and the
+// tower's foot in the frame for the screen's shape, plus this margin (m) around them.
+const CATCH_AIR_DIR = new THREE.Vector3(-0.45, 0.24, 0.86).normalize();
+const CATCH_AIR_MARGIN = 45;
 const CATCH_GROUND = new THREE.Vector3(240, 1.7, 330);
-const CATCH_AIM = { air: [0.85, 0.3], ground: 0.3 };
+const CATCH_AIM = { ground: 0.3 };
 // Someone on the ground looks up at most this far (radians), so the horizon stays in the ground view.
 const CATCH_GROUND_UP = 0.6;
 // Where the camera sits relative to the ship's middle at the start and at the catch, until the player takes over.
@@ -416,8 +417,18 @@ export class Explore {
     // moves with the aim; the ground view stays put where a person would stand.
     const c = this.controls;
     const arms = new THREE.Vector3(this.foot.x, SHIP_PINS - CATCH_C, this.foot.z);
-    const k = smooth01(r.t / CATCH_CLOSE[0]);
-    const aim = arms.lerp(mid, this.ground ? CATCH_AIM.ground : lerp(CATCH_AIM.air[0], CATCH_AIM.air[1], k));
+    let aim;
+    let air = null;
+    if (this.ground) aim = arms.clone().lerp(mid, CATCH_AIM.ground);
+    else {
+      // Fit the ship, the arms and the tower's foot: aim at the middle of their box, back off along CATCH_AIR_DIR.
+      const box = new THREE.Box3().setFromPoints([mid, arms, new THREE.Vector3(this.foot.x + TOWER_DX, 0, this.foot.z)]);
+      aim = box.getCenter(new THREE.Vector3());
+      const radius = box.getSize(new THREE.Vector3()).length() / 2 + CATCH_AIR_MARGIN;
+      const v = THREE.MathUtils.degToRad(view.camera.fov) / 2;
+      const h = Math.atan(Math.tan(v) * view.camera.aspect);
+      air = aim.clone().addScaledVector(CATCH_AIR_DIR, radius / Math.sin(Math.min(v, h)));
+    }
     const move = aim.clone().sub(c.target);
     c.target.copy(aim);
     if (this.ground) {
@@ -429,7 +440,7 @@ export class Explore {
       const flat = Math.hypot(d.x, d.z);
       if (d.y > flat * Math.tan(CATCH_GROUND_UP)) c.target.set(aim.x, g.y + flat * Math.tan(CATCH_GROUND_UP), aim.z);
     } else if (r.auto) {
-      view.camera.position.lerp(CATCH_AIR[0].clone().lerp(CATCH_AIR[1], k).add(this.foot), snap ? 1 : 1 - Math.exp(-dt * 3));
+      view.camera.position.lerp(air, snap ? 1 : 1 - Math.exp(-dt * 3));
     } else view.camera.position.add(move);
     this.idle = r.t > CATCH_CLOSE[1] + 2 ? this.idle : 0;
   }
