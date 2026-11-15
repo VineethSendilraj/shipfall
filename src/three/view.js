@@ -32,9 +32,9 @@ export const QUALITY = [
   { name: 'minimal', maxDpr: 1, shadows: false, bloom: 0, msaa: 0, bakedSky: true },
 ];
 
-// Phone apps can cover the bottom ~30% of a tall embed, so the camera's aim point is lifted toward the top.
+// On tall screens the aim point sits a little above center: the touch keys and X's bottom bar cover the lower edge.
 const TALL_ASPECT = 0.8;
-const TALL_LIFT = 0.35;
+const TALL_LIFT = 0.05;
 
 // The ship's catch pins above the booster's when stacked on its hot-stage ring (blender/build_models.py:
 // the ring's top flange, BODY_TOP + 4 = 12 m, minus the ship's aft end, SHIP_SKIRT = -32.9 m).

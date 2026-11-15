@@ -481,7 +481,7 @@ function runGame() {
   // Browsers only start audio inside a user gesture (iOS: a touch end or click), so any gesture restarts it while it
   // isn't running: on first load, and after coming back to a page iOS suspended in the background.
   const unlockAudio = (ev) => {
-    if (soundBtn.contains(ev.target) || $('pause-sound').contains(ev.target)) return;
+    if (ev.target instanceof Node && (soundBtn.contains(ev.target) || $('pause-sound').contains(ev.target))) return;
     if (sound.enabled && !sound.running && !document.hidden) sound.unlock();
   };
   for (const t of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(t, unlockAudio, { capture: true });
