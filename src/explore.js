@@ -438,6 +438,7 @@ export class Explore {
     if (!this.intro) return;
     this.intro = false;
     document.body.classList.remove('intro');
+    this.view.handoffFrom(this.view.camera);
     this.back();
   }
 
@@ -461,7 +462,7 @@ export class Explore {
     const r = this.replay;
     const { view } = this;
     r.t += dt * r.speed;
-    if (this.intro && r.t > r.close[1] + 1.2) {
+    if (this.intro && r.t > r.close[1] + 0.3) {
       this.finishIntro();
       return;
     }
@@ -471,6 +472,11 @@ export class Explore {
       fog.density *= REPLAY_FOG;
     }
     const s = catchAt(r.t, r.keys);
+    if (r.kind === 'ship' && r.t > CATCH[3][0]) {
+      // The flip swings a little past its lean, the other way, and settles.
+      const u = r.t - CATCH[3][0];
+      s.a += 0.13 * Math.exp(-u * 1.2) * Math.sin(u * 3.1);
+    }
     if (r.wobble) {
       // Grid-fin steering: small tilts and sideways drift, dying away as the vehicle settles toward the arms.
       const w = r.wobble * (1 - smooth01(r.t / r.close[0]));

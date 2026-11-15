@@ -126,6 +126,11 @@ export class View {
    * while the sim waits on its title screen; null for the map's establishing shot. A game started from it
    * pulls the camera away from this shot instead.
    */
+  /** Starts a glide from the camera's current pose into the director's next shots, over `ms`. */
+  handoffFrom(camera, ms = 1600) {
+    this.handoff = { pos: camera.position.clone(), quat: camera.quaternion.clone(), fov: camera.fov, t0: performance.now(), ms };
+  }
+
   setShowcase(kind) {
     if (kind === this.showcase) return;
     this.showcase = kind;
@@ -504,6 +509,17 @@ export class View {
     if (!this.free) {
       const shot = this.showcase && this.heroSpan ? { hero: this.heroPose(game, this.director.clock - (1 - alpha) * DT) } : { establish: this.world.establish };
       this.director.apply(this.camera, game, { ...shot, alpha });
+      // After the intro, the camera glides from where the replay left it into this shot.
+      const h = this.handoff;
+      if (h) {
+        const e = THREE.MathUtils.smoothstep((performance.now() - h.t0) / h.ms, 0, 1);
+        const cam = this.camera;
+        cam.position.lerpVectors(h.pos, cam.position, e);
+        cam.quaternion.slerpQuaternions(h.quat, cam.quaternion, e);
+        cam.fov = h.fov + (cam.fov - h.fov) * e;
+        cam.updateProjectionMatrix();
+        if (e >= 1) this.handoff = null;
+      }
     }
     // Explosions are a function of time, so frames drawn between sim steps get the in-between time.
     this.explosions.update(t - (1 - alpha) * DT, this.camera);
