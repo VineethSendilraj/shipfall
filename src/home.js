@@ -3,12 +3,12 @@ import { TARGETS } from './sim.js';
 const MODE_KEY = 'catch-the-booster.mode';
 const TARGET_KEY = 'catch-the-booster.target';
 const TARGET_INFO = {
-  booster: { title: 'Catch the booster', blurb: 'Steer it into the tower arms and close them' },
-  ship: { title: 'Catch the ship', blurb: 'Shorter and lighter, caught under its forward flaps' },
-  random: { title: 'Catch either', blurb: 'Booster or ship, drawn fresh every round' },
+  booster: { title: 'Booster only', blurb: 'Steer it into the tower arms and close them' },
+  ship: { title: 'Ship only', blurb: 'Shorter and lighter, caught under its forward flaps' },
+  random: { title: 'ShipFall', blurb: 'Catch both: booster or ship, a new one every round' },
 };
-// Picker order: the ship first, then the booster, then either.
-const ORDER = ['ship', 'booster', 'random'];
+// Picker order: both (the full stack in the arms) first, then the ship, then the booster.
+const ORDER = ['random', 'ship', 'booster'];
 const SWIPE_PX = 40;
 
 function load(key, valid, fallback) {
@@ -37,7 +37,7 @@ function save(key, value) {
 export function bindHome({ root, modes, view }) {
   // A mode that opens straight from its tab (Explore) is never the one the home screen comes back to.
   let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null) && !m.instant) ?? modes[0];
-  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'ship');
+  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'random');
   const $ = (sel) => root.querySelector(sel);
   const tabs = $('.modes');
   const pick = $('.pick');
