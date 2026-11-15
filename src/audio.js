@@ -7,11 +7,35 @@ export class Sound {
 
   setEnabled(on) {
     this.enabled = on;
-    if (on && !this.ctx) this.init();
+    // Turning sound on from a tap (the speaker button) counts as the gesture that unlocks it.
+    if (on) this.unlock();
     if (this.ctx) {
-      if (on) this.ctx.resume();
       this.master.gain.setTargetAtTime(on ? 0.7 : 0, this.ctx.currentTime, 0.05);
     }
+  }
+
+  get running() {
+    return this.ctx?.state === 'running';
+  }
+
+  /**
+   * Called from every user gesture until the context runs. iOS only starts audio inside a touch end or click (not a
+   * touch start), and mutes Web Audio with the silent switch unless the page plays as media.
+   */
+  unlock() {
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    } catch {
+      // Older browsers have no audio session API.
+    }
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    if (this.ctx.state !== 'running') this.ctx.resume();
+    // A one-sample silent buffer started inside the gesture is what finally unlocks older iOS.
+    const s = this.ctx.createBufferSource();
+    s.buffer = this.ctx.createBuffer(1, 1, 22050);
+    s.connect(this.ctx.destination);
+    s.start(0);
   }
 
   init() {

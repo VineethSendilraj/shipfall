@@ -465,15 +465,14 @@ function runGame() {
     if (remember) writeSoundPref(on);
   }
 
-  // Browsers only allow audio after a user gesture, so the AudioContext is created on the first one.
-  let unlocked = false;
+  // Browsers only start audio inside a user gesture (iOS: a touch end or click), so every gesture tries until it runs.
+  const GESTURES = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
   const unlockAudio = (ev) => {
-    if (unlocked || soundBtn.contains(ev.target) || $('pause-sound').contains(ev.target)) return;
-    unlocked = true;
-    if (readSoundPref()) setSound(true, false);
+    if (soundBtn.contains(ev.target) || $('pause-sound').contains(ev.target)) return;
+    if (sound.enabled) sound.unlock();
+    if (sound.running) for (const t of GESTURES) window.removeEventListener(t, unlockAudio, { capture: true });
   };
-  window.addEventListener('pointerdown', unlockAudio, { capture: true });
-  window.addEventListener('keydown', unlockAudio, { capture: true });
+  for (const t of GESTURES) window.addEventListener(t, unlockAudio, { capture: true });
   // Sound is on unless the player muted it. The context starts suspended until a gesture where the browser requires one.
   setSound(readSoundPref(), false);
 
@@ -484,7 +483,6 @@ function runGame() {
   $('board-back').addEventListener('click', closeBoard);
   $('pause-btn').addEventListener('click', () => state === 'playing' && setPaused(true));
   $('pause-sound').addEventListener('click', () => {
-    unlocked = true;
     setSound(!sound.enabled);
   });
   $('resume').addEventListener('click', () => setPaused(false));
@@ -500,7 +498,6 @@ function runGame() {
   // The home screen stays hidden until here, so a reload never flashes it before the intro takes over.
   document.documentElement.classList.add('booted');
   soundBtn.addEventListener('click', () => {
-    unlocked = true;
     setSound(!sound.enabled);
   });
 
@@ -539,8 +536,7 @@ function runGame() {
       } else if (state === 'over') showTitle();
     }
     if (ev.code === 'KeyM') {
-      unlocked = true;
-      setSound(!sound.enabled);
+        setSound(!sound.enabled);
     }
     if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing') setPaused(true);
   });
