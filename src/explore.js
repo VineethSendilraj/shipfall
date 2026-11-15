@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ARM_REACH, GROUND_Y, PX_PER_M, VEHICLES } from './sim.js';
 import { toX } from './three/director.js';
-import { ENGINE_Y } from './three/booster.js';
+import { ENGINE_Y, createBooster } from './three/booster.js';
+import { createPlume } from './three/effects.js';
 import { createStack, SHIELD_Y, SHIP_Y } from './three/stack.js';
 import { SPIN, SHIP_ENGINE_Y, createShip, createShipPlume, faceTower } from './three/ship.js';
 
@@ -43,8 +44,9 @@ const FILL_CD = 800;
  */
 const PRESETS = [
   { id: 'stack', label: 'Stack', target: [0, 76, 0], camera: [62, 10, 200], fov: 44 },
-  // Not a framing: replays a ship catch (see CATCH below) with the camera following the ship.
-  { id: 'catch', label: 'Ship catch', replay: true },
+  // Not framings: replay a catch (see CATCHES below) with the corner cameras.
+  { id: 'catch', label: 'Ship catch', replay: 'ship' },
+  { id: 'boostercatch', label: 'Booster catch', replay: 'booster' },
   // From below, between two of the mount's legs.
   { id: 'engines', label: 'Engines', target: [0, BOOSTER_Y + ENGINE_Y + 0.35, 0], camera: [0, 10, 6.3], fov: 52, wide: true },
   { id: 'fins', label: 'Grid fins', target: [0, BOOSTER_Y + 4.5, 0], camera: [11, BOOSTER_Y + 12, 14], fov: 40 },
@@ -83,7 +85,25 @@ const CATCH = [
   [15.6, 0, 0, 0, 0],
 ];
 const CATCH_CLOSE = [15.0, 15.8]; // the arms close on the pins between these times
-const CATCH_C = VEHICLES.ship.center / PX_PER_M; // the ship's middle, this far below its pins
+// The booster's replay, after the real catches: it comes back engines first, slightly tilted, from high over the far
+// side, lights its landing burn, brakes and slides sideways into the open arms.
+const BOOSTER_CATCH = [
+  [0, 260, 1400, 0.12, 0],
+  [7.0, 130, 520, 0.08, 0],
+  [7.6, 115, 450, 0.06, 1],
+  [11.0, 30, 90, 0.03, 0.85],
+  [13.5, 0, 6, 0, 0.6],
+  [14.8, 0, 0, 0, 0.5],
+  [15.2, 0, 0, 0, 0],
+];
+// Per vehicle: keys, when the arms close, where its pins sit in the arms, how far its middle is below them, its engines.
+const CATCHES = {
+  ship: { keys: CATCH, close: CATCH_CLOSE, pins: SHIP_PINS, c: VEHICLES.ship.center / PX_PER_M, engineY: SHIP_ENGINE_Y },
+  // The booster is caught hovering well above the launch mount, not down on it; it wobbles as its grid fins steer.
+  booster: { keys: BOOSTER_CATCH, close: [14.6, 15.4], pins: BOOSTER_Y + 45, c: VEHICLES.booster.center / PX_PER_M, engineY: ENGINE_Y, wobble: 1 },
+};
+// The Mars haze hides a replay seen from hundreds of meters; it thins to this share while one plays.
+const REPLAY_FOG = 0.35;
 // The replay's two fixed corner cameras (from the foot): high over the front-left corner, framing the tower and the
 // falling ship together, and someone standing at eye height out at the front-right corner. Each aims partway from the
 // arms toward the ship, so the tower stays in the shot as the ship comes down to it.
@@ -92,15 +112,15 @@ const CATCH_C = VEHICLES.ship.center / PX_PER_M; // the ship's middle, this far 
 const CATCH_AIR_DIR = new THREE.Vector3(-0.45, 0.24, 0.86).normalize();
 const CATCH_AIR_MARGIN = 45;
 const CATCH_GROUND = new THREE.Vector3(240, 1.7, 330);
-const CATCH_AIM = { ground: 0.3 };
-// Someone on the ground looks up at most this far (radians), so the horizon stays in the ground view.
-const CATCH_GROUND_UP = 0.6;
+// The ground view's aim, from the arms toward the vehicle: looking up at it early, settling on the tower by the catch.
+const CATCH_AIM = { ground: [0.92, 0.3] };
+// Someone on the ground looks up at most this far (radians).
+const CATCH_GROUND_UP = 1.2;
 // Where the camera sits relative to the ship's middle at the start and at the catch, until the player takes over.
 const smooth01 = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
 /** The replay's state at time t: { dx, h, a, thr }, positions on a smooth curve through the keys. */
-function catchAt(t) {
-  const K = CATCH;
+function catchAt(t, K) {
   const last = K.length - 1;
   if (t >= K[last][0]) return { dx: K[last][1], h: K[last][2], a: K[last][3], thr: K[last][4] };
   let i = 0;
@@ -341,28 +361,35 @@ export class Explore {
     this.stack.root.visible = on && !this.replay;
     this.lights.visible = on;
     this.moveMount(on);
-    this.replayShip?.plume.setPalette(view.world.fx);
+    for (const v of Object.values(this.replayVehicles ?? {})) v.plume.setPalette(view.world.fx);
   }
 
-  /** Starts (or restarts) the ship catch replay: the stack steps aside and the camera follows the falling ship. */
-  startReplay() {
-    // Only inside Explore: the replay ship would otherwise sit in the home screen's tower beside its showcase.
+  /** Starts (or restarts) a catch replay of `kind` ('ship' or 'booster'): the stack steps aside for it. */
+  startReplay(kind = 'ship') {
+    // Only inside Explore: the replay vehicle would otherwise sit in the home screen's tower beside its showcase.
     if (!this.active) return;
     if (!this.stack) {
-      this.ready?.then(() => this.active && this.startReplay());
+      this.ready?.then(() => this.active && this.startReplay(kind));
       return;
     }
     const { view } = this;
-    if (!this.replayShip) {
-      const ship = createShip(view.shipMats, this.builtModels?.ship);
-      faceTower(ship, 1);
-      ship.plume = createShipPlume();
-      ship.root.add(ship.plume.group);
-      this.replayShip = ship;
+    this.endReplay();
+    this.replayVehicles ??= {};
+    if (!this.replayVehicles[kind]) {
+      const v = kind === 'ship' ? createShip(view.shipMats, this.builtModels?.ship) : createBooster(view.boosterMats, this.builtModels?.booster);
+      if (kind === 'ship') faceTower(v, 1);
+      v.plume = kind === 'ship' ? createShipPlume() : createPlume({ boost: 1.45 });
+      if (kind === 'booster') v.plume.group.position.y = ENGINE_Y;
+      v.root.add(v.plume.group);
+      this.replayVehicles[kind] = v;
     }
-    this.replayShip.plume.setPalette(view.world.fx);
-    view.scene.add(this.replayShip.root);
-    this.replay = { t: 0, auto: true };
+    const vehicle = this.replayVehicles[kind];
+    vehicle.plume.setPalette(view.world.fx);
+    view.scene.add(vehicle.root);
+    // The arms wait at the vehicle's pins.
+    this.game.towers[0].armY = GROUND_Y - CATCHES[kind].pins * PX_PER_M;
+    this.thinned = new Map();
+    this.replay = { t: 0, auto: true, kind, vehicle, ...CATCHES[kind] };
     document.body.classList.add('replaying');
     this.flight = null;
     this.stack.root.visible = false;
@@ -389,8 +416,11 @@ export class Explore {
     this.replay = null;
     document.body.classList.remove('replaying');
     if (this.ground) this.setGroundView(false);
-    this.replayShip?.root.removeFromParent();
+    for (const v of Object.values(this.replayVehicles ?? {})) v.root.removeFromParent();
     this.game.towers[0].open = 1;
+    this.game.towers[0].armY = GROUND_Y - SHIP_PINS * PX_PER_M;
+    for (const [fog, density] of this.thinned ?? []) fog.density = density;
+    this.thinned = null;
     this.controls.maxTargetRadius = PIVOT_R;
     this.controls.maxDistance = 520;
     if (this.stack) this.stack.root.visible = this.active;
@@ -401,25 +431,37 @@ export class Explore {
     const r = this.replay;
     const { view } = this;
     r.t += dt;
-    const s = catchAt(r.t);
-    const ship = this.replayShip;
-    // The keys place the ship's middle; the root (its pins) sits CATCH_C up the turned axis from it.
-    const mid = new THREE.Vector3(this.foot.x - s.dx, SHIP_PINS - CATCH_C + s.h, this.foot.z);
+    const fog = view.scene.fog;
+    if (fog && !this.thinned.has(fog)) {
+      this.thinned.set(fog, fog.density);
+      fog.density *= REPLAY_FOG;
+    }
+    const s = catchAt(r.t, r.keys);
+    if (r.wobble) {
+      // Grid-fin steering: small tilts and sideways drift, dying away as the vehicle settles toward the arms.
+      const w = r.wobble * (1 - smooth01(r.t / r.close[0]));
+      const t = r.t;
+      s.a += w * (0.05 * Math.sin(t * 1.9) + 0.025 * Math.sin(t * 4.7 + 1.3));
+      s.dx += w * (6 * Math.sin(t * 1.3 + 0.4) + 2 * Math.sin(t * 3.1));
+    }
+    const ship = r.vehicle;
+    // The keys place the vehicle's middle; the root (its pins) sits r.c up the turned axis from it.
+    const mid = new THREE.Vector3(this.foot.x - s.dx, r.pins - r.c + s.h, this.foot.z);
     ship.root.rotation.set(0, 0, s.a);
-    ship.root.position.set(mid.x - Math.sin(s.a) * CATCH_C, mid.y + Math.cos(s.a) * CATCH_C, mid.z);
-    const engineY = ship.root.position.y + Math.cos(s.a) * SHIP_ENGINE_Y;
-    const engineX = ship.root.position.x - Math.sin(s.a) * SHIP_ENGINE_Y;
+    ship.root.position.set(mid.x - Math.sin(s.a) * r.c, mid.y + Math.cos(s.a) * r.c, mid.z);
+    const engineY = ship.root.position.y + Math.cos(s.a) * r.engineY;
+    const engineX = ship.root.position.x - Math.sin(s.a) * r.engineY;
     ship.plume.update(s.thr, this.game.t, Math.max(0, engineY - view.world.groundHeight(engineX, mid.z)));
     ship.throatMat.color.setRGB(7 * s.thr + 0.02, 3 * s.thr, 0.9 * s.thr);
-    const [c0, c1] = CATCH_CLOSE;
+    const [c0, c1] = r.close;
     this.game.towers[0].open = 1 - smooth01((r.t - c0) / (c1 - c0));
     // The aim leans from the arms toward the ship. A drag or zoom in the aerial view keeps the player's angle and
     // moves with the aim; the ground view stays put where a person would stand.
     const c = this.controls;
-    const arms = new THREE.Vector3(this.foot.x, SHIP_PINS - CATCH_C, this.foot.z);
+    const arms = new THREE.Vector3(this.foot.x, r.pins - r.c, this.foot.z);
     let aim;
     let air = null;
-    if (this.ground) aim = arms.clone().lerp(mid, CATCH_AIM.ground);
+    if (this.ground) aim = arms.clone().lerp(mid, lerp(CATCH_AIM.ground[0], CATCH_AIM.ground[1], smooth01(r.t / r.close[0])));
     else {
       // Fit the ship, the arms and the tower's foot: aim at the middle of their box, back off along CATCH_AIR_DIR.
       const box = new THREE.Box3().setFromPoints([mid, arms, new THREE.Vector3(this.foot.x + TOWER_DX, 0, this.foot.z)]);
@@ -442,7 +484,7 @@ export class Explore {
     } else if (r.auto) {
       view.camera.position.lerp(air, snap ? 1 : 1 - Math.exp(-dt * 3));
     } else view.camera.position.add(move);
-    this.idle = r.t > CATCH_CLOSE[1] + 2 ? this.idle : 0;
+    this.idle = r.t > r.close[1] + 2 ? this.idle : 0;
   }
 
   createControls() {
@@ -511,7 +553,7 @@ export class Explore {
     this.wake();
     this.chips.forEach((chip, i) => chip.classList.toggle('on', PRESETS[i] === p));
     this.chips[PRESETS.indexOf(p)].scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' });
-    if (p.replay) return this.startReplay();
+    if (p.replay) return this.startReplay(p.replay);
     this.endReplay();
     const base = p.world ? new THREE.Vector3() : this.foot;
     const to = { target: new THREE.Vector3(...p.target).add(base), position: new THREE.Vector3(...p.camera).add(base), fov: this.fovFor(p) };

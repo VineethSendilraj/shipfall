@@ -3,9 +3,9 @@ import { TARGETS } from './sim.js';
 const MODE_KEY = 'catch-the-booster.mode';
 const TARGET_KEY = 'catch-the-booster.target';
 const TARGET_INFO = {
-  booster: { title: 'Booster only', blurb: 'Steer it into the tower arms and close them' },
-  ship: { title: 'Ship only', blurb: 'Shorter and lighter, caught under its forward flaps' },
-  random: { title: 'ShipFall', blurb: 'Catch both: booster or ship, a new one every round' },
+  booster: { title: 'Booster only: steer it into the arms', blurb: '' },
+  ship: { title: 'Ship only: catch it under its flaps', blurb: '' },
+  random: { title: 'Catch booster and ship', blurb: '' },
 };
 // Picker order: both (the full stack in the arms) first, then the ship, then the booster.
 const ORDER = ['random', 'ship', 'booster'];
