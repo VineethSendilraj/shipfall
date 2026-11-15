@@ -6,10 +6,10 @@ import { buildWorld, bakeSky } from './world.js';
 import { createPlume, createParticles } from './effects.js';
 import { createExplosions } from './explosion.js';
 import { createComposer } from './post.js';
-import { SHIP_Y } from './stack.js';
+import { SHIP_Y, SHIELD_Y } from './stack.js';
 import { Director, toX, toY } from './director.js';
 import { Orbit } from './orbit.js';
-import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
+import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT, GROUND_Y } from '../sim.js';
 
 // The ship's lean toward its tower on the way down (radians), and the seconds it takes to straighten once its burn lights.
 const SHIP_LEAN = 0.2;
@@ -41,7 +41,13 @@ const TALL_LIFT = 0.35;
 const HERO_LAYOUT = { wide: { fill: 0.5, y: 0.43 }, square: { fill: 0.4, y: 0.36 }, tall: { fill: 0.3, y: 0.34 } };
 // Seconds a new pick takes to drop into the arms.
 const HERO_SETTLE = 0.55;
-const heroParts = (kind) => (kind === 'random' ? [['booster', 0], ['ship', SHIP_Y]] : [[kind, 0]]);
+// The home screen's vehicles, around the launch mount (moved under the tower lane, as in Explore): the full stack stands on
+// it with the arms at the ship's pins, the ship alone is held where it would sit on the booster, and the booster alone
+// hovers above the mount. HERO_ARMS: the arms' height (m) per pick; heroParts: [kind, meters above the arms].
+const MOUNT_TOP = 22.25;
+const STACK_BOOSTER = MOUNT_TOP - SHIELD_Y;
+const HERO_ARMS = { random: STACK_BOOSTER + SHIP_Y, ship: STACK_BOOSTER + SHIP_Y, booster: STACK_BOOSTER + 45 };
+const heroParts = (kind) => (kind === 'random' ? [['booster', -SHIP_Y], ['ship', 0]] : [[kind, 0]]);
 
 export class View {
   constructor(canvas, { pixelRatio = 1, cinematic = false, titleTime = 0, samples = 4, preserve = false, map = 'starbase' } = {}) {
@@ -128,6 +134,8 @@ export class View {
 
   /** Bottom and top (m) of the showcased vehicle held at the arms of tower A. */
   heroBounds(game) {
+    // The title's tower is display-only, so its arms follow the pick.
+    if (HERO_ARMS[this.showcase]) game.towers[0].armY = GROUND_Y - HERO_ARMS[this.showcase] * PX_PER_M;
     const pins = toY(game.towers[0].armY);
     let lo = Infinity;
     let hi = -Infinity;

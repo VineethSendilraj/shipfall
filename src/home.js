@@ -4,11 +4,11 @@ const MODE_KEY = 'catch-the-booster.mode';
 const TARGET_KEY = 'catch-the-booster.target';
 const TARGET_INFO = {
   booster: { title: 'Booster only', blurb: 'Steer it into the arms and close them' },
-  ship: { title: 'Ship only', blurb: 'Caught under its forward flaps' },
+  ship: { title: 'Catch the ship', blurb: 'Caught under its forward flaps' },
   random: { title: 'Catch ship and booster', blurb: 'A new one every round' },
 };
-// Picker order: both (the full stack in the arms) first, then the ship, then the booster.
-const ORDER = ['random', 'ship', 'booster'];
+// Picker order: the ship first (the intro ends with one in the arms), then the full stack, then the booster.
+const ORDER = ['ship', 'random', 'booster'];
 const SWIPE_PX = 40;
 
 function load(key, valid, fallback) {
@@ -37,7 +37,7 @@ function save(key, value) {
 export function bindHome({ root, modes, view }) {
   // A mode that opens straight from its tab (Explore) is never the one the home screen comes back to.
   let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null) && !m.instant) ?? modes[0];
-  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'random');
+  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'ship');
   const $ = (sel) => root.querySelector(sel);
   const tabs = $('.modes');
   const pick = $('.pick');

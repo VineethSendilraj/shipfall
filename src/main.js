@@ -156,7 +156,7 @@ function runGame() {
   let state = 'title';
   // Map picker on the home screen: applied at once there, and at takeoff.
   // Explore has its own picker; after a swap there it re-stages the stack on the new world's mount.
-  const mapPicker = bindMapPicker(view, view.world.map, () => state === 'title' || state === 'explore', () => state === 'explore' && explore.stage(true));
+  const mapPicker = bindMapPicker(view, view.world.map, () => state === 'title' || state === 'explore', () => (state === 'explore' ? explore.stage(true) : state === 'title' && explore.mountUnderTower(true)));
   let overTimer = -1;
   let paused = false;
   const held = { left: false, right: false, up: false, down: false };
@@ -268,6 +268,7 @@ function runGame() {
 
   function startGame() {
     setPaused(false);
+    explore.resetMounts();
     mapPicker.apply();
     game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0, target: home.target });
     game.start();
@@ -285,6 +286,7 @@ function runGame() {
   }
 
   function startFlight() {
+    explore.resetMounts();
     mapPicker.apply();
     flightView ??= new FlightView(view);
     flightHud ??= new FlightHud(ui);
@@ -326,6 +328,10 @@ function runGame() {
     document.body.classList.remove('touch-ui', 'playing');
     titleEl.classList.remove('hidden');
     home.show();
+    // The home screen shows the launch mount under the tower, as Explore does (after the models, which split it off).
+    Promise.resolve()
+      .then(() => explore.models)
+      .then(() => state === 'title' && explore.mountUnderTower(true));
   }
 
   const explore = new Explore({ view, models, game: new Game({ width: WORLD_W, seed: 1 }), onExit: showTitle });
@@ -482,6 +488,7 @@ function runGame() {
   if (params.get('explore') === '1') startExplore(params.get('focus'));
   // Opening the game plays a short ship catch, then the home screen (?intro=0 skips it).
   else if (!FLIGHT && params.get('intro') !== '0') startExplore('catch', { intro: true });
+  else if (state === 'title') explore.models.then(() => state === 'title' && explore.mountUnderTower(true));
   soundBtn.addEventListener('click', () => {
     unlocked = true;
     setSound(!sound.enabled);

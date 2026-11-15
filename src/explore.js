@@ -371,6 +371,21 @@ export class Explore {
     for (const v of Object.values(this.replayVehicles ?? {})) v.plume.setPalette(view.world.fx);
   }
 
+  /** Moves the launch mount under the tower lane (on) or back (off), as Explore does, for the home screen. */
+  mountUnderTower(on) {
+    const { view } = this;
+    this.movers ??= new WeakMap();
+    if (!this.movers.has(view.world)) this.movers.set(view.world, mountMover(view, this.foot));
+    this.movers.get(view.world)(on);
+    (this.moved ??= new Set())[on ? 'add' : 'delete'](view.world);
+  }
+
+  /** Puts every world's mount back where the catch game expects it (cached maps keep theirs otherwise). */
+  resetMounts() {
+    for (const world of this.moved ?? []) this.movers.get(world)(false);
+    this.moved?.clear();
+  }
+
   /** Starts (or restarts) a catch replay of `kind` ('ship' or 'booster'): the stack steps aside for it. */
   startReplay(kind = 'ship') {
     // Only inside Explore: the replay vehicle would otherwise sit in the home screen's tower beside its showcase.
