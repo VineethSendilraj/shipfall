@@ -563,10 +563,17 @@ body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 
 /* Until the game script decides between the intro and the home screen, show neither. */
 html:not(.booted) #title-screen { visibility: hidden; }
 
-/* Wide screens: one bottom row. The on-screen keys sit in the gauge bar's outer corners, the gauges move inward. */
-body:not(.compact):not(.tall) .touch { bottom: calc(16px * var(--ui) + 14px); }
-body:not(.compact):not(.tall).touch-ui .hud-bar { padding-left: calc(var(--keys-l) + 20px); padding-right: calc(var(--keys-r) + 20px); }
-body:not(.compact):not(.tall) { --kb: clamp(50px, min(14.5vw, 15vh), 68px); --keys-l: calc(var(--kb) * 2 + 8px + 12px); --keys-r: calc(var(--kb) * 3.42 + 16px + 12px); }
+/* Wide screens use the phone layout: gauges and score in a bar along the top, the on-screen keys alone at the bottom. */
+body:not(.compact):not(.tall) { --kb: clamp(50px, min(14.5vw, 15vh), 68px); }
+body:not(.compact):not(.tall).touch-ui .hud::before, body:not(.compact):not(.tall).touch-ui .scorebox, body:not(.compact):not(.tall).touch-ui .clock { display: none; }
+body:not(.compact):not(.tall).touch-ui .hud-bar { top: 0; bottom: auto; height: auto; align-items: start; padding: calc(14px * var(--ui)) calc(22px * var(--ui)) calc(30px * var(--ui));
+  background: linear-gradient(180deg, rgba(1, 2, 5, 0.75), rgba(1, 2, 5, 0.38) 60%, rgba(1, 2, 5, 0)); }
+body:not(.compact):not(.tall).touch-ui .cluster { align-items: flex-start; }
+body:not(.compact):not(.tall).touch-ui .mission { width: auto; }
+body:not(.compact):not(.tall).touch-ui .mscore { display: block; font-size: calc(40px * var(--ui)); line-height: 1; color: var(--ink); }
+body:not(.compact):not(.tall).touch-ui:not(.free-flight) .timeline { display: none; }
+body:not(.compact):not(.tall).touch-ui.free-flight .timeline { position: fixed; left: 50%; transform: translateX(-50%); top: auto; bottom: calc(var(--kb) + 52px); width: min(720px, 58vw); margin: 0; }
+body:not(.compact):not(.tall) .touch { bottom: 26px; }
 
 /* Mission timeline: events still ahead can be clicked to fast-forward to them. */
 .timeline .fl.ahead { pointer-events: auto; cursor: pointer; }
@@ -616,5 +623,4 @@ body.tall .disclaimer { bottom: calc(env(safe-area-inset-bottom) + 3px); }
 .home-dock { bottom: 64px; }
 body.compact .home-dock { bottom: 50px; }
 body.tall .home-dock { bottom: calc(env(safe-area-inset-bottom) + 80px); }
-body:not(.compact):not(.tall).touch-ui .hud-bar { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: calc(12px * var(--ui)); }
-body:not(.compact):not(.tall).touch-ui .mission { width: auto; max-width: calc(560px * var(--ui)); justify-self: center; min-width: 0; }
+body:not(.compact):not(.tall).touch-ui.free-flight .coach { bottom: calc(var(--kb) + 52px + min(720px, 58vw) * 0.13 + 16px); }
