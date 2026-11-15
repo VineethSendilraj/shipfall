@@ -5,6 +5,9 @@ const YAW_PER_PX = 0.006;
 const PITCH_PER_PX = 0.005;
 const ZOOM_MIN = 0.35;
 const ZOOM_MAX = 3;
+// In flight the camera pulls back much further and swings right under the vehicle, so the planet fits around it.
+const FLIGHT_ZOOM_MAX = 20;
+const FLIGHT_ELEV = 1.5;
 // Lowest and highest elevation (radians above the horizon) a drag can take the camera to.
 const ELEV_MIN = -0.3;
 const ELEV_MAX = 1.45;
@@ -12,9 +15,11 @@ const ELEV_MAX = 1.45;
 /**
  * The player's look-around offset on top of a director's shot: drag to orbit the shot's target, wheel or pinch to
  * zoom, double-click to reset. Takes input only while a game or flight is being played and not paused.
+ * In 'flight' mode the orbit swings further above and below the vehicle and the wheel pulls back further.
  */
 export class Orbit {
   constructor(el) {
+    this.mode = 'orbit';
     this.want = { yaw: 0, pitch: 0, zoom: 1 };
     this.yaw = 0;
     this.pitch = 0;
@@ -29,7 +34,10 @@ export class Orbit {
 
   get active() {
     const c = document.body.classList;
-    return c.contains('playing') && !c.contains('paused');
+    if (c.contains('playing')) return !c.contains('paused');
+    // The home screen can be looked around too, unless How to play covers it.
+    const home = document.getElementById('title-screen');
+    return !!home && !home.classList.contains('hidden') && !home.classList.contains('helping');
   }
 
   reset(snap = false) {
@@ -85,7 +93,13 @@ export class Orbit {
   }
 
   zoomBy(f) {
-    this.want.zoom = clamp(this.want.zoom * f, ZOOM_MIN, ZOOM_MAX);
+    this.want.zoom = clamp(this.want.zoom * f, ZOOM_MIN, this.mode === 'flight' ? FLIGHT_ZOOM_MAX : ZOOM_MAX);
+  }
+
+  /** 'orbit' for the catch game and home screen, 'flight' for free flight; resets the offset. */
+  setMode(mode) {
+    this.mode = mode;
+    this.reset(true);
   }
 
   /** Moves pos about tgt by the current offset, with up as the vertical; eases toward the input once per frame. */
@@ -97,6 +111,9 @@ export class Orbit {
     this.yaw += (w.yaw - this.yaw) * k;
     this.pitch += (w.pitch - this.pitch) * k;
     this.zoom += (w.zoom - this.zoom) * k;
+    // body.cam-moved shows the recenter button while the view is off the director's shot.
+    const moved = Math.abs(w.yaw) > 0.01 || Math.abs(w.pitch) > 0.01 || Math.abs(w.zoom - 1) > 0.01;
+    if (moved !== this.moved) document.body.classList.toggle('cam-moved', (this.moved = moved));
     if (Math.abs(this.yaw) < 1e-4 && Math.abs(this.pitch) < 1e-4 && Math.abs(this.zoom - 1) < 1e-4) return pos;
     const rel = pos.sub(tgt);
     const r = rel.length();
@@ -106,7 +123,8 @@ export class Orbit {
     if (hl < 1e-6 * r) return pos.add(tgt);
     h.divideScalar(hl).applyQuaternion(this._q.setFromAxisAngle(up, this.yaw));
     const e = Math.atan2(y, hl);
-    const e2 = clamp(e + this.pitch, Math.min(e, ELEV_MIN), Math.max(e, ELEV_MAX));
+    const [lo, hi] = this.mode === 'flight' ? [-FLIGHT_ELEV, FLIGHT_ELEV] : [ELEV_MIN, ELEV_MAX];
+    const e2 = clamp(e + this.pitch, Math.min(e, lo), Math.max(e, hi));
     const d = r * this.zoom;
     return pos.copy(tgt).addScaledVector(h, Math.cos(e2) * d).addScaledVector(up, Math.sin(e2) * d);
   }

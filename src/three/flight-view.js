@@ -65,6 +65,7 @@ export class FlightView {
     this.bind();
     v.scene.add(...this.objects);
     this.director = new FlightDirector();
+    v.orbit.setMode('flight');
     this.prev = null;
     this.roll = ROLL;
     this.boom = null;
@@ -124,6 +125,7 @@ export class FlightView {
     const v = this.view;
     const { scene, camera } = v;
     scene.remove(...this.objects, ...this.look.objects);
+    v.orbit.setMode('orbit');
     this.craft.detach();
     this.restoreSite();
     this.kids = [];

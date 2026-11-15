@@ -81,7 +81,7 @@ export function startServer({ port = 41730, host = '127.0.0.1', quiet = false, r
   return new Promise((ok) =>
     server.listen(port, host, () => {
       const { port: p } = server.address();
-      if (!quiet) console.log(`Catch the Booster → http://${host}:${p}/  (embed: /embed/, demo: /?demo=1)`);
+      if (!quiet) console.log(`ShipFall → http://${host}:${p}/  (embed: /embed/, demo: /?demo=1)`);
       ok({ server, port: p, url: `http://${host}:${p}` });
     }),
   );

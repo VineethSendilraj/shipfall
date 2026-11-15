@@ -7,6 +7,8 @@ const TARGET_INFO = {
   ship: { title: 'Catch the ship', blurb: 'Shorter and lighter, caught under its forward flaps' },
   random: { title: 'Catch either', blurb: 'Booster or ship, drawn fresh every round' },
 };
+// Picker order: the ship first, then the booster, then either.
+const ORDER = ['ship', 'booster', 'random'];
 const SWIPE_PX = 40;
 
 function load(key, valid, fallback) {
@@ -34,7 +36,7 @@ function save(key, value) {
  */
 export function bindHome({ root, modes, view }) {
   let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null)) ?? modes[0];
-  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), TARGETS[0]);
+  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'ship');
   const $ = (sel) => root.querySelector(sel);
   const tabs = $('.modes');
   const pick = $('.pick');
@@ -69,7 +71,7 @@ export function bindHome({ root, modes, view }) {
 
   function cycle(step) {
     if (!mode.targets) return;
-    target = TARGETS[(TARGETS.indexOf(target) + step + TARGETS.length) % TARGETS.length];
+    target = ORDER[(ORDER.indexOf(target) + step + ORDER.length) % ORDER.length];
     save(TARGET_KEY, target);
     show();
   }
@@ -86,6 +88,14 @@ export function bindHome({ root, modes, view }) {
       cycle(Number(b.dataset.step));
     });
   }
+  const peekBtn = $('.peek-btn');
+  peekBtn.addEventListener('click', (ev) => {
+    if (ev.detail > 0) peekBtn.blur();
+    const on = !root.classList.contains('peek');
+    root.classList.toggle('peek', on);
+    peekBtn.setAttribute('aria-pressed', String(on));
+    if (!on) view.orbit.reset();
+  });
   helpBtn.addEventListener('click', (ev) => {
     if (ev.detail > 0) helpBtn.blur();
     setHelp(help.classList.contains('hidden'));

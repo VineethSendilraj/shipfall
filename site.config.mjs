@@ -4,12 +4,12 @@
 // Set VITE_SITE_URL (or SITE_URL) when building, e.g. `VITE_SITE_URL=https://booster.example.com npm run build`.
 // Without it, Vercel and Cloudflare Pages builds fall back to the URL the platform provides.
 
-export const PLACEHOLDER_SITE_URL = 'https://catch-the-booster.example';
+export const PLACEHOLDER_SITE_URL = 'https://shipfall.example';
 
 export const CARD = {
-  title: 'Catch the Booster',
-  description: "Line up a falling rocket booster with the tower's arms and close them gently. Not affiliated with SpaceX.",
-  imageAlt: "A stainless rocket booster held in a launch tower's catch arms at night",
+  title: 'ShipFall',
+  description: "In honor of today's amazing feat of engineering: see how many Starships you can catch. Not affiliated with SpaceX.",
+  imageAlt: "A stainless rocket ship caught in a launch tower's arms, sparks flying",
   site: '@VineethSendil',
   // X shows this image in place of the frame until the game loads, so it has the frame's square shape.
   playerImage: '/player.jpg',

@@ -1,4 +1,4 @@
-"""Builds the Catch the Booster GLB models (booster, ship, tower, props) with bpy.
+"""Builds the ShipFall GLB models (booster, ship, tower, props) with bpy.
 
 Run headless from the repo root:
 

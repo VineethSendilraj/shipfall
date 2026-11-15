@@ -12,8 +12,8 @@ import { CARD } from '../site.config.mjs';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const candidatesDir = argv.includes('--candidates') ? argv[argv.indexOf('--candidates') + 1] : null;
-// Sim frame (60 Hz) of the chosen shot: round 1 approach, booster tilted on its landing burn beside the open arms.
-const CARD_FRAME = Number(process.env.CARD_FRAME || 352);
+// Sim frame (60 Hz) of the chosen shot: the double catch, the ship just closed in tower B's arms with sparks flying.
+const CARD_FRAME = Number(process.env.CARD_FRAME || 1480);
 const CATCHES = [398, 823, 1291, 1461];
 const GL_ARGS = (process.env.CHROMIUM_ARGS || '--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist').split(' ').filter(Boolean);
 
@@ -43,7 +43,7 @@ async function open(s) {
   await page.evaluate(() => {
     const t = document.createElement('div');
     t.className = 'card-title';
-    t.innerHTML = '<h1>catch the booster</h1>';
+    t.innerHTML = '<h1>try to catch starship</h1>';
     const f = document.createElement('div');
     f.className = 'card-foot';
     f.textContent = 'not affiliated with SpaceX';

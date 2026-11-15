@@ -127,7 +127,7 @@ export class HudBar {
     const round = Math.max(1, h.round);
     const lives = '●'.repeat(h.lives) + '○'.repeat(Math.max(0, 3 - h.lives));
     const tower = h.double && h.booster ? ` · ${h.kind === 'ship' ? 'SHIP · ' : ''}TOWER ${h.towerIdx === 0 ? 'A' : 'B'}` : '';
-    this.set('flight', compact ? `FLIGHT ${round}${tower} · ${lives}` : `CATCH THE BOOSTER · FLIGHT ${round}`, (v) => (e.flight.textContent = v));
+    this.set('flight', compact ? `FLIGHT ${round}${tower} · ${lives}` : `SHIPFALL · FLIGHT ${round}`, (v) => (e.flight.textContent = v));
     this.set('clock', clock(game.t), (v) => (e.clock.textContent = v));
     this.set('mscore', h.score.toLocaleString('en-US'), (v) => (e.mscore.textContent = v));
 

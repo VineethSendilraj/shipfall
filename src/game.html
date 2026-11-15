@@ -1,5 +1,5 @@
 <div id="app">
-  <canvas id="gl" aria-label="Catch the Booster game view"></canvas>
+  <canvas id="gl" aria-label="ShipFall game view"></canvas>
 
   <div id="popups" aria-hidden="true"></div>
   <div id="banner" class="banner" aria-live="polite">
@@ -49,6 +49,10 @@
   </div>
 
   <div id="corner" class="corner">
+    <button id="recenter-btn" class="icon-btn" type="button" title="Recenter camera (C)">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+      <span class="sr">Recenter camera</span>
+    </button>
     <button id="pause-btn" class="icon-btn" type="button" title="Pause (Esc)">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
       <span class="sr">Pause</span>
@@ -60,7 +64,17 @@
   </div>
 
   <section id="title-screen" class="overlay home">
-    <h1 class="wordmark">catch the booster</h1>
+    <h1 class="wordmark">shipfall</h1>
+    <div class="home-top">
+      <div class="map-pick" role="group" aria-label="Launch site">
+        <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
+        <button type="button" data-map="mars" aria-pressed="false">Mars</button>
+      </div>
+      <button class="icon-btn peek-btn" type="button" aria-pressed="false" title="Look around: hide the menu, drag to turn, scroll or pinch to zoom">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        <span class="sr">Look around</span>
+      </button>
+    </div>
     <div class="pick" role="group" aria-label="What to catch">
       <button class="pick-arrow" type="button" data-step="-1" aria-label="Previous vehicle">
         <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14.5 5.5L8 12l6.5 6.5"/></svg>
@@ -71,7 +85,7 @@
     </div>
     <div class="home-dock">
       <div class="pick-label" aria-live="polite">
-        <b class="pick-name">Catch the booster</b>
+        <b class="pick-name">Catch the ship</b>
         <span class="pick-note"></span>
       </div>
       <nav class="modes" aria-label="Game mode"></nav>
@@ -80,10 +94,6 @@
         Play <kbd>↵</kbd>
       </button>
       <div class="home-links">
-        <div class="map-pick" role="group" aria-label="Launch site">
-          <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
-          <button type="button" data-map="mars" aria-pressed="false">Mars</button>
-        </div>
         <button class="ext open-board" type="button">Leaderboard</button>
         <button class="ext open-how" type="button" aria-expanded="false">How to play</button>
         <a class="ext full" href="/" target="_blank" rel="noopener">Full screen ↗</a>
@@ -204,7 +214,7 @@
   </section>
 
   <div id="demo-title" class="demo-card hidden">
-    <h1>catch the booster</h1>
+    <h1>shipfall</h1>
     <p class="tag">steer it in · line up the arms · close gently</p>
   </div>
   <div id="demo-end" class="demo-card hidden">

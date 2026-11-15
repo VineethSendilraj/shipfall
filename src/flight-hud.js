@@ -227,7 +227,7 @@ export class FlightHud {
   coach(f, touch, inOrbit) {
     const s = f.ship;
     const act = touch ? 'tap' : 'SPACE';
-    if (f.phase === 'pad' && f.action()) return touch ? 'tap START to skip the countdown' : 'SPACE skips the countdown';
+    if (f.phase === 'pad' && f.action()) return touch ? 'tap START to skip the countdown · drag to look around' : 'SPACE skips the countdown · drag to look around';
     if (f.phase === 'pad' || (f.phase === 'flight' && f.t - f.marks.liftoff < 12)) {
       if (!f.clearOfTower()) return touch ? '◀ ▶ pitch once clear of the tower · ▲ ▼ throttle' : '← → pitch once clear of the tower · ↑ ↓ throttle';
       return touch ? '◀ ▶ pitch · ▲ ▼ throttle · action button' : '← → pitch · ↑ ↓ throttle · SPACE action';

@@ -137,7 +137,9 @@ body.paused #touch { display: none; }
 
 .corner { position: absolute; right: 18px; bottom: 18px; display: flex; gap: 8px; z-index: 5; }
 .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line); background: rgba(10, 11, 13, 0.62); color: var(--ink); cursor: pointer; }
-#pause-btn { display: none; }
+#pause-btn, #recenter-btn { display: none; }
+body.playing.cam-moved:not(.paused) #recenter-btn { display: grid; }
+body.cam-moved:has(#title-screen:not(.hidden)) #recenter-btn { display: grid; }
 body.playing:not(.paused):not(.free-flight) #pause-btn { display: grid; }
 .icon-btn .wave { display: none; }
 .icon-btn[aria-pressed='true'] .wave { display: inline; }
@@ -253,6 +255,10 @@ body.compact .g-unit { top: 62%; font-size: 6.5px; }
 body.compact .engines figcaption, body.compact .align figcaption { margin-top: 3px; font-size: 7px; letter-spacing: 0.12em; }
 body.compact .mission { width: auto; padding: 0 6px; }
 body.compact .timeline, body.compact .clock { display: none; }
+/* Free flight keeps its mission steps on narrow screens: a full-width row along the bottom, above the coach line. */
+body.compact.free-flight .timeline { display: block; position: fixed; left: 12px; right: 12px; top: auto; bottom: 62px; width: auto; margin: 0; }
+body.compact.free-flight.touch-ui .timeline { bottom: calc(clamp(50px, min(14.5vw, 15vh), 68px) + 74px); }
+body.compact.free-flight.playing:not(.touch-ui) #corner { bottom: auto; top: 104px; }
 body.compact .mscore { display: block; font-size: 24px; line-height: 1; color: var(--ink); }
 body.compact .flight { margin-top: 4px; font-size: 8.5px; letter-spacing: 0.14em; }
 body.compact .status, body.compact .gust { font-size: 11px; padding: 4px 2px; letter-spacing: 0.14em; }
@@ -360,8 +366,12 @@ body.tall #flight-over { align-items: start; padding-top: 16px; padding-bottom: 
 .btn.play kbd { font-size: 11px; min-width: 0; padding: 1px 6px; color: rgba(11, 12, 14, 0.6); border-color: rgba(11, 12, 14, 0.25); background: none; box-shadow: none; }
 .btn.play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .home-links { display: flex; align-items: center; gap: 4px; }
-.home-links .map-pick { padding: 2px; margin-right: 6px; background: rgba(6, 7, 9, 0.4); border-color: rgba(255, 255, 255, 0.12); }
-.home-links .map-pick button { font-size: 12.5px; padding: 5px 11px; }
+.home-top { position: absolute; top: 20px; right: 22px; display: flex; align-items: center; gap: 8px; }
+.home-top .map-pick { padding: 2px; background: rgba(6, 7, 9, 0.4); border-color: rgba(255, 255, 255, 0.12); }
+.home-top .map-pick button { font-size: 12.5px; padding: 5px 11px; }
+.peek-btn { border-radius: 50%; }
+.peek-btn[aria-pressed='true'] { background: rgba(241, 242, 244, 0.92); color: #0a0b0d; }
+.home.peek .pick, .home.peek .home-dock { visibility: hidden; }
 .home-links .ext { white-space: nowrap; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); padding: 8px 10px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 .home-links .ext:hover, .home-links .ext:focus-visible { color: var(--ink); }
 .home-links .full { display: none; }
@@ -385,7 +395,7 @@ body.embed .how .taps { display: inline; }
 
 /* Small embeds and phones: the title on top, the vehicle, then the same column, tighter. */
 body.compact .overlay.home { --hero-y: 36%; }
-body.compact .wordmark { top: 14px; left: 0; right: 0; text-align: center; font-size: 27px; }
+body.compact .wordmark { top: 14px; left: 16px; font-size: 27px; }
 body.compact .pick-arrow { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
 body.compact .pick-arrow[data-step='-1'] { transform: translateX(min(-120px, -26vw)); }
 body.compact .pick-arrow[data-step='1'] { transform: translateX(max(120px, 26vw)); }
@@ -396,8 +406,8 @@ body.compact:not(.tall) .pick-note { display: none; }
 body.compact .modes button { font-size: 13px; padding: 7px 12px; }
 body.compact .btn.play { min-width: 220px; padding: 12px 28px; font-size: 19px; }
 body.compact .home-links { gap: 0; }
-body.compact .home-links .map-pick { margin-right: 2px; }
-body.compact .home-links .map-pick button { font-size: 12px; padding: 4px 9px; }
+body.compact .home-top { top: 10px; right: 12px; gap: 6px; }
+body.compact .home-top .map-pick button { font-size: 12px; padding: 4px 9px; }
 body.compact .home-links .ext { font-size: 12px; padding: 4px 6px; }
 body.compact .how { padding: 16px 18px 14px; }
 body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
