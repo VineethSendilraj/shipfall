@@ -153,6 +153,11 @@ export class Game {
 
   // ---------------------------------------------------------------- rounds
 
+  /** Live play burns fuel slower in the first rounds and faster later, up to a ceiling (round 7 on). */
+  fuelUse() {
+    return this.live ? 0.75 + 0.075 * Math.min(this.difficulty(), 6) : 1;
+  }
+
   difficulty() {
     return Math.min(this.round - 1, 9);
   }
@@ -521,7 +526,7 @@ export class Game {
       const ff = profile > b.vHover ? A_BURN : 0;
       const acc = clamp(G + ff + 8 * (b.vy - vt), G * 0.3, G + A_MAX);
       b.throttle += (acc / (G + A_MAX) - b.throttle) * 0.35;
-      b.fuel = Math.max(0, b.fuel - (this.live ? LIVE_BURN_FUEL_RATE : BURN_FUEL_RATE) * b.throttle * DT);
+      b.fuel = Math.max(0, b.fuel - (this.live ? LIVE_BURN_FUEL_RATE : BURN_FUEL_RATE) * this.fuelUse() * b.throttle * DT);
       ay = G - acc;
     } else {
       b.throttle *= 0.8;
@@ -537,7 +542,7 @@ export class Game {
     }
     if (thrust) {
       ax += thrust * THRUST_ACC;
-      b.fuel = Math.max(0, b.fuel - FUEL_RATE * DT);
+      b.fuel = Math.max(0, b.fuel - FUEL_RATE * this.fuelUse() * DT);
       this.spawnRcs(b, thrust);
     }
     b.rcs = thrust;
