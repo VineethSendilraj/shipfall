@@ -529,7 +529,8 @@ body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 
 .modes button { font-size: 13px; letter-spacing: 0.12em; }
 .btn { letter-spacing: 0.1em; font-size: 14px; }
 .pick-name { letter-spacing: 0.06em; }
-.disclaimer { letter-spacing: 0.14em; font-size: 9.5px; }
+/* Uppercase like the rest, but quiet: small, dim, on a black chip in the corner. */
+.disclaimer { letter-spacing: 0.14em; font-size: 9px; color: rgba(230, 237, 255, 0.6); background: rgba(0, 0, 0, 0.6); border-radius: 6px; text-shadow: none; }
 
 /* How to play: one column of key chips and short labels. */
 .how { padding: 24px 24px 20px; }
