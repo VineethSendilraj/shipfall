@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ARM_REACH, GROUND_Y, PX_PER_M, VEHICLES } from './sim.js';
+import { ARM_REACH, GROUND_Y, PX_PER_M, VEHICLES, towerPositions } from './sim.js';
 import { toX } from './three/director.js';
 import { ENGINE_Y, createBooster } from './three/booster.js';
 import { createPlume } from './three/effects.js';
@@ -427,6 +427,30 @@ export class Explore {
     this.stepReplay(0, true);
   }
 
+  /**
+   * The double catch, for the share card: a second tower facing the first, its arms closed on a booster caught a moment
+   * ago (engines still lit, settling), while the ship replay comes into tower A. The aerial camera frames both towers.
+   */
+  stageDouble(thr = 0.45) {
+    const g = this.game;
+    const { view } = this;
+    if (!g.towers[1]) {
+      const x = towerPositions(g.W).b;
+      g.towers[1] = { ...g.towers[0], idx: 1, side: 1, x, cx: x + ARM_REACH, open: 0, closing: false, holding: null, rise: 1, bounce: 0, armVel: 0 };
+    }
+    const tw = g.towers[1];
+    const pins = CATCHES.booster.pins;
+    tw.armY = GROUND_Y - pins * PX_PER_M;
+    const v = createBooster(view.boosterMats, this.builtModels?.booster);
+    v.plume = createPlume({ boost: 1.45 });
+    v.plume.group.position.y = ENGINE_Y;
+    v.root.add(v.plume.group);
+    v.plume.setPalette(view.world.fx);
+    v.root.position.set(toX(tw.cx), pins, this.foot.z);
+    view.scene.add(v.root);
+    this.double = { v, thr, x: toX(tw.cx), foot: toX(tw.x), pins };
+  }
+
   /** Switches the replay between following the ship from above and the fixed camera on the ground. */
   setGroundView(on) {
     this.ground = on;
@@ -506,6 +530,12 @@ export class Explore {
     ship.plume.update(s.thr, this.game.t, Math.max(0, engineY - view.world.groundHeight(engineX, mid.z)));
     ship.throatMat.color.setRGB(7 * s.thr + 0.02, 3 * s.thr, 0.9 * s.thr);
     this.replaySmoke(dt * r.speed, engineX, engineY - view.world.groundHeight(engineX, mid.z), s);
+    if (this.double) {
+      const d = this.double;
+      const ey = d.pins + ENGINE_Y;
+      d.v.plume.update(d.thr, this.game.t, Math.max(0, ey - view.world.groundHeight(d.x, mid.z)));
+      d.v.throatMat.color.setRGB(7 * d.thr + 0.02, 3 * d.thr, 0.9 * d.thr);
+    }
     const [c0, c1] = r.close;
     this.game.towers[0].open = 1 - smooth01((r.t - c0) / (c1 - c0));
     // The aim leans from the arms toward the ship. A drag or zoom in the aerial view keeps the player's angle and
@@ -517,7 +547,11 @@ export class Explore {
     if (this.ground) aim = arms.clone().lerp(mid, lerp(CATCH_AIM.ground[0], CATCH_AIM.ground[1], smooth01(r.t / r.close[0])));
     else {
       // Fit the ship, the arms and the tower's foot: aim at the middle of their box, back off along CATCH_AIR_DIR.
-      const box = new THREE.Box3().setFromPoints([mid, arms, new THREE.Vector3(this.foot.x + TOWER_DX, 0, this.foot.z)]);
+      const fit = [mid, arms, new THREE.Vector3(this.foot.x + TOWER_DX, 0, this.foot.z)];
+      // Extra sky above the arms (m), for a card with its title at the top.
+      if (this.headroom) fit.push(new THREE.Vector3(arms.x, arms.y + this.headroom, arms.z));
+      if (this.double) fit.push(new THREE.Vector3(this.double.foot, 0, this.foot.z), new THREE.Vector3(this.double.x, this.double.pins + 20, this.foot.z));
+      const box = new THREE.Box3().setFromPoints(fit);
       aim = box.getCenter(new THREE.Vector3());
       const radius = box.getSize(new THREE.Vector3()).length() / 2 + CATCH_AIR_MARGIN;
       const v = THREE.MathUtils.degToRad(view.camera.fov) / 2;

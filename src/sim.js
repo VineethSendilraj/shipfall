@@ -58,8 +58,7 @@ const REOPEN_DELAY = 0.35;
 const SECOND_BOOSTER_DELAY = 2.2;
 const SPAWN_Y = -270;
 export const LIVE_SPAWN_Y = -620;
-const STAGGER_DELAY = 1.2; // after the first vehicle is down near the arms (or caught or lost)
-const STAGGER_ALT_M = 140;
+const STAGGER_DELAY = 1.2; // after the first vehicle is caught or lost
 const INTRO_TIME = 0.8;
 const OUTRO_TIME = 1.3;
 const UNLOCK_TIME = 1.8;
@@ -155,7 +154,7 @@ export class Game {
 
   /** Live play burns fuel slower in the first rounds and faster later, up to a ceiling (round 7 on). */
   fuelUse() {
-    return this.live ? 0.75 + 0.075 * Math.min(this.difficulty(), 6) : 1;
+    return this.live ? 0.85 + 0.06 * Math.min(this.difficulty(), 6) : 1;
   }
 
   difficulty() {
@@ -455,7 +454,7 @@ export class Game {
     for (const b of this.boosters) {
       switch (b.state) {
         case 'waiting':
-          if (this.live && this.boosters.some((o) => o !== b && o.state === 'falling' && this.altitudeM(o) > STAGGER_ALT_M)) break;
+          if (this.live && this.boosters.some((o) => o !== b && o.state === 'falling')) break;
           b.delay -= DT;
           if (b.delay <= 0) {
             b.state = 'falling';
