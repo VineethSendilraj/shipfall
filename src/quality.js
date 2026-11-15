@@ -2,7 +2,8 @@ import { QUALITY } from './three/view.js';
 
 const WINDOW_MS = 1000;
 const MIN_FRAMES = 8;
-const TARGET_FPS = 33;
+// Below 30: Low Power Mode on iPhones and some battery savers cap browsers at exactly 30 fps, which plays fine.
+const TARGET_FPS = 26;
 
 function isSoftwareRenderer(renderer) {
   const gl = renderer.getContext();
@@ -20,13 +21,14 @@ export class AutoQuality {
     this.view = view;
     const forcedLevel = QUALITY.findIndex((q) => q.name === forced);
     this.locked = forcedLevel >= 0;
-    // Phones and tablets start at medium (pixel ratio 1, no MSAA): high-DPR screens on mobile GPUs rarely hold 33 fps at high.
+    // Phones and tablets start at medium (pixel ratio 1.5, no MSAA): high-DPR screens on mobile GPUs rarely hold 33 fps at high.
     const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
     this.level = this.locked ? forcedLevel : isSoftwareRenderer(view.renderer) ? 2 : touch ? 1 : 0;
     this.last = 0;
     this.frames = 0;
     this.elapsed = 0;
-    this.settle = 1;
+    // The first seconds compile shaders and build the world, so they say nothing about the device's speed.
+    this.settle = 3;
     this.fps = 0;
     view.setQuality(QUALITY[this.level]);
   }
