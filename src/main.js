@@ -657,6 +657,7 @@ function runGame() {
 
   let last = performance.now();
   let acc = 0;
+  let shown = false;
   const frame = (now) => {
     const dt = Math.min(0.1, (now - last) / 1000);
     acc += dt;
@@ -664,6 +665,11 @@ function runGame() {
     const idle = paused || document.hidden;
     if (idle) acc = 0;
     quality.frame(now, !idle);
+    // The loading screen lifts once there's something to show: the intro's first frame, or any other screen.
+    if (!shown && (state !== 'explore' || !explore.intro || explore.replay)) {
+      shown = true;
+      document.documentElement.classList.add('shown');
+    }
     if (state === 'explore') {
       // The sim stays stopped, so it doesn't fast-forward through the time spent exploring.
       acc = 0;
@@ -685,6 +691,7 @@ function runGame() {
 
   /** Frame-stepped free flight flown by the scripted pilot, for screenshots and scans: window.__advance(n, render). */
   async function captureFlight() {
+    document.documentElement.classList.add('shown');
     view.useModels(await Promise.race([models, new Promise((done) => setTimeout(done, DEMO_MODEL_WAIT_MS, null))]));
     await loadFonts();
     startFlight();
