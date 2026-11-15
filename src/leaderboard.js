@@ -17,13 +17,20 @@ function dedupe(list) {
     });
 }
 
-export function loadBoard() {
+// Every run is kept (up to this many, best first); the board shows each handle's best.
+const KEEP = 200;
+
+function loadAll() {
   try {
     const list = JSON.parse(localStorage.getItem(KEY) || '[]');
-    return Array.isArray(list) ? dedupe(list.filter((e) => e && typeof e.score === 'number')).slice(0, 5) : [];
+    return Array.isArray(list) ? list.filter((e) => e && typeof e.score === 'number') : [];
   } catch {
     return [];
   }
+}
+
+export function loadBoard() {
+  return dedupe(loadAll()).slice(0, 5);
 }
 
 export function normalizeHandle(raw) {
@@ -42,9 +49,10 @@ export function savedHandle() {
 /** Inserts an entry into the on-device board, persists, and returns { list, index }. */
 export function addEntry(handle, score, round) {
   const entry = { handle, score, round, at: new Date().toISOString().slice(0, 10) };
-  const list = dedupe([...loadBoard(), entry]).slice(0, 5);
+  const all = [...loadAll(), entry].sort((a, b) => b.score - a.score).slice(0, KEEP);
+  const list = dedupe(all).slice(0, 5);
   try {
-    localStorage.setItem(KEY, JSON.stringify(list));
+    localStorage.setItem(KEY, JSON.stringify(all));
     localStorage.setItem(HANDLE_KEY, handle);
   } catch {
     // Storage can be unavailable (private mode); the board still renders for this session.
