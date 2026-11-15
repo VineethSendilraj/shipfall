@@ -159,4 +159,4 @@ vercel.json                Vercel build + headers
 scripts/                   serve, check-card, make-card, record, record-embed, author-demo, tests
 ```
 
-Font: D-DIN by Datto, SIL Open Font License (license in `public/licenses/`). three.js: MIT (bundled from npm). 3D models: built from `blender/` in this repo, no third-party assets.
+Fonts: D-DIN by Datto and Sedgwick Ave Display (the wordmark), both SIL Open Font License (licenses in `public/licenses/`). three.js: MIT (bundled from npm). 3D models: built from `blender/` in this repo, no third-party assets.
