@@ -27,7 +27,8 @@ const SHOTS = [
 const cardCss = (s) => `
   #hud, #popups, #banner, #corner, #touch, .coach, .status-stack, .disclaimer, #title-screen { display: none !important; }
   .card-art { position: absolute; left: 0; right: 0; top: ${s.y * 100}%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-  .card-art h1 { margin: 0; font: 700 ${190 * s.u}px/0.9 var(--display); letter-spacing: ${0.02 * 190 * s.u}px; text-transform: uppercase;
+  .card-art img { display: block; width: ${760 * s.u}px; height: auto; filter: drop-shadow(0 0 ${2 * s.u}px #000) drop-shadow(0 0 ${2 * s.u}px #000) drop-shadow(0 ${6 * s.u}px ${16 * s.u}px rgba(0, 0, 0, 0.6)); }
+  .card-art h1 { margin: 0; font: 400 ${210 * s.u}px/1 var(--display); letter-spacing: 0;
     background: linear-gradient(180deg, #ffffff 0%, #e4e8ef 46%, #9aa3b2 54%, #dfe4ec 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
     -webkit-text-stroke: ${3 * s.u}px rgba(10, 13, 20, 0.9); paint-order: stroke fill;
     filter: drop-shadow(0 ${8 * s.u}px ${18 * s.u}px rgba(0, 0, 0, 0.55)) drop-shadow(0 ${2 * s.u}px 0 rgba(0, 0, 0, 0.6)); }
@@ -58,7 +59,7 @@ for (const s of SHOTS) {
       for (let i = 0; i < 3; i++) window.__advance(1, true);
       const art = document.createElement('div');
       art.className = 'card-art';
-      art.innerHTML = '<h1>ShipFall</h1><div class="tag">Try to catch Starship</div><div class="sub">Playable in <i class="x"><svg viewBox="0 0 24 24"><path fill="#fff" d="' + xPath + '"/></svg></i></div>';
+      art.innerHTML = '<img src="/shipfall-tag.svg" alt="ShipFall" /><div class="tag">Try to catch Starship</div><div class="sub">Playable in <i class="x"><svg viewBox="0 0 24 24"><path fill="#fff" d="' + xPath + '"/></svg></i></div>';
       const foot = document.createElement('div');
       foot.className = 'card-foot';
       foot.textContent = 'not affiliated with SpaceX';
@@ -66,7 +67,7 @@ for (const s of SHOTS) {
     },
     [CARD_T, { ...CAMERA, zoom: s.zoom ?? CAMERA.zoom }, X_PATH],
   );
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))]));
   const out = join(REPO, 'public', s.file);
   await page.screenshot({ path: out, type: 'jpeg', quality: 88 });
   await page.close();
