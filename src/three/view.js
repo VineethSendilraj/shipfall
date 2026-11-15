@@ -134,7 +134,8 @@ export class View {
   setShowcase(kind) {
     if (kind === this.showcase) return;
     this.showcase = kind;
-    this.heroT = 0;
+    // Coming in from the intro, the ship is already held in the arms: no drop, no closing arms.
+    this.heroT = this.handoff ? HERO_SETTLE : 0;
   }
 
   /** Bottom and top (m) of the showcased vehicle held at the arms of tower A. */
@@ -412,6 +413,7 @@ export class View {
     const blink = (k) => (Math.sin(t * 2.6 + k) > 0.35 ? 1 : 0.12);
 
     const active = game.activeTower();
+    if (this.showcase && game.phase === 'ready') this.heroSpan ??= this.heroBounds(game);
     const hero = this.showcase && game.phase === 'ready' && this.heroSpan;
     this.towers.forEach((view, i) => {
       const tw = game.towers[i];
@@ -507,6 +509,7 @@ export class View {
     }
 
     if (!this.free) {
+      // The hero framing is worked out on the spot (above) when a pick appears, so the camera never detours via the wide shot.
       const shot = this.showcase && this.heroSpan ? { hero: this.heroPose(game, this.director.clock - (1 - alpha) * DT) } : { establish: this.world.establish };
       this.director.apply(this.camera, game, { ...shot, alpha });
       // After the intro, the camera glides from where the replay left it into this shot.

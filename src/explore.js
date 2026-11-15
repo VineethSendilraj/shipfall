@@ -439,6 +439,9 @@ export class Explore {
     this.intro = false;
     document.body.classList.remove('intro');
     this.view.handoffFrom(this.view.camera);
+    // The menu fades in once the camera has glided into place.
+    document.body.classList.add('from-intro');
+    setTimeout(() => document.body.classList.remove('from-intro'), 2600);
     this.back();
   }
 

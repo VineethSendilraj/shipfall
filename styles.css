@@ -480,6 +480,9 @@ body.tall .how { top: 35%; }
 .explore-bar .explore-photo svg, .icon-btn svg { display: block; }
 body.compact .explore-bar .btn.explore-photo { width: 36px; height: 36px; padding: 0; }
 .explore-bar .map-pick { pointer-events: auto; }
+/* After the intro, the home screen's controls fade in as the camera settles. */
+body.from-intro #title-screen > *, body.from-intro #corner { animation: home-in 0.8s 1s both; }
+@keyframes home-in { from { opacity: 0; } to { opacity: 1; } }
 /* The intro: the replay alone, the ShipFall logo in the lower third, and a quiet skip hint. */
 .intro-logo { display: none; position: absolute; left: 0; right: 0; top: 66%; text-align: center; pointer-events: none; z-index: 3;
   font: 400 clamp(56px, 13vw, 104px)/1 'Sedgwick Ave Display', var(--display); color: var(--ink); text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6); }
