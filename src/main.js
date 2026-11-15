@@ -13,6 +13,7 @@ import { FlightHud, report } from './flight-hud.js';
 import { initialMap, bindMapPicker } from './maps.js';
 import { bindHome } from './home.js';
 import { Explore } from './explore.js';
+import { track } from './telemetry.js';
 
 const params = new URLSearchParams(location.search);
 const DEMO_MODE = params.get('demo') === '1';
@@ -282,6 +283,7 @@ function runGame() {
   function startGame() {
     // The handle field keeps focus after a game over; the arrow keys belong to the game again.
     if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
+    track('play', { m: mapPicker.map, t: home.target });
     setPaused(false);
     explore.resetMounts();
     mapPicker.apply();
@@ -301,6 +303,7 @@ function runGame() {
   }
 
   function startFlight() {
+    track('mission', { m: mapPicker.map });
     explore.resetMounts();
     mapPicker.apply();
     flightView ??= new FlightView(view);
@@ -357,6 +360,7 @@ function runGame() {
   if (EXPLORE_CAPTURE) window.__exploreFrame = (dt) => explore.frame(dt);
 
   function startExplore(focus = null, opts = {}) {
+    if (!opts.intro) track('simulate', { m: mapPicker.map });
     state = 'explore';
     titleEl.classList.add('hidden');
     // Explore draws its own stack through View, which would also hold the hero vehicle in the arms.
@@ -373,6 +377,7 @@ function runGame() {
   const home = bindHome({ root: titleEl, modes: MODES, view });
 
   function showGameOver() {
+    track('over', { m: mapPicker.map, t: home.target });
     state = 'over';
     touchEl.classList.add('hidden');
     document.body.classList.remove('touch-ui', 'playing');
@@ -450,6 +455,7 @@ function runGame() {
     const res = await submitGlobal({ handle, score: game.score, catches: s.catches, perfects: s.perfects, rounds: game.round });
     const { index } = addEntry(handle, game.score, game.round);
     if (res?.rank) {
+      track('submit');
       worldwide = res;
       paintBoard(boards.over);
       const place = `#${res.rank.toLocaleString('en-US')} of ${res.total.toLocaleString('en-US')}`;
@@ -519,6 +525,8 @@ function runGame() {
     const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1500));
     idle(() => view.prebuildMap(view.world.map === 'mars' ? 'starbase' : 'mars'), { timeout: 6000 });
   });
+  track('visit', { m: view.world.map });
+  for (const el of [shareLink, $('fo-share')]) el.addEventListener('click', () => track('share'));
   // The home screen stays hidden until here, so a reload never flashes it before the intro takes over.
   document.documentElement.classList.add('booted');
   soundBtn.addEventListener('click', () => {
@@ -621,7 +629,11 @@ function runGame() {
       if (ev.type === 'catch') {
         ui.finishCoach();
         sound.play('catch');
-        if (ev.perfect) sound.play('perfect');
+        track('catch', { m: mapPicker.map, t: home.target });
+        if (ev.perfect) {
+          sound.play('perfect');
+          track('perfect');
+        }
       } else if (ev.type === 'gameover') {
         overTimer = 1.4;
       } else sound.play(ev.type);

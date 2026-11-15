@@ -13,13 +13,13 @@ const MAX_PER_CATCH = 1800;
 const MAX_DOUBLE_BONUS = 500;
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;
 
-function store() {
+export function store() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   return url && token ? { url, token } : null;
 }
 
-async function redis(db, commands) {
+export async function redis(db, commands) {
   const res = await fetch(`${db.url}/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${db.token}`, 'Content-Type': 'application/json' },
