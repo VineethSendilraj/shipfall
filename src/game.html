@@ -171,15 +171,16 @@
   </section>
 
   <section id="pause" class="overlay hidden">
-    <div class="card">
+    <div class="card pause-card">
       <p class="kicker">paused</p>
-      <h1 class="go-score"><span id="pause-score">0</span><small>pts</small></h1>
-      <p class="lede" id="pause-stats"></p>
-      <div class="actions pause-actions">
-        <button id="resume" class="btn primary" type="button">Resume</button>
-        <button id="restart" class="btn" type="button">Restart</button>
-        <button id="home" class="btn" type="button">Home</button>
-        <button id="pause-sound" class="btn" type="button" aria-pressed="false">Sound off</button>
+      <div class="pause-grid" id="pause-stats"></div>
+      <div class="pause-actions">
+        <button id="resume" class="btn primary" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l12.5-7.5z"/></svg>Resume</button>
+        <div class="pause-row">
+          <button id="restart" class="btn icon-label" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5"/></svg><span>Restart</span></button>
+          <button id="home" class="btn icon-label" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg><span>Home</span></button>
+          <button id="pause-sound" class="btn icon-label" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7"/><path class="mute" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l5 5M21 9l-5 5"/></svg><span>Sound off</span></button>
+        </div>
       </div>
     </div>
   </section>
@@ -223,8 +224,8 @@
       <button data-k="right" type="button" aria-label="Thrust right">▶</button>
     </div>
     <div class="cluster">
-      <button data-k="up" type="button" aria-label="Arms up / throttle up"><span class="k-arm">▲</span><span class="k-thr">▲<small>THRUST</small></span></button>
-      <button data-k="down" type="button" aria-label="Arms down / throttle down"><span class="k-arm">▼</span><span class="k-thr">▼<small>THRUST</small></span></button>
+      <button data-k="up" type="button" aria-label="Arms up / throttle up"><span class="k-arm">▲<small>ARMS</small></span><span class="k-thr">▲<small>THRUST</small></span></button>
+      <button data-k="down" type="button" aria-label="Arms down / throttle down"><span class="k-arm">▼<small>ARMS</small></span><span class="k-thr">▼<small>THRUST</small></span></button>
       <button data-k="close" type="button" class="catch" aria-label="Close arms">CATCH</button>
     </div>
   </div>

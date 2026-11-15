@@ -433,9 +433,11 @@ export class View {
         root.rotation.set(0, 0, a);
         root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);
       } else if (b.kind === 'ship' && b.state === 'falling') {
-        // The ship falls belly first, level with its tiles down, and swings upright as the landing burn lights.
+        // The ship falls belly first, level with its tiles down and its nose toward the tower, and swings upright as the
+        // landing burn lights, nose leaning in; it rolls half a turn on the way so the tiles end up facing away.
         const k = b.burnT === null ? 0 : THREE.MathUtils.smoothstep(b.burnT, 0, SHIP_FLIP_S);
-        const a = (b.tower === 0 ? 1 : -1) * (Math.PI / 2) * (1 - k) - b.tilt;
+        const a = -(b.tower === 0 ? 1 : -1) * (Math.PI / 2) * (1 - k) - b.tilt;
+        if (slot.spin) slot.spin.rotation.y += Math.PI * (1 - k);
         const c = VEHICLES.ship.center / PX_PER_M;
         root.rotation.set(0, 0, a);
         root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);

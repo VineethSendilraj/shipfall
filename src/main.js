@@ -246,15 +246,21 @@ function runGame() {
       if (pauseEl.contains(document.activeElement)) document.activeElement.blur();
       return;
     }
+    const stats = [];
     if (flight) {
       const t = Math.max(0, Math.floor(flight.t));
-      $('pause-score').textContent = `T+${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
-      $('pause-stats').textContent = 'Mission';
+      stats.push([`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`, 'mission time'], [`${flight.ship.sats ?? 0}`, 'sats aboard']);
     } else {
-      const s = game.stats;
-      $('pause-score').textContent = game.score.toLocaleString('en-US');
-      $('pause-stats').textContent = `Round ${game.round} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${game.lives} booster${game.lives === 1 ? '' : 's'} left`;
+      stats.push([game.score.toLocaleString('en-US'), 'points'], [String(game.round), 'round'], [String(game.lives), 'tries left']);
     }
+    const grid = $('pause-stats');
+    grid.replaceChildren(
+      ...stats.map(([v, l]) => {
+        const d = document.createElement('div');
+        d.append(Object.assign(document.createElement('b'), { textContent: v }), Object.assign(document.createElement('span'), { textContent: l }));
+        return d;
+      }),
+    );
     $('resume').focus({ preventScroll: true });
   }
 
@@ -433,7 +439,7 @@ function runGame() {
     sound.setEnabled(on);
     soundBtn.setAttribute('aria-pressed', String(on));
     $('pause-sound').setAttribute('aria-pressed', String(on));
-    $('pause-sound').textContent = on ? 'Sound on' : 'Sound off';
+    $('pause-sound').querySelector('span').textContent = on ? 'Sound on' : 'Sound off';
     if (remember) writeSoundPref(on);
   }
 

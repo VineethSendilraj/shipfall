@@ -162,6 +162,8 @@ export class Game {
       spawnDx: towardTower ? toward * r.range(15, 42) : -toward * r.range(60 + d * 10, 110 + d * 16),
       vx0: r.range(-12 - d * 4, 12 + d * 4),
     };
+    // The ship drifts in toward its tower.
+    if (kind === 'ship') p.vx0 = toward * Math.abs(p.vx0);
     const o = this.overrides[this.round]?.boosters?.[slot];
     return o ? { ...p, ...o } : p;
   }

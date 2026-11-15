@@ -138,8 +138,20 @@ kbd.wide { min-width: 64px; }
 #leaderboard .actions { margin-top: 16px; }
 .go-score { display: flex; align-items: baseline; gap: 10px; }
 body.paused #touch { display: none; }
-.pause-actions .btn:first-child { flex-basis: 100%; }
-body.free-flight #pause .go-score small { display: none; }
+/* Pause card: a centered stat row, Resume, then icon buttons. */
+.pause-card { width: min(400px, calc(100vw - 32px)); text-align: center; }
+.pause-card .kicker { margin-bottom: 14px; }
+.pause-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+.pause-grid div { padding: 12px 6px 10px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); }
+.pause-grid b { display: block; font: 700 28px/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pause-grid span { display: block; margin-top: 6px; font: 600 10px/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.pause-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.pause-actions .btn.primary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; font-size: 16px; }
+.pause-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.btn.icon-label { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; font-size: 12px; letter-spacing: 0.06em; }
+#pause-sound .wave { display: none; }
+#pause-sound[aria-pressed='true'] .wave { display: inline; }
+#pause-sound[aria-pressed='true'] .mute { display: none; }
 /* Phone-width Mission: drop the two engine diagrams so the instrument bar fits the screen. */
 @media (max-width: 440px) { body.compact.free-flight .engines { display: none; } }
 .go-score small { font-size: 0.36em; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); }
@@ -151,6 +163,8 @@ body.free-flight #pause .go-score small { display: none; }
 body.playing:not(.paused) #pause-btn { display: grid; }
 body.playing #sound { display: none; }
 .touch .k-thr, body.free-flight .touch .k-arm { display: none; }
+.touch .k-arm { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1; }
+.touch .k-arm small { font: 700 9px var(--display); letter-spacing: 0.12em; color: var(--muted); }
 body.free-flight .touch .k-thr { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1; }
 .touch .k-thr small { font: 700 9px var(--display); letter-spacing: 0.12em; color: var(--muted); }
 .icon-btn .wave { display: none; }
