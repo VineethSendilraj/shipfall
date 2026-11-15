@@ -55,6 +55,8 @@ export function bindHome({ root, modes, view }) {
       mode = m;
       save(MODE_KEY, m.id);
       show();
+      // A mode with nothing to set up (Explore) opens straight away; Esc comes back here.
+      if (m.instant) m.start();
     });
     return tabs.appendChild(b);
   });
@@ -88,14 +90,6 @@ export function bindHome({ root, modes, view }) {
       cycle(Number(b.dataset.step));
     });
   }
-  const peekBtn = $('.peek-btn');
-  peekBtn.addEventListener('click', (ev) => {
-    if (ev.detail > 0) peekBtn.blur();
-    const on = !root.classList.contains('peek');
-    root.classList.toggle('peek', on);
-    peekBtn.setAttribute('aria-pressed', String(on));
-    if (!on) view.orbit.reset();
-  });
   helpBtn.addEventListener('click', (ev) => {
     if (ev.detail > 0) helpBtn.blur();
     setHelp(help.classList.contains('hidden'));

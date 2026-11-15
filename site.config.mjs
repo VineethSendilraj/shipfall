@@ -8,7 +8,7 @@ export const PLACEHOLDER_SITE_URL = 'https://shipfall.example';
 
 export const CARD = {
   title: 'ShipFall',
-  description: "In honor of today's amazing feat of engineering: see how many Starships you can catch. Not affiliated with SpaceX.",
+  description: 'Try to catch Starship',
   imageAlt: "A stainless rocket ship caught in a launch tower's arms, sparks flying",
   site: '@VineethSendil',
   // X shows this image in place of the frame until the game loads, so it has the frame's square shape.

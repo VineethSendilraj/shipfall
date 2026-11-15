@@ -225,6 +225,8 @@ export class Game {
         throttle: 0,
         burning: false,
         cutoff: false,
+        // Seconds since the landing burn lit (null before): the view flips a belly-first ship upright on it.
+        burnT: null,
         tilt: 0,
         rcs: 0,
         zeroY: p.zeroY,
@@ -481,8 +483,10 @@ export class Game {
 
     if (!b.burning && !b.cutoff && (alt <= burnAltM(V) || b.vy * b.vy >= 2 * A_IGNITE * (b.zeroY - b.y))) {
       b.burning = true;
+      b.burnT = 0;
       this.emit('ignite');
     }
+    if (b.burnT !== null) b.burnT += DT;
     if (b.burning && (b.fuel <= 0 || b.y > b.zeroY + b.hoverLen)) {
       const depleted = b.fuel <= 0;
       b.burning = false;

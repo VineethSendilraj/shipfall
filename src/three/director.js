@@ -14,6 +14,8 @@ const DIP_OUT = 0.34;
 // Seconds into a game for the establishing shot to give way to the play camera.
 const ESTABLISH_OUT = 1.2;
 const UP = new THREE.Vector3(0, 1, 0);
+// How much further back the play shot sits than a tight frame, so the tower and the incoming vehicle have room.
+const PLAY_ZOOM = 1.35;
 
 /**
  * Cinematic camera. Advanced once per fixed sim step so the demo is frame-exact; the render
@@ -133,7 +135,7 @@ export class Director {
       const bottom = Math.max(-4, Math.min(arm - 6, catchY - 68 - 30 * burn));
       const span = top - bottom + 18;
       const halfFov = THREE.MathUtils.degToRad(fov / 2);
-      const dist = clamp(span / (2 * Math.tan(halfFov)) * 1.08, 110, 290) * widen;
+      const dist = clamp((span / (2 * Math.tan(halfFov))) * 1.08 * PLAY_ZOOM, 110 * PLAY_ZOOM, 290 * PLAY_ZOOM) * widen;
       const fx = lane + (bx - lane) * 0.5;
       const fy = (top + bottom) / 2;
       P.set(fx - 0.3 * dist, clamp(fy * 0.3, 7, 42), dist * 0.95);

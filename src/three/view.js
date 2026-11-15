@@ -11,6 +11,8 @@ import { Director, toX, toY } from './director.js';
 import { Orbit } from './orbit.js';
 import { VEHICLES, PX_PER_M, CATCH_TOL_X, DT } from '../sim.js';
 
+// Seconds the ship takes to swing from belly first to upright once its landing burn lights.
+const SHIP_FLIP_S = 2.2;
 const GUIDE_R = VEHICLES.booster.halfW / PX_PER_M + CATCH_TOL_X / PX_PER_M;
 const ENGINE_EXIT = { booster: ENGINE_Y, ship: SHIP_ENGINE_Y };
 // One slot (and engine light) per vehicle on screen; every lit pixel pays for each light, so keep it at three.
@@ -428,6 +430,13 @@ export class View {
       if (b.state === 'tumbling' || b.state === 'crashed') {
         const a = -b.rot;
         const c = VEHICLES[b.kind].center / PX_PER_M;
+        root.rotation.set(0, 0, a);
+        root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);
+      } else if (b.kind === 'ship' && b.state === 'falling') {
+        // The ship falls belly first, level with its tiles down, and swings upright as the landing burn lights.
+        const k = b.burnT === null ? 0 : THREE.MathUtils.smoothstep(b.burnT, 0, SHIP_FLIP_S);
+        const a = (b.tower === 0 ? 1 : -1) * (Math.PI / 2) * (1 - k) - b.tilt;
+        const c = VEHICLES.ship.center / PX_PER_M;
         root.rotation.set(0, 0, a);
         root.position.set(X - Math.sin(a) * c, Y - c + Math.cos(a) * c, 0);
       } else {

@@ -66,10 +66,6 @@
         <button type="button" data-map="starbase" aria-pressed="true">Starbase</button>
         <button type="button" data-map="mars" aria-pressed="false">Mars</button>
       </div>
-      <button class="icon-btn peek-btn" type="button" aria-pressed="false" title="Look around: hide the menu, drag to turn, scroll or pinch to zoom">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
-        <span class="sr">Look around</span>
-      </button>
     </div>
     <div class="pick" role="group" aria-label="What to catch">
       <button class="pick-arrow" type="button" data-step="-1" aria-label="Previous vehicle">
@@ -183,6 +179,7 @@
         <button id="resume" class="btn primary" type="button">Resume</button>
         <button id="restart" class="btn" type="button">Restart</button>
         <button id="home" class="btn" type="button">Home</button>
+        <button id="pause-sound" class="btn" type="button" aria-pressed="false">Sound off</button>
       </div>
     </div>
   </section>
@@ -226,8 +223,8 @@
       <button data-k="right" type="button" aria-label="Thrust right">▶</button>
     </div>
     <div class="cluster">
-      <button data-k="up" type="button" aria-label="Arms up">▲</button>
-      <button data-k="down" type="button" aria-label="Arms down">▼</button>
+      <button data-k="up" type="button" aria-label="Arms up / throttle up"><span class="k-arm">▲</span><span class="k-thr">▲<small>THRUST</small></span></button>
+      <button data-k="down" type="button" aria-label="Arms down / throttle down"><span class="k-arm">▼</span><span class="k-thr">▼<small>THRUST</small></span></button>
       <button data-k="close" type="button" class="catch" aria-label="Close arms">CATCH</button>
     </div>
   </div>

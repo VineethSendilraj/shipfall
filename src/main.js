@@ -23,6 +23,8 @@ const PILOT = FLIGHT && (CAPTURE || params.get('pilot') === '1');
 const FLIGHT_SOUNDS = { ignite: 'ignite', stage: 'ignite', close: 'close', catch: 'catch', boosterLost: 'crash', orbit: 'unlock', deploy: 'close', flip: 'ignite', landingBurn: 'ignite', landed: 'catch' };
 const EMBED = document.body.classList.contains('embed');
 const SITE_URL = __SITE_URL__;
+// The launch post on X (https://x.com/<handle>/status/<id>). When set, Post on X quotes it instead of linking the site.
+const SHARE_POST = import.meta.env.VITE_SHARE_POST || '';
 const SOUND_KEY = 'catch-the-booster.sound';
 const WORLD_W = 1280;
 const $ = (id) => document.getElementById(id);
@@ -242,9 +244,15 @@ function runGame() {
       if (pauseEl.contains(document.activeElement)) document.activeElement.blur();
       return;
     }
-    const s = game.stats;
-    $('pause-score').textContent = game.score.toLocaleString('en-US');
-    $('pause-stats').textContent = `Round ${game.round} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${game.lives} booster${game.lives === 1 ? '' : 's'} left`;
+    if (flight) {
+      const t = Math.max(0, Math.floor(flight.t));
+      $('pause-score').textContent = `T+${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+      $('pause-stats').textContent = 'Mission';
+    } else {
+      const s = game.stats;
+      $('pause-score').textContent = game.score.toLocaleString('en-US');
+      $('pause-stats').textContent = `Round ${game.round} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${game.lives} booster${game.lives === 1 ? '' : 's'} left`;
+    }
     $('resume').focus({ preventScroll: true });
   }
 
@@ -257,6 +265,13 @@ function runGame() {
     ui.resetScore();
     ui.enableCoach();
     play();
+  }
+
+  function restartFlight() {
+    setPaused(false);
+    flightView.exit();
+    flightHud.exit();
+    startFlight();
   }
 
   function startFlight() {
@@ -318,7 +333,7 @@ function runGame() {
   const MODES = [
     { id: 'catch', label: 'Catch', targets: true, start: startGame },
     { id: 'flight', label: 'Mission', title: 'Fly a mission', blurb: 'Launch to orbit, then land the ship at the tower', start: startFlight },
-    { id: 'explore', label: 'Explore', title: 'Explore the stack', blurb: 'Walk round the full stack up close', start: () => startExplore() },
+    { id: 'explore', label: 'Explore', title: 'Explore the stack', blurb: 'Walk round the full stack up close', instant: true, start: () => startExplore() },
   ];
   const home = bindHome({ root: titleEl, modes: MODES, view });
 
@@ -375,7 +390,7 @@ function runGame() {
   }
 
   function postUrl(text) {
-    return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`${SITE_URL}/`)}`;
+    return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(SHARE_POST || `${SITE_URL}/`)}`;
   }
 
   // X frames the embed without allow-forms, so a submit event never fires there. Enter in the field still clicks this button.
@@ -415,13 +430,15 @@ function runGame() {
   function setSound(on, remember = true) {
     sound.setEnabled(on);
     soundBtn.setAttribute('aria-pressed', String(on));
+    $('pause-sound').setAttribute('aria-pressed', String(on));
+    $('pause-sound').textContent = on ? 'Sound on' : 'Sound off';
     if (remember) writeSoundPref(on);
   }
 
   // Browsers only allow audio after a user gesture, so the AudioContext is created on the first one.
   let unlocked = false;
   const unlockAudio = (ev) => {
-    if (unlocked || soundBtn.contains(ev.target)) return;
+    if (unlocked || soundBtn.contains(ev.target) || $('pause-sound').contains(ev.target)) return;
     unlocked = true;
     if (readSoundPref()) setSound(true, false);
   };
@@ -433,12 +450,16 @@ function runGame() {
   $('fo-again').addEventListener('click', showTitle);
   for (const b of document.querySelectorAll('.open-board')) b.addEventListener('click', openBoard);
   $('board-back').addEventListener('click', closeBoard);
-  $('pause-btn').addEventListener('click', () => state === 'playing' && !flight && setPaused(true));
+  $('pause-btn').addEventListener('click', () => state === 'playing' && setPaused(true));
+  $('pause-sound').addEventListener('click', () => {
+    unlocked = true;
+    setSound(!sound.enabled);
+  });
   $('resume').addEventListener('click', () => setPaused(false));
-  $('restart').addEventListener('click', startGame);
+  $('restart').addEventListener('click', () => (flight ? restartFlight() : startGame()));
   $('home').addEventListener('click', showTitle);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && state === 'playing' && !flight) setPaused(true);
+    if (document.hidden && state === 'playing') setPaused(true);
   });
   if (params.get('explore') === '1') startExplore(params.get('focus'));
   soundBtn.addEventListener('click', () => {
@@ -483,8 +504,7 @@ function runGame() {
       unlocked = true;
       setSound(!sound.enabled);
     }
-    if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing' && !flight) setPaused(true);
-    else if (ev.code === 'Escape' && flight) showTitle();
+    if ((ev.code === 'KeyP' || ev.code === 'Escape') && state === 'playing') setPaused(true);
   });
   window.addEventListener('keyup', (ev) => {
     const k = KEYMAP[ev.code];
