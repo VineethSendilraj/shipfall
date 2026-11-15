@@ -348,7 +348,14 @@ function runGame() {
     const best = loadBoard()[0]?.score ?? 0;
     if (game.score > best && s.catches > 0) $('go-kicker').textContent = 'new personal best';
     $('go-score').textContent = game.score.toLocaleString('en-US');
-    $('go-stats').textContent = `${game.round} round${game.round === 1 ? '' : 's'} · ${s.catches} catch${s.catches === 1 ? '' : 'es'} · ${s.perfects} perfect · ${s.doubles} double`;
+    $('go-stats').textContent = [
+      `${game.round} round${game.round === 1 ? '' : 's'}`,
+      `${s.catches} catch${s.catches === 1 ? '' : 'es'}`,
+      s.perfects && `${s.perfects} perfect`,
+      s.doubles && `${s.doubles} double${s.doubles === 1 ? '' : 's'}`,
+    ]
+      .filter(Boolean)
+      .join(' · ');
     setShareText();
     const canSubmit = s.catches > 0;
     form.classList.toggle('hidden', !canSubmit);

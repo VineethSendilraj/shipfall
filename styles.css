@@ -128,8 +128,18 @@ kbd.wide { min-width: 64px; }
 .initials input::placeholder { color: rgba(255, 255, 255, 0.35); font-weight: 500; }
 .form-note { margin: 8px 0 0; min-height: 1.2em; font-size: 13px; color: var(--muted); }
 .form-note.placed { margin: 0; font-size: 17px; font-weight: 600; color: var(--ink); }
-.board li a { color: var(--ink); text-decoration: none; }
-.board li a:hover { text-decoration: underline; }
+.board li a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(255, 255, 255, 0.35); text-underline-offset: 3px; }
+.board li a::after { content: ' ↗'; color: var(--muted); font-size: 0.85em; }
+.board li a:hover { text-decoration-color: var(--ink); }
+/* Game-over card: same rhythm as the pause card (kicker, big score, one uppercase line). */
+#gameover .card { width: min(420px, calc(100vw - 32px)); }
+#gameover .go-logo { margin: -4px 0 10px; text-align: center; font: 400 40px/1 'Sedgwick Ave Display', var(--display); color: var(--ink); text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5); }
+body.compact #gameover .go-logo { font-size: 30px; margin-bottom: 4px; }
+#gameover .go-score { margin: 6px 0 0; font-size: 56px; line-height: 1; }
+#gameover .go-score small { display: none; }
+#gameover #go-stats { margin: 8px 0 16px; font: 600 12px/1.4 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+#gameover .board h2 { font-family: var(--display); letter-spacing: 0.16em; font-size: 11px; }
+#gameover .board li { grid-template-columns: 22px 1fr auto; padding: 9px 12px; border-radius: 8px; }
 .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 .actions .btn { flex: 1; }
 .btn.share { display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: #000; border-color: rgba(255, 255, 255, 0.28); }
