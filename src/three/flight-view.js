@@ -75,7 +75,8 @@ export class FlightView {
     // looks out from the world's origin.
     this.step(f);
     v.guide.visible = v.lane.visible = false;
-    this.craft.attach(v.pool[2].root, v.pool[0].root);
+    // The door, slot and plasma are modeled around the tiles' angle, so they turn with the tiles in `spin`.
+    this.craft.attach(v.pool[2].spin ?? v.pool[2].root, v.pool[0].root);
     this.craft.showAll(true);
     v.renderer.compile(v.scene, v.camera);
     this.craft.showAll(false);
@@ -458,7 +459,7 @@ export class FlightView {
     const reach = b.state === 'sep' ? alongAxis(this._u, b, BOOSTER_TOP).distanceTo(this._v.set(s.x, s.y, 0)) : Infinity;
     this.engine(f, 2, ox, oy, s.ang, SHIP_ENGINE_Y, ss.root.visible ? s.throttle : 0, s.engines === 6 ? 1.7 : 1, engines, reach);
 
-    this.craft.attach(ss.root, bs.root);
+    this.craft.attach(ss.spin ?? ss.root, bs.root);
     this.craft.update(f, shipMid(this._v, s), f.real);
     return engines;
   }
