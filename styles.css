@@ -381,8 +381,9 @@ body.compact .map-pick button { font-size: 12px; padding: 0 11px; }
   background: linear-gradient(180deg, rgba(3, 4, 7, 0.55), rgba(3, 4, 7, 0) 24%, rgba(3, 4, 7, 0) 55%, rgba(3, 4, 7, 0.82)); }
 .home > * { pointer-events: auto; }
 .wordmark { position: absolute; top: 18px; left: 26px; margin: 0; font-family: 'Sedgwick Ave Display', var(--display); font-size: 46px; line-height: 1; font-weight: 400; letter-spacing: -0.005em; color: var(--ink); text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55); }
-.modes { display: flex; gap: 2px; padding: 3px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(10, 11, 13, 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-.modes button { white-space: nowrap; font: 600 15px var(--display); letter-spacing: 0.02em; color: #c9ced6; background: none; border: 0; border-radius: 7px; padding: 9px 18px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+/* Split tabs, like the map toggle: the picked one fills its segment edge to edge. */
+.modes { display: flex; gap: 0; padding: 0; overflow: hidden; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(10, 11, 13, 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.modes button { white-space: nowrap; font: 600 15px var(--display); letter-spacing: 0.02em; color: #c9ced6; background: none; border: 0; border-radius: 0; padding: 12px 20px; cursor: pointer; transition: background 0.15s, color 0.15s; }
 .modes button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.08); }
 .modes button[aria-pressed='true'] { color: #0b0c0e; background: var(--ink); }
 .modes button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
@@ -398,7 +399,7 @@ body.compact .map-pick button { font-size: 12px; padding: 0 11px; }
 .pick-arrow:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .pick-label { display: flex; flex-direction: column; align-items: center; text-align: center; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75); }
 .pick-name { font-size: 30px; line-height: 1.05; font-weight: 700; letter-spacing: 0.01em; color: var(--ink); }
-.pick-note { margin-top: 3px; font-size: 14px; letter-spacing: 0.02em; color: #c9ced6; }
+.pick-note { margin-top: 4px; font-size: 14px; letter-spacing: 0.02em; color: rgba(241, 242, 244, 0.78); }
 .pick.fixed .pick-arrow { display: none; }
 
 .home-dock { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -406,12 +407,19 @@ body.compact .map-pick button { font-size: 12px; padding: 0 11px; }
 .btn.play kbd { font-size: 11px; min-width: 0; padding: 1px 6px; color: rgba(11, 12, 14, 0.6); border-color: rgba(11, 12, 14, 0.25); background: none; box-shadow: none; }
 .btn.play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .home-links { display: flex; align-items: center; gap: 4px; }
-.home-top { position: absolute; top: 20px; right: 22px; display: flex; align-items: center; gap: 8px; }
-.home-links .ext { white-space: nowrap; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); padding: 8px 10px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
+.home-top { position: absolute; top: 20px; right: 70px; display: flex; align-items: center; gap: 8px; }
+/* On the home screen the sound button joins the top row, to the right of the map toggle. */
+body:has(#title-screen:not(.hidden)) #corner { top: 20px; right: 22px; bottom: auto; }
+body.compact:has(#title-screen:not(.hidden)) #corner { top: 10px; right: 12px; bottom: auto; }
+/* A soft fade behind the menu, so its text reads over any scene. */
+.overlay.home::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 52%; pointer-events: none;
+  background: linear-gradient(180deg, rgba(4, 6, 10, 0) 0%, rgba(4, 6, 10, 0.35) 45%, rgba(4, 6, 10, 0.7) 100%); }
+.home-links .ext { white-space: nowrap; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(241, 242, 244, 0.72); padding: 8px 12px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 .home-links .ext:hover, .home-links .ext:focus-visible { color: var(--ink); }
 .home-links .full { display: none; }
 body.embed .home-links .full { display: inline; }
 @media (pointer: coarse) { .btn.play kbd { display: none; } }
+body.compact .btn.play kbd { display: none; }
 
 .how { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: min(440px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto;
   padding: 22px 24px 20px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
@@ -439,16 +447,16 @@ body.compact .home-dock { bottom: 12px; gap: 10px; }
 body.compact .pick-name { font-size: 24px; }
 body.compact .pick-note { font-size: 12px; }
 body.compact:not(.tall) .pick-note { display: none; }
-body.compact .modes button { font-size: 13px; padding: 7px 12px; }
+body.compact .modes button { font-size: 13px; padding: 9px 14px; }
 body.compact .btn.play { min-width: 220px; padding: 12px 28px; font-size: 19px; }
 body.compact .home-links { gap: 0; }
-body.compact .home-top { top: 10px; right: 12px; gap: 6px; }
-body.compact .home-links .ext { font-size: 12px; padding: 4px 6px; }
+body.compact .home-top { top: 10px; right: 56px; gap: 6px; }
+body.compact .home-links .ext { font-size: 11.5px; padding: 6px 9px; }
 body.compact .how { padding: 16px 18px 14px; }
 body.compact .how .lede { font-size: 13px; margin-bottom: 12px; }
 body.compact .how .rules { margin: 12px 0 14px; font-size: 12px; }
-body.tall .overlay.home { --hero-y: 25%; }
-body.tall .home-dock { bottom: calc(30% + 8px); }
+body.tall .overlay.home { --hero-y: 34%; }
+body.tall .home-dock { bottom: calc(env(safe-area-inset-bottom) + 34px); }
 body.tall .how { top: 35%; }
 
 /* -------------------------------------------------------------- explore */
@@ -457,14 +465,15 @@ body.tall .how { top: 35%; }
 /* Explore shows the ShipFall wordmark where its label was. */
 .explore-tag { margin-right: auto; font-family: 'Sedgwick Ave Display', var(--display); font-size: 40px; line-height: 1; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6); }
 .explore-bar .btn { pointer-events: auto; padding: 8px 13px; font-size: 13px; background: rgba(10, 11, 13, 0.62); }
-.explore-bar .explore-photo { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 8px; border-color: var(--line); }
+.explore-bar .btn.explore-photo { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 8px; border-color: var(--line); }
 .explore-bar .explore-photo svg, .icon-btn svg { display: block; }
-body.compact .explore-bar .explore-photo { width: 36px; height: 36px; padding: 0; }
+body.compact .explore-bar .btn.explore-photo { width: 36px; height: 36px; padding: 0; }
 .explore-bar .map-pick { pointer-events: auto; }
-/* The ground-view switch only shows while the ship catch replays. */
-.explore-bar .explore-view { display: none; }
-body.replaying .explore-bar .explore-view { display: grid; }
-.explore-bar .explore-view[aria-pressed='true'] { background: rgba(241, 242, 244, 0.92); color: #0a0b0d; }
+/* The ground-view switch: a chip just above the chip bar, only while the ship catch replays. */
+.explore-view { display: none; position: absolute; left: 50%; transform: translateX(-50%); bottom: 92px; pointer-events: auto; }
+body.replaying .explore-view { display: block; }
+body.compact .explore-view { bottom: 66px; }
+body.tall .explore-view { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 48px); }
 .explore kbd { font-size: 10px; min-width: 0; padding: 1px 5px; border-radius: 4px; box-shadow: none; }
 .explore-bar kbd { margin-left: 6px; }
 .explore-hint { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); margin: 0; text-align: center; text-wrap: balance;

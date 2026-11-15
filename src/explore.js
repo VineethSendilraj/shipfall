@@ -91,7 +91,9 @@ const CATCH_C = VEHICLES.ship.center / PX_PER_M; // the ship's middle, this far 
 // tower (air: [start, end] weights toward the ship).
 const CATCH_AIR = [new THREE.Vector3(-300, 760, 620), new THREE.Vector3(-150, 150, 250)];
 const CATCH_GROUND = new THREE.Vector3(240, 1.7, 330);
-const CATCH_AIM = { air: [0.85, 0.3], ground: 0.45 };
+const CATCH_AIM = { air: [0.85, 0.3], ground: 0.3 };
+// Someone on the ground looks up at most this far (radians), so the horizon stays in the ground view.
+const CATCH_GROUND_UP = 0.6;
 // Where the camera sits relative to the ship's middle at the start and at the catch, until the player takes over.
 const smooth01 = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
@@ -375,8 +377,8 @@ export class Explore {
   setGroundView(on) {
     this.ground = on;
     this.viewBtn.setAttribute('aria-pressed', String(on));
-    this.viewBtn.title = on ? 'Aerial view' : 'Ground view';
-    setFov(this.view.camera, 55);
+    this.viewBtn.classList.toggle('on', on);
+    setFov(this.view.camera, on ? 62 : 55);
     // Back in the follow view, the camera eases back to its framing around the ship.
     if (!on && this.replay) this.replay.auto = true;
   }
@@ -422,6 +424,10 @@ export class Explore {
       const g = CATCH_GROUND.clone().add(this.foot);
       g.y = view.world.groundHeight(g.x, g.z) + CATCH_GROUND.y;
       view.camera.position.copy(g);
+      // Keep the look within CATCH_GROUND_UP of level.
+      const d = aim.clone().sub(g);
+      const flat = Math.hypot(d.x, d.z);
+      if (d.y > flat * Math.tan(CATCH_GROUND_UP)) c.target.set(aim.x, g.y + flat * Math.tan(CATCH_GROUND_UP), aim.z);
     } else if (r.auto) {
       view.camera.position.lerp(CATCH_AIR[0].clone().lerp(CATCH_AIR[1], k).add(this.foot), snap ? 1 : 1 - Math.exp(-dt * 3));
     } else view.camera.position.add(move);
