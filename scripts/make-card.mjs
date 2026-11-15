@@ -4,7 +4,7 @@
 //   ship:  the demo's double catch (?demo=1&capture=1), the ship swinging upright on its engines beside the tower.
 // The page is rendered taller than the card and the top is kept, which crops most of the ground away.
 //   replay: Explore's ship catch replay on its landing burn (default), with the big wordmark.
-// Usage: npm run card                        (CARD_SCENE=replay|ship|stack, default replay)
+// Usage: npm run card                        (CARD_SCENE=double|replay|ship|stack, default double)
 //        CHROMIUM_CHANNEL=chrome npm run card   (uses the installed Google Chrome instead of Playwright's Chromium)
 //        CARD_OUT=/tmp/cards npm run card       (writes there instead of public/, to compare options)
 import { chromium } from 'playwright';
@@ -28,11 +28,11 @@ const SCENES = {
   stack: { url: `/?flight=1&capture=1&map=${MAP}`, ready: '__flightReady', at: 3.5, cam: { zoom: 1.75, pitch: -0.24, yaw: 0 }, square: { extra: 0.22, y: 0.2 }, wide: { extra: 0.2, y: 0.22, zoom: 1.9 } },
   ship: { url: `/?demo=1&capture=1&map=${MAP}`, ready: '__demoReady', at: Number(process.env.CARD_AT || 1325), cam: { zoom: Number(process.env.CARD_ZOOM || 0.72), pitch: -0.08, yaw: Number(process.env.CARD_YAW || 0.15) }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
 };
-const SCENE = SCENES[process.env.CARD_SCENE || 'replay'];
+const SCENE = SCENES[process.env.CARD_SCENE || 'double'];
 // CARD_STYLE=big puts the big-title look on the demo and flight scenes too (the replay always uses it).
 const BIG = SCENE.big || process.env.CARD_STYLE === 'big';
-// CARD_TEXT=top puts the wordmark in the sky with the banner under it; bottom (default) sets it low with the banner above.
-const TOP = process.env.CARD_TEXT === 'top';
+// CARD_TEXT=top (default) puts the wordmark in the sky with the banner under it; bottom sets it low with the banner above.
+const TOP = (process.env.CARD_TEXT || 'top') === 'top';
 // The X logo, as on the game's Post on X button.
 const X_PATH = 'M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z';
 const CHANNEL = process.env.CHROMIUM_CHANNEL || undefined;
@@ -99,7 +99,7 @@ for (const s of SHOTS) {
         foot.textContent = 'not affiliated with SpaceX';
         document.body.append(art, foot);
       },
-      [SCENE.replay, SCENE.at, X_PATH, !!SCENE.double, TOP ? Number(process.env.CARD_HEADROOM || 110) : 0],
+      [SCENE.replay, SCENE.at, X_PATH, !!SCENE.double, TOP ? Number(process.env.CARD_HEADROOM || 80) : 0],
     );
     await page.evaluate(() => document.fonts.ready);
     const out = join(OUT, s.file);
