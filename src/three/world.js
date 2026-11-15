@@ -22,7 +22,7 @@ const rgb = (c) => new THREE.Color().setRGB(...c);
  */
 const TIME_OF_DAY = (() => {
   const asked = Number.parseFloat(new URLSearchParams(globalThis.location?.search).get('tod'));
-  return Number.isFinite(asked) ? ((asked % 24) + 24) % 24 : 14.5;
+  return Number.isFinite(asked) ? ((asked % 24) + 24) % 24 : 17.2;
 })();
 const LATITUDE = THREE.MathUtils.degToRad(26);
 const DECLINATION = THREE.MathUtils.degToRad(10);
@@ -346,13 +346,13 @@ const SPUR = [
 const TOWER_B = [-170, -760];
 
 // Ground albedo (sRGB), warm enough to stay sand-coloured under the blue sky light.
-const SAND = [0.52, 0.43, 0.28];
-const MUD = [0.35, 0.29, 0.2];
-const SCRUB = [0.45, 0.39, 0.23];
-const VEG = [0.33, 0.36, 0.2];
-const MARSH_GREEN = [0.28, 0.32, 0.17];
-const MARSH_BROWN = [0.4, 0.34, 0.21];
-const FLATS = [0.6, 0.55, 0.4];
+const SAND = [0.7, 0.53, 0.29];
+const MUD = [0.42, 0.33, 0.2];
+const SCRUB = [0.5, 0.5, 0.2];
+const VEG = [0.28, 0.48, 0.16];
+const MARSH_GREEN = [0.22, 0.46, 0.14];
+const MARSH_BROWN = [0.48, 0.39, 0.22];
+const FLATS = [0.7, 0.6, 0.4];
 const GRAVEL = [0.61, 0.57, 0.44];
 const ASPHALT = [0.26, 0.25, 0.21];
 const BEACH = [0.86, 0.78, 0.55];

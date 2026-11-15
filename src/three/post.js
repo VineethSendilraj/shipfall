@@ -15,13 +15,14 @@ const FinalShader = {
     uAspect: { value: 16 / 9 },
     uFlash: { value: new THREE.Vector3() },
     uDip: { value: 0 },
+    uSat: { value: 1.22 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */ `
     uniform sampler2D tDiffuse; uniform float uTime; uniform vec4 uHaze; uniform vec4 uHaze2; uniform float uAspect;
-    uniform vec3 uFlash; uniform float uDip;
+    uniform vec3 uFlash; uniform float uDip; uniform float uSat;
     varying vec2 vUv;
     float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float n2(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -45,7 +46,7 @@ const FinalShader = {
       float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
       float hi = luma / (luma + 0.35);
       col *= mix(vec3(0.9, 0.98, 1.12), vec3(1.08, 1.0, 0.9), hi);
-      col = max(mix(vec3(luma), col, 1.22), 0.0);
+      col = max(mix(vec3(luma), col, uSat), 0.0);
       col *= pow(max(luma, 1e-4) / 0.3, 0.12);
       float vig = smoothstep(1.05, 0.3, length(cc * vec2(1.0, 0.9)) * 1.25);
       col *= mix(0.55, 1.0, vig);

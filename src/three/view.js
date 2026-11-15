@@ -495,6 +495,8 @@ export class View {
     this.final.uniforms.uFlash.value.set((r / 255) * fl * 0.1, (g / 255) * fl * 0.1, (b / 255) * fl * 0.1);
     this.final.uniforms.uDip.value = dip ?? this.director.dip;
     this.final.uniforms.uTime.value = t;
+    // Starbase gets a stronger colour grade so its sand, scrub and water read as vividly as the Mars plain.
+    this.final.uniforms.uSat.value = this.world.map === 'starbase' ? 1.45 : 1.22;
     this.composer.render();
   }
 }

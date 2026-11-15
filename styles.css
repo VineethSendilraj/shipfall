@@ -441,7 +441,8 @@ body.tall .how { top: 35%; }
 /* -------------------------------------------------------------- explore */
 .explore { position: absolute; inset: 0; pointer-events: none; }
 .explore-bar { position: absolute; top: 16px; left: 20px; right: 18px; display: flex; align-items: center; gap: 8px; }
-.explore-tag { margin-right: auto; font-size: 13px; letter-spacing: 0.16em; font-weight: 600; padding: 5px 2px; border-top: 1px solid currentColor; border-bottom: 1px solid currentColor; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
+/* Explore shows the ShipFall wordmark where its label was. */
+.explore-tag { margin-right: auto; font-family: 'Sedgwick Ave Display', var(--display); font-size: 40px; line-height: 1; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6); }
 .explore-bar .btn { pointer-events: auto; padding: 8px 13px; font-size: 13px; background: rgba(10, 11, 13, 0.62); }
 .explore kbd { font-size: 10px; min-width: 0; padding: 1px 5px; border-radius: 4px; box-shadow: none; }
 .explore-bar kbd { margin-left: 6px; }
@@ -461,7 +462,7 @@ body.tall .how { top: 35%; }
 @media (pointer: coarse) { .explore kbd { display: none; } }
 body.exploring #sound, body.embed #explore-photo { display: none; }
 body.compact .explore-bar { top: 10px; left: 10px; right: 10px; gap: 6px; }
-body.compact .explore-tag { font-size: 11px; letter-spacing: 0.14em; padding: 4px 2px; }
+body.compact .explore-tag { font-size: 32px; }
 body.compact .explore-bar .btn { padding: 6px 10px; font-size: 12px; }
 body.compact .explore-hint { bottom: 64px; font-size: 11px; padding: 5px 10px; }
 body.compact .explore-chips { bottom: 26px; gap: 4px; max-width: calc(100% - 16px); }

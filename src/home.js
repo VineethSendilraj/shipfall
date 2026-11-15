@@ -35,7 +35,8 @@ function save(key, value) {
  * a mode with `targets` takes its title and blurb from the picked vehicle.
  */
 export function bindHome({ root, modes, view }) {
-  let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null)) ?? modes[0];
+  // A mode that opens straight from its tab (Explore) is never the one the home screen comes back to.
+  let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null) && !m.instant) ?? modes[0];
   let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'ship');
   const $ = (sel) => root.querySelector(sel);
   const tabs = $('.modes');
@@ -52,11 +53,11 @@ export function bindHome({ root, modes, view }) {
     b.textContent = m.label;
     b.addEventListener('click', (ev) => {
       if (ev.detail > 0) b.blur();
+      // A mode with nothing to set up (Explore) opens straight away; Esc comes back to the mode that was picked before.
+      if (m.instant) return m.start();
       mode = m;
       save(MODE_KEY, m.id);
       show();
-      // A mode with nothing to set up (Explore) opens straight away; Esc comes back here.
-      if (m.instant) m.start();
     });
     return tabs.appendChild(b);
   });

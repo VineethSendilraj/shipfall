@@ -14,12 +14,14 @@ import { startServer } from './serve.mjs';
 import { CARD } from '../site.config.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// CARD_MAP=mars|starbase picks the launch site the cards are rendered on.
+const MAP = process.env.CARD_MAP || 'mars';
 const OUT = process.env.CARD_OUT ? resolve(process.env.CARD_OUT) : join(REPO, 'public');
 // at: mission seconds (stack) or demo sim frame (ship); cam: the look-around offset; extra: how much taller than the
 // card the page renders (the extra is cropped off the bottom); y: where the title block sits, as a fraction of the card.
 const SCENES = {
-  stack: { url: '/?flight=1&capture=1&map=mars', ready: '__flightReady', at: 3.5, cam: { zoom: 1.75, pitch: -0.24, yaw: 0 }, square: { extra: 0.22, y: 0.2 }, wide: { extra: 0.2, y: 0.22, zoom: 1.9 } },
-  ship: { url: '/?demo=1&capture=1&map=mars', ready: '__demoReady', at: Number(process.env.CARD_AT || 1325), cam: { zoom: 0.72, pitch: -0.08, yaw: 0.15 }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
+  stack: { url: `/?flight=1&capture=1&map=${MAP}`, ready: '__flightReady', at: 3.5, cam: { zoom: 1.75, pitch: -0.24, yaw: 0 }, square: { extra: 0.22, y: 0.2 }, wide: { extra: 0.2, y: 0.22, zoom: 1.9 } },
+  ship: { url: `/?demo=1&capture=1&map=${MAP}`, ready: '__demoReady', at: Number(process.env.CARD_AT || 1325), cam: { zoom: 0.72, pitch: -0.08, yaw: 0.15 }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
 };
 const SCENE = SCENES[process.env.CARD_SCENE || 'ship'];
 // The X logo, as on the game's Post on X button.
