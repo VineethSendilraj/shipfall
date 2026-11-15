@@ -1,4 +1,4 @@
-import { Game, DT, NO_INPUT } from './sim.js';
+import { Game, DT, NO_INPUT, LIVE_SPAWN_Y } from './sim.js';
 import { View } from './three/view.js';
 import { loadModels } from './three/models.js';
 import { createDemoRunner, DEMO } from './demo.js';
@@ -27,7 +27,8 @@ const EMBED = document.body.classList.contains('embed');
 const SITE_URL = __SITE_URL__;
 // The launch post on X (https://x.com/<handle>/status/<id>). When set, Post on X quotes it instead of linking the site.
 const SHARE_POST = import.meta.env.VITE_SHARE_POST || '';
-const SOUND_KEY = 'catch-the-booster.sound';
+// A new key, so a mute saved while testing doesn't carry over: sound starts on.
+const SOUND_KEY = 'shipfall.sound';
 const WORLD_W = 1280;
 const $ = (id) => document.getElementById(id);
 
@@ -172,7 +173,6 @@ function runGame() {
   const touchEl = $('touch');
   const soundBtn = $('sound');
   // Sound is on unless the player turned it off; browsers only start it on the first tap, so show it on from the start.
-  soundBtn.setAttribute('aria-pressed', String(readSoundPref()));
   const shareLink = $('share');
   const form = $('initials-form');
   const handleInput = $('initials');
@@ -270,7 +270,7 @@ function runGame() {
     setPaused(false);
     explore.resetMounts();
     mapPicker.apply();
-    game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0, target: home.target });
+    game = new Game({ width: WORLD_W, seed: (Math.random() * 2 ** 32) >>> 0, target: home.target, spawnY: LIVE_SPAWN_Y, stagger: true });
     game.start();
     view.director.reset();
     ui.resetScore();
@@ -372,7 +372,8 @@ function runGame() {
       .filter(Boolean)
       .join(' · ');
     setShareText();
-    const canSubmit = s.catches > 0;
+    // Every run can go on the board, a zero included.
+    const canSubmit = true;
     form.classList.toggle('hidden', !canSubmit);
     handleInput.value = savedHandle();
     formNote.textContent = '';
@@ -468,6 +469,8 @@ function runGame() {
   };
   window.addEventListener('pointerdown', unlockAudio, { capture: true });
   window.addEventListener('keydown', unlockAudio, { capture: true });
+  // Sound is on unless the player muted it. The context starts suspended until a gesture where the browser requires one.
+  setSound(readSoundPref(), false);
 
   $('play').addEventListener('click', () => home.start());
   $('again').addEventListener('click', showTitle);
@@ -635,6 +638,8 @@ function runGame() {
       // The sim stays stopped, so it doesn't fast-forward through the time spent exploring.
       acc = 0;
       if (!EXPLORE_CAPTURE) explore.frame(dt);
+      // Catch replays (and the intro) roar with the vehicle's engines.
+      sound.update(explore.replay ? explore.replay.thr : 0, false);
       requestAnimationFrame(frame);
       return;
     }

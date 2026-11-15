@@ -133,7 +133,7 @@ kbd.wide { min-width: 64px; }
 .board li a:hover { text-decoration-color: var(--ink); }
 /* Game-over card: same rhythm as the pause card (kicker, big score, one uppercase line). */
 #gameover .card { width: min(420px, calc(100vw - 32px)); }
-#gameover .go-logo { margin: -4px 0 10px; text-align: center; font: 400 40px/1 'Sedgwick Ave Display', var(--display); color: var(--ink); text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5); }
+#gameover .go-logo, #leaderboard .go-logo { margin: -4px 0 10px; text-align: center; font: 400 40px/1 'Sedgwick Ave Display', var(--display); color: var(--ink); text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5); }
 body.compact #gameover .go-logo { font-size: 30px; margin-bottom: 4px; }
 #gameover .go-score { margin: 6px 0 0; font-size: 56px; line-height: 1; }
 #gameover .go-score small { display: none; }
@@ -522,3 +522,37 @@ body.compact .chip { padding: 6px 9px; font-size: 10.5px; letter-spacing: 0.1em;
 body.compact .chip kbd { display: none; }
 body.tall .explore-chips { bottom: max(16px, env(safe-area-inset-bottom)); }
 body.tall .explore-hint { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 44px); }
+
+/* -------------------------------------------------------------- caps pass: labels, toggles, buttons */
+.map-pick button, .modes button, .btn, .ext, .pick-name, .disclaimer, .how .controls span:last-child { text-transform: uppercase; }
+.map-pick button { font-size: 12px; letter-spacing: 0.14em; }
+.modes button { font-size: 13px; letter-spacing: 0.12em; }
+.btn { letter-spacing: 0.1em; font-size: 14px; }
+.pick-name { letter-spacing: 0.06em; }
+.disclaimer { letter-spacing: 0.14em; font-size: 9.5px; }
+
+/* How to play: one column of key chips and short labels. */
+.how { padding: 24px 24px 20px; }
+.how .kicker { margin-bottom: 6px; }
+.how .lede { margin: 0 0 18px; font-size: 15px; line-height: 1.45; color: var(--ink); }
+.how .controls { gap: 0; border-top: 1px solid var(--line); }
+.how .controls > div { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.how .controls span:last-child { margin-left: auto; font: 600 12px var(--display); letter-spacing: 0.14em; color: var(--muted); }
+.how .controls span:only-child { margin-left: 0; text-transform: none; letter-spacing: 0.02em; font: 400 14px var(--display); color: #c3cde3; }
+.how .rules { margin: 14px 0 18px; font: 600 11px var(--display); letter-spacing: 0.12em; text-transform: uppercase; text-align: center; }
+
+/* Leaderboard: logo, title, rows, back. */
+#leaderboard .card { width: min(420px, 100%); }
+#leaderboard .board h2 { text-align: center; font-family: var(--display); letter-spacing: 0.2em; font-size: 11px; margin-bottom: 12px; }
+.board li.empty { justify-items: center; padding: 14px 10px; font-size: 13px; }
+#leaderboard .actions .btn { width: 100%; }
+
+/* Touch controls: line icons on glass, and a solid catch key. */
+.touch button { display: grid; place-items: center; padding: 0; border-color: rgba(255, 255, 255, 0.14); background: rgba(10, 11, 13, 0.5); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.touch button > svg { width: 42%; height: 42%; }
+.touch .k-arm svg, .touch .k-thr svg { width: calc(var(--b, 62px) * 0.36); height: calc(var(--b, 62px) * 0.36); }
+.touch .k-arm, body.free-flight .touch .k-thr { gap: 2px; }
+.touch button.on { background: rgba(255, 255, 255, 0.22); border-color: rgba(255, 255, 255, 0.4); }
+.touch button.catch { color: #0b0c0e; background: var(--ink); border-color: var(--ink); font-weight: 700; letter-spacing: 0.14em; }
+.touch button.catch.on { background: #cfd3da; }
+.touch button.catch.idle { color: var(--muted); background: rgba(10, 11, 13, 0.5); border-color: rgba(255, 255, 255, 0.14); }

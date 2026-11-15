@@ -95,30 +95,33 @@
     </div>
     <div class="how hidden" role="dialog" aria-label="How to play">
       <div data-mode="catch">
-        <p class="lede">Steer the falling vehicle over the tower with its cold-gas thrusters, bring the arms to its catch pins, and close them gently.</p>
+        <p class="kicker">How to play</p>
+        <p class="lede">Steer it over the tower, line the arms up with its pins, close them gently.</p>
         <div class="controls">
-          <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>side thrusters (use landing fuel)</span></div>
-          <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>move the catch arms</span></div>
-          <div><kbd class="wide">Space</kbd><span class="taps catch">CATCH</span><span>close the arms</span></div>
+          <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>Steer</span></div>
+          <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>Arms</span></div>
+          <div><kbd class="wide">Space</kbd><span class="taps catch">CATCH</span><span>Close</span></div>
         </div>
-        <p class="rules">Catch window: pins within ±3 m of the arms, less than 3.75 m off center, descending under 3 m/s.</p>
+        <p class="rules">Pins level with the arms · centered · under 3 m/s</p>
       </div>
       <div data-mode="flight">
-        <p class="lede">Fly the stack to orbit, launch satellites and land the ship back at the tower.</p>
+        <p class="kicker">How to play</p>
+        <p class="lede">Fly to orbit, deploy satellites, land the ship back at the tower.</p>
         <div class="controls">
-          <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>pitch</span></div>
-          <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>throttle</span></div>
-          <div><kbd class="wide">Space</kbd><span class="taps">ACTION</span><span>stage, deploy, flip</span></div>
+          <div><kbd>←</kbd><kbd>→</kbd><span class="taps">◀ ▶</span><span>Pitch</span></div>
+          <div><kbd>↑</kbd><kbd>↓</kbd><span class="taps">▲ ▼</span><span>Throttle</span></div>
+          <div><kbd class="wide">Space</kbd><span class="taps">ACTION</span><span>Stage · deploy · flip</span></div>
         </div>
-        <p class="rules">The screen coaches each step on the way up and back.</p>
+        <p class="rules">The screen coaches each step</p>
       </div>
       <div data-mode="explore">
-        <p class="lede">The full stack stands on the launch mount beside the tower. Look round it from any side.</p>
+        <p class="kicker">How to play</p>
+        <p class="lede">Look round the full stack on its launch mount, or replay a catch.</p>
         <div class="controls">
-          <div><span>drag to orbit · scroll or pinch to zoom · right-drag or two fingers to pan</span></div>
-          <div><kbd>1</kbd><kbd>9</kbd><span>fly to a part, or pick its chip along the bottom</span></div>
+          <div><span>Drag to orbit · pinch or scroll to zoom</span></div>
+          <div><kbd>1</kbd><kbd>9</kbd><span>Jump to a part</span></div>
         </div>
-        <p class="rules">Back (or Esc) returns to the home screen.</p>
+        <p class="rules">Esc returns home</p>
       </div>
       <button class="btn close-how" type="button">Got it</button>
     </div>
@@ -191,6 +194,7 @@
 
   <section id="leaderboard" class="overlay hidden">
     <div class="card">
+      <p class="go-logo" aria-hidden="true">ShipFall</p>
       <div class="board">
         <h2 id="board-h">Your best catches</h2>
         <ol id="board"></ol>
@@ -229,12 +233,12 @@
 
   <div id="touch" class="touch hidden" aria-label="On-screen controls">
     <div class="cluster">
-      <button data-k="left" type="button" aria-label="Thrust left">◀</button>
-      <button data-k="right" type="button" aria-label="Thrust right">▶</button>
+      <button data-k="left" type="button" aria-label="Thrust left"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
+      <button data-k="right" type="button" aria-label="Thrust right"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M9.5 5.5L16 12l-6.5 6.5"/></svg></button>
     </div>
     <div class="cluster">
-      <button data-k="up" type="button" aria-label="Arms up / throttle up"><span class="k-arm">▲<small>ARMS</small></span><span class="k-thr">▲<small>THRUST</small></span></button>
-      <button data-k="down" type="button" aria-label="Arms down / throttle down"><span class="k-arm">▼<small>ARMS</small></span><span class="k-thr">▼<small>THRUST</small></span></button>
+      <button data-k="up" type="button" aria-label="Arms up / throttle up"><span class="k-arm"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5.5 14.5L12 8l6.5 6.5"/></svg><small>ARMS</small></span><span class="k-thr"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5.5 14.5L12 8l6.5 6.5"/></svg><small>THRUST</small></span></button>
+      <button data-k="down" type="button" aria-label="Arms down / throttle down"><span class="k-arm"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5.5 9.5L12 16l6.5-6.5"/></svg><small>ARMS</small></span><span class="k-thr"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5.5 9.5L12 16l6.5-6.5"/></svg><small>THRUST</small></span></button>
       <button data-k="close" type="button" class="catch" aria-label="Close arms">CATCH</button>
     </div>
   </div>

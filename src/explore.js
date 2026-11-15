@@ -448,6 +448,7 @@ export class Explore {
   endReplay() {
     if (!this.replay) return;
     this.replay = null;
+    this.game.particles = [];
     document.body.classList.remove('replaying');
     if (this.ground) this.setGroundView(false);
     for (const v of Object.values(this.replayVehicles ?? {})) v.root.removeFromParent();
@@ -475,27 +476,32 @@ export class Explore {
       fog.density *= REPLAY_FOG;
     }
     const s = catchAt(r.t, r.keys);
+    r.thr = s.thr;
     if (r.kind === 'ship' && r.t > CATCH[3][0]) {
       // The flip swings a little past its lean, the other way, and settles.
+      // Eased in, so the swing starts without a kick.
       const u = r.t - CATCH[3][0];
-      s.a += 0.13 * Math.exp(-u * 1.2) * Math.sin(u * 3.1);
+      s.a += 0.11 * smooth01(u / 0.8) * Math.exp(-u * 0.9) * Math.sin(u * 2.2);
     }
     if (r.wobble) {
-      // Grid-fin steering: small tilts and sideways drift, dying away as the vehicle settles toward the arms.
-      const w = r.wobble * (1 - smooth01(r.t / r.close[0]));
+      // Fin and flap steering all the way down, belly flop included: slow tilts, rocking and sideways drift that
+      // settle over the last few seconds before the arms close.
+      const w = r.wobble * (1 - smooth01((r.t - r.close[0] + 4) / 4));
       const t = r.t;
-      s.a += w * (0.05 * Math.sin(t * 1.9) + 0.025 * Math.sin(t * 4.7 + 1.3));
-      s.dx += w * (6 * Math.sin(t * 1.3 + 0.4) + 2 * Math.sin(t * 3.1));
+      s.a += w * (0.06 * Math.sin(t * 0.9) + 0.02 * Math.sin(t * 1.7 + 1.3));
+      s.dx += w * (6 * Math.sin(t * 0.7 + 0.4) + 2 * Math.sin(t * 1.5));
+      s.rock = w * (0.07 * Math.sin(t * 1.1 + 0.7) + 0.02 * Math.sin(t * 2.3));
     }
     const ship = r.vehicle;
     // The keys place the vehicle's middle; the root (its pins) sits r.c up the turned axis from it.
     const mid = new THREE.Vector3(this.foot.x - s.dx, r.pins - r.c + s.h, this.foot.z);
-    ship.root.rotation.set(0, 0, s.a);
+    ship.root.rotation.set(s.rock ?? 0, 0, s.a);
     ship.root.position.set(mid.x - Math.sin(s.a) * r.c, mid.y + Math.cos(s.a) * r.c, mid.z);
     const engineY = ship.root.position.y + Math.cos(s.a) * r.engineY;
     const engineX = ship.root.position.x - Math.sin(s.a) * r.engineY;
     ship.plume.update(s.thr, this.game.t, Math.max(0, engineY - view.world.groundHeight(engineX, mid.z)));
     ship.throatMat.color.setRGB(7 * s.thr + 0.02, 3 * s.thr, 0.9 * s.thr);
+    this.replaySmoke(dt * r.speed, engineX, engineY - view.world.groundHeight(engineX, mid.z), s);
     const [c0, c1] = r.close;
     this.game.towers[0].open = 1 - smooth01((r.t - c0) / (c1 - c0));
     // The aim leans from the arms toward the ship. A drag or zoom in the aerial view keeps the player's angle and
@@ -528,6 +534,34 @@ export class Explore {
       view.camera.position.lerp(air, snap ? 1 : 1 - Math.exp(-dt * 3));
     } else view.camera.position.add(move);
     this.idle = r.t > r.close[1] + 2 ? this.idle : 0;
+  }
+
+  /**
+   * Exhaust smoke behind the burning engines and dust blown across the pad once the blast reaches the ground,
+   * through the sim's own particles (the view draws them on the tower's plane, where the replay flies).
+   */
+  replaySmoke(dt, x, alt, s) {
+    const g = this.game;
+    const f = g.fx;
+    const px = x * PX_PER_M + 640;
+    const py = GROUND_Y - alt * PX_PER_M;
+    const [ex, ey] = [Math.sin(s.a), Math.cos(s.a)];
+    if (dt > 0 && s.thr > 0.05) {
+      // A cloud of exhaust smoke left hanging behind the descending vehicle.
+      for (let n = Math.round(dt * 60 * (1 + s.thr * 2)); n > 0; n--) {
+        const sp = f.range(150, 260) * s.thr;
+        g.pushParticle({ k: 1, x: px + ex * 30 + f.range(-8, 8), y: py + ey * 30, vx: ex * sp + f.range(-25, 25), vy: ey * sp, t: 0, life: f.range(1.6, 2.8), size: f.range(16, 28), grow: 55 });
+      }
+      // The blast hits the ground below 90 m: billowing dust and steam thrown out both ways.
+      const k = Math.max(0, 1 - alt / 90) * s.thr;
+      for (let n = Math.round(dt * 60 * k * 6); n > 0; n--) {
+        const side = f.chance(0.5) ? 1 : -1;
+        g.pushParticle({ k: f.chance(0.7) ? 4 : 1, x: px + side * f.range(4, 40), y: GROUND_Y - f.range(0, 8), vx: side * f.range(160, 460) * (0.5 + k), vy: -f.range(15, 110), t: 0, life: f.range(1.4, 2.6), size: f.range(18, 36), grow: 60 });
+      }
+    }
+    // The sim moves its particles in fixed 1/60 s steps.
+    this.smokeT = (this.smokeT ?? 0) + dt;
+    for (; this.smokeT >= 1 / 60; this.smokeT -= 1 / 60) g.updateParticles();
   }
 
   createControls() {
@@ -844,6 +878,8 @@ export class Explore {
   frame(dt) {
     this.game.t += dt;
     this.idle += dt;
+    // The intro waits on its models without drawing, so the page never flashes the title camera's look at the ground.
+    if (this.intro && !this.replay) return;
     if (this.replay) this.stepReplay(dt);
     if (this.flight) this.fly(dt);
     else this.orbit(dt);

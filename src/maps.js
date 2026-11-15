@@ -1,11 +1,12 @@
 /** Visual themes for the launch site. A map only changes the world around the towers, never the sim. */
 export const MAPS = ['starbase', 'mars'];
-export const DEFAULT_MAP = 'mars';
-const KEY = 'catch-the-booster.map';
+export const DEFAULT_MAP = 'starbase';
+// A new key, so a Mars pick saved before Starbase became the default doesn't stick.
+const KEY = 'shipfall.map';
 
 export const isMap = (name) => MAPS.includes(name);
 
-/** `?map=` wins; otherwise the player's last choice (if `remember`), otherwise Mars. */
+/** `?map=` wins; otherwise the player's last choice (if `remember`), otherwise Starbase. */
 export function initialMap(params, { remember = true } = {}) {
   const asked = params.get('map');
   if (isMap(asked)) return asked;

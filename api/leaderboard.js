@@ -42,7 +42,7 @@ const int = (v) => (Number.isInteger(v) ? v : NaN);
 /** Rejects scores the game cannot produce for the reported run. Returns an error string or null. */
 export function checkRun({ score, catches, perfects, rounds }) {
   if (![score, catches, perfects, rounds].every((v) => Number.isFinite(int(v)))) return 'bad numbers';
-  if (catches < 1 || rounds < 1 || perfects < 0 || perfects > catches) return 'bad counts';
+  if (catches < 0 || rounds < 1 || perfects < 0 || perfects > catches) return 'bad counts';
   if (catches > rounds * 2) return 'too many catches';
   if (score < 1000 * catches || score > catches * MAX_PER_CATCH + rounds * MAX_DOUBLE_BONUS) return 'score out of range';
   return null;

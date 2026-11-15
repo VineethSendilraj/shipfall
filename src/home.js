@@ -1,4 +1,3 @@
-import { TARGETS } from './sim.js';
 
 const MODE_KEY = 'catch-the-booster.mode';
 const TARGET_KEY = 'catch-the-booster.target';
@@ -10,15 +9,6 @@ const TARGET_INFO = {
 // Picker order: the ship first (the intro ends with one in the arms), then the full stack, then the booster.
 const ORDER = ['ship', 'random', 'booster'];
 const SWIPE_PX = 40;
-
-function load(key, valid, fallback) {
-  try {
-    const v = localStorage.getItem(key);
-    return valid(v) ? v : fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 function save(key, value) {
   try {
@@ -36,8 +26,9 @@ function save(key, value) {
  */
 export function bindHome({ root, modes, view }) {
   // A mode that opens straight from its tab (Explore) is never the one the home screen comes back to.
-  let mode = modes.find((m) => m.id === load(MODE_KEY, Boolean, null) && !m.instant) ?? modes[0];
-  let target = load(TARGET_KEY, (v) => TARGETS.includes(v), 'ship');
+  // Every visit opens on Catch with the ship, matching the intro's last frame; picks still change within a visit.
+  let mode = modes[0];
+  let target = 'ship';
   const $ = (sel) => root.querySelector(sel);
   const tabs = $('.modes');
   const pick = $('.pick');

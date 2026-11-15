@@ -3,7 +3,8 @@
 //   stack: free flight (?flight=1&capture=1) seconds after liftoff, the full stack climbing out of its smoke.
 //   ship:  the demo's double catch (?demo=1&capture=1), the ship swinging upright on its engines beside the tower.
 // The page is rendered taller than the card and the top is kept, which crops most of the ground away.
-// Usage: npm run card                        (CARD_SCENE=ship|stack, default ship)
+//   replay: Explore's ship catch replay on its landing burn (default), with the big wordmark.
+// Usage: npm run card                        (CARD_SCENE=replay|ship|stack, default replay)
 //        CHROMIUM_CHANNEL=chrome npm run card   (uses the installed Google Chrome instead of Playwright's Chromium)
 //        CARD_OUT=/tmp/cards npm run card       (writes there instead of public/, to compare options)
 import { chromium } from 'playwright';
@@ -15,15 +16,17 @@ import { CARD } from '../site.config.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // CARD_MAP=mars|starbase picks the launch site the cards are rendered on.
-const MAP = process.env.CARD_MAP || 'mars';
+const MAP = process.env.CARD_MAP || 'starbase';
 const OUT = process.env.CARD_OUT ? resolve(process.env.CARD_OUT) : join(REPO, 'public');
 // at: mission seconds (stack) or demo sim frame (ship); cam: the look-around offset; extra: how much taller than the
 // card the page renders (the extra is cropped off the bottom); y: where the title block sits, as a fraction of the card.
 const SCENES = {
+  // The default: Explore's ship catch replay, the ship on its landing burn beside the tower in its own smoke.
+  replay: { url: `/?explore=1&capture=1&map=${MAP}`, replay: 'ship', at: Number(process.env.CARD_AT || 14.6), big: true, square: { extra: 0 }, wide: { extra: 0 } },
   stack: { url: `/?flight=1&capture=1&map=${MAP}`, ready: '__flightReady', at: 3.5, cam: { zoom: 1.75, pitch: -0.24, yaw: 0 }, square: { extra: 0.22, y: 0.2 }, wide: { extra: 0.2, y: 0.22, zoom: 1.9 } },
   ship: { url: `/?demo=1&capture=1&map=${MAP}`, ready: '__demoReady', at: Number(process.env.CARD_AT || 1325), cam: { zoom: 0.72, pitch: -0.08, yaw: 0.15 }, square: { extra: 0.14, y: 0.19 }, wide: { extra: 0.12, y: 0.21, zoom: 0.85 } },
 };
-const SCENE = SCENES[process.env.CARD_SCENE || 'ship'];
+const SCENE = SCENES[process.env.CARD_SCENE || 'replay'];
 // The X logo, as on the game's Post on X button.
 const X_PATH = 'M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z';
 const CHANNEL = process.env.CHROMIUM_CHANNEL || undefined;
@@ -31,9 +34,20 @@ const GL_ARGS = (process.env.CHROMIUM_ARGS || (CHANNEL ? '--ignore-gpu-blocklist
 
 // u: one unit of type size for the shot.
 const SHOTS = [
-  { file: CARD.playerImage, w: CARD.playerImageSize, h: CARD.playerImageSize, u: 0.82, ...SCENE.square },
-  { file: CARD.image, w: CARD.imageWidth, h: CARD.imageHeight, u: 0.55, sub: false, ...SCENE.wide },
+  { file: CARD.playerImage, w: CARD.playerImageSize, h: CARD.playerImageSize, u: 0.82, title: 230, ...SCENE.square },
+  { file: CARD.image, w: CARD.imageWidth, h: CARD.imageHeight, u: 0.62, title: 150, sub: false, ...SCENE.wide },
 ];
+
+// The big-title look: only the scene, the wordmark low in the frame and "Playable in X" above it.
+const bigCss = (s) => `
+  #explore, #corner, .disclaimer, #explore-hint, #title-screen, #hud, .explore-view, #explore-chips, .intro-logo, .explore-bar { display: none !important; }
+  .card-art { position: fixed; left: 0; right: 0; bottom: ${s.h * 0.03}px; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 99; }
+  .card-art .sub { display: flex; align-items: center; gap: ${12 * s.u}px; font: 700 ${30 * s.u}px/1 var(--display); letter-spacing: ${0.14 * 30 * s.u}px; text-transform: uppercase; color: #fff; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7); }
+  .card-art .x { display: grid; place-items: center; width: ${46 * s.u}px; height: ${46 * s.u}px; border-radius: ${11 * s.u}px; background: #000; box-shadow: 0 ${3 * s.u}px ${12 * s.u}px rgba(0, 0, 0, 0.5); }
+  .card-art .x svg { width: 64%; height: 64%; }
+  .card-art h1 { margin: 0; font: 400 ${s.title}px/1.05 'Sedgwick Ave Display', var(--display); color: #fff; text-shadow: 0 ${6 * s.u}px ${30 * s.u}px rgba(0, 0, 0, 0.45); }
+  .card-foot { position: fixed; left: ${18 * s.u}px; bottom: ${12 * s.u}px; z-index: 99; font: 600 ${13 * s.u}px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(241, 242, 244, 0.75); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
+`;
 
 const cardCss = (s) => `
   #hud, #popups, #banner, #corner, #touch, .coach, .status-stack, .disclaimer, #title-screen, #demo-title, #demo-end { display: none !important; }
@@ -58,6 +72,32 @@ for (const s of SHOTS) {
   const page = await browser.newPage({ viewport: { width: s.w, height: Math.round(s.h * (1 + s.extra)) }, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => console.error('[page error]', e.message));
   await page.goto(url + SCENE.url);
+  if (SCENE.big) {
+    await page.waitForFunction(() => window.__exploreFrame && window.__explore, null, { timeout: 120000 });
+    await page.evaluate(() => window.__explore.ready);
+    await page.addStyleTag({ content: bigCss(s) });
+    await page.evaluate(
+      ([kind, at, xPath]) => {
+        const e = window.__explore;
+        e.startReplay(kind);
+        for (let t = 0; t < at; t += 1 / 30) window.__exploreFrame(1 / 30);
+        const art = document.createElement('div');
+        art.className = 'card-art';
+        art.innerHTML = '<div class="sub">Playable in <i class="x"><svg viewBox="0 0 24 24"><path fill="#fff" d="' + xPath + '"/></svg></i></div><h1>ShipFall</h1>';
+        const foot = document.createElement('div');
+        foot.className = 'card-foot';
+        foot.textContent = 'not affiliated with SpaceX';
+        document.body.append(art, foot);
+      },
+      [SCENE.replay, SCENE.at, X_PATH],
+    );
+    await page.evaluate(() => document.fonts.ready);
+    const out = join(OUT, s.file);
+    await page.screenshot({ path: out, type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: s.w, height: s.h } });
+    await page.close();
+    console.log(`wrote ${out} (${s.w}x${s.h})`);
+    continue;
+  }
   await page.waitForFunction((flag) => window[flag] === true, SCENE.ready, { timeout: 120000 });
   await page.addStyleTag({ content: cardCss(s) });
   await page.evaluate(

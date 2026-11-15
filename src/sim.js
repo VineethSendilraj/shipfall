@@ -53,6 +53,8 @@ const BURN_FUEL_RATE = 33;
 const REOPEN_DELAY = 0.35;
 const SECOND_BOOSTER_DELAY = 2.2;
 const SPAWN_Y = -270;
+export const LIVE_SPAWN_Y = -400;
+const STAGGER_DELAY = 1.2; // after the first vehicle is caught or lost
 const INTRO_TIME = 0.8;
 const OUTRO_TIME = 1.3;
 const UNLOCK_TIME = 1.8;
@@ -89,7 +91,11 @@ function makeTower(idx, side, x) {
 }
 
 export class Game {
-  constructor({ width = 1280, seed = 1, maxRounds = Infinity, overrides = null, target = 'booster' } = {}) {
+  constructor({ width = 1280, seed = 1, maxRounds = Infinity, overrides = null, target = 'booster', spawnY = SPAWN_Y, stagger = false } = {}) {
+    // Live play drops from higher and, in a double round, holds the second vehicle until the first is down;
+    // the demo and the tests keep the original timing so their scripted inputs still fly the same.
+    this.spawnY = spawnY;
+    this.stagger = stagger;
     this.W = width;
     this.seed = seed >>> 0;
     this.maxRounds = maxRounds;
@@ -222,12 +228,12 @@ export class Game {
         tower: i,
         slot: i,
         x: clamp(tw.cx + p.spawnDx, 40, this.W - 40),
-        y: SPAWN_Y,
+        y: this.spawnY,
         vx: p.vx0,
         vy: p.vy0,
         fuel: 100,
         state: i === 0 ? 'falling' : 'waiting',
-        delay: i * SECOND_BOOSTER_DELAY,
+        delay: i * (this.stagger ? STAGGER_DELAY : SECOND_BOOSTER_DELAY),
         throttle: 0,
         burning: false,
         cutoff: false,
@@ -437,6 +443,7 @@ export class Game {
     for (const b of this.boosters) {
       switch (b.state) {
         case 'waiting':
+          if (this.stagger && this.boosters.some((o) => o !== b && o.state === 'falling')) break;
           b.delay -= DT;
           if (b.delay <= 0) {
             b.state = 'falling';
