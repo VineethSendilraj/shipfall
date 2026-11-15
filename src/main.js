@@ -153,7 +153,8 @@ function runGame() {
   let game = new Game({ width: WORLD_W, seed: 1 });
   let state = 'title';
   // Map picker on the home screen: applied at once there, and at takeoff.
-  const mapPicker = bindMapPicker(view, view.world.map, () => state === 'title');
+  // Explore has its own picker; after a swap there it re-stages the stack on the new world's mount.
+  const mapPicker = bindMapPicker(view, view.world.map, () => state === 'title' || state === 'explore', () => state === 'explore' && explore.stage(true));
   let overTimer = -1;
   let paused = false;
   const held = { left: false, right: false, up: false, down: false };
@@ -194,6 +195,11 @@ function runGame() {
     else b.heading.textContent = 'Your best catches';
     // Short windows get fewer rows, so the card's buttons stay on screen without scrolling.
     const card = b.ol.closest('.card');
+    // The full leaderboard lists everyone it has and scrolls.
+    if (b === boards.full) {
+      renderBoard(b.ol, worldwide ? boardRows(worldwide, worldwide.entries.length) : localRows(loadBoard(), mine));
+      return;
+    }
     for (let size = b.size(); ; size--) {
       const rows = worldwide ? boardRows(worldwide, size) : clipRows(localRows(loadBoard(), mine), size);
       renderBoard(b.ol, rows);
@@ -207,7 +213,7 @@ function runGame() {
     paintBoard(b);
     // A submit bumps boardReq, so a fetch that finishes after it can't hide the player's new rank.
     const req = ++boardReq;
-    const data = await fetchGlobal(savedHandle());
+    const data = await fetchGlobal(savedHandle(), b === boards.full ? 100 : 0);
     if (!data || req !== boardReq) return;
     worldwide = data;
     if (b.shown()) paintBoard(b);

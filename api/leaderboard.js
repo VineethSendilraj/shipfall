@@ -7,6 +7,8 @@
 const BOARD = 'ctb:board';
 const WHO = 'ctb:who';
 const TOP = 10;
+// GET ?limit= can ask for more rows (the scrolling full leaderboard), up to this many.
+const MAX_LIMIT = 100;
 const MAX_PER_CATCH = 1800;
 const MAX_DOUBLE_BONUS = 500;
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;
@@ -62,9 +64,9 @@ async function rows(db, start, stop) {
   });
 }
 
-/** The top 10, the field size, and (for a handle on the board) its row and neighbors. */
-async function board(db, key) {
-  const [entries, [total, rank]] = await Promise.all([rows(db, 0, TOP - 1), redis(db, [['ZCARD', BOARD], ['ZREVRANK', BOARD, key ?? '']])]);
+/** The top `limit` (10 by default), the field size, and (for a handle on the board) its row and neighbors. */
+async function board(db, key, limit = TOP) {
+  const [entries, [total, rank]] = await Promise.all([rows(db, 0, limit - 1), redis(db, [['ZCARD', BOARD], ['ZREVRANK', BOARD, key ?? '']])]);
   const out = { entries, total };
   if (key && Number.isInteger(rank)) {
     out.around = await rows(db, Math.max(0, rank - 1), rank + 1);
@@ -79,9 +81,11 @@ const json = (body, status = 200) =>
 export async function GET(request) {
   const db = store();
   if (!db) return json({ error: 'leaderboard not configured' }, 503);
-  const handle = request ? normalizeHandle(new URL(request.url).searchParams.get('handle')) : null;
+  const params = request ? new URL(request.url).searchParams : new URLSearchParams();
+  const handle = normalizeHandle(params.get('handle'));
+  const limit = Math.min(MAX_LIMIT, Math.max(1, Number.parseInt(params.get('limit'), 10) || TOP));
   try {
-    return json(await board(db, handle?.toLowerCase()));
+    return json(await board(db, handle?.toLowerCase(), limit));
   } catch {
     return json({ error: 'leaderboard unavailable' }, 502);
   }

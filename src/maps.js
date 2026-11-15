@@ -23,9 +23,9 @@ export function initialMap(params, { remember = true } = {}) {
 /**
  * Wires every `.map-pick` segmented control (title card and quick-start card) to the view. A choice is
  * remembered and applied straight away while `canApply()` (the title screen is up); `apply()` applies the
- * current choice later, e.g. when a flight starts.
+ * current choice later, e.g. when a flight starts. `applied()` runs after a picker applies a map straight away.
  */
-export function bindMapPicker(view, initial, canApply) {
+export function bindMapPicker(view, initial, canApply, applied = () => {}) {
   let current = initial;
   const buttons = [...document.querySelectorAll('.map-pick button[data-map]')];
   const show = () => {
@@ -44,7 +44,10 @@ export function bindMapPicker(view, initial, canApply) {
         // Not remembered in this frame; the choice still applies for this session.
       }
       show();
-      if (canApply()) apply();
+      if (canApply()) {
+        apply();
+        applied();
+      }
     });
   }
   show();

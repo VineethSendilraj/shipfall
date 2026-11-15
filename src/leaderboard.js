@@ -39,9 +39,12 @@ export function addEntry(handle, score, round) {
 }
 
 /** Worldwide board ({ entries, total, me, around }), or null when the backend isn't reachable (local dev, not configured). */
-export async function fetchGlobal(handle = '') {
+export async function fetchGlobal(handle = '', limit = 0) {
   try {
-    const q = normalizeHandle(handle) ? `?handle=${encodeURIComponent(handle)}` : '';
+    const p = new URLSearchParams();
+    if (normalizeHandle(handle)) p.set('handle', handle);
+    if (limit) p.set('limit', String(limit));
+    const q = p.size ? `?${p}` : '';
     const res = await fetch(`${API}${q}`, { headers: { Accept: 'application/json' } });
     if (!res.ok) return null;
     const data = await res.json();
